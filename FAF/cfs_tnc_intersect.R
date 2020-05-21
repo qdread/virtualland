@@ -2,6 +2,10 @@
 # Tabulate 2012 CDL by combination of FAF polygon and TNC ecoregion
 # So first we need to create a combined polygon layer that contains the intersection of every FAF polygon and TNC ecoregion.
 
+
+# Perform intersect -------------------------------------------------------
+
+
 library(sf)
 
 is_local <- dir.exists('Q:/')
@@ -42,3 +46,34 @@ cfs_tnc_area_mat <- cfs_tnc_area_df %>%
   pivot_wider(names_from = ECO_CODE, values_from = area, values_fill = list(area = 0))
 
 # The tabulation of the CDL raster by this intersected polygon layer is done in Python from a shell script
+
+
+# Wrangle tabulated CDL raster by intersected layer -----------------------
+
+library(tidyverse)
+library(sf)
+cdlcfstnc2012 <- read_csv(file.path(fp, 'raw_data/landuse/output_csvs', 'CDL_2012_CFSTNC.csv')) %>%
+  rename(region = X1) %>%
+  pivot_longer(-region, names_to = 'cdl_class', values_to = 'n_pixels')
+
+# The region names are just 0 to 452 in this output so we need to match it with the correct names.
+cfstncmap <- st_read(file.path(fp_out, 'cfs_tnc_aea_intersect.gpkg'))
+
+region_lookup <- cfstncmap %>%
+  as_tibble %>%
+  select(FAF_Region, ECODE_NAME, Code, ECO_CODE) %>%
+  setNames(c('FAF_Region', 'TNC_Region', 'FAF_Code', 'TNC_Code')) %>%
+  mutate(region = 0:452)
+
+cdlcfstnc2012 <- cdlcfstnc2012 %>%
+  left_join(region_lookup) %>%
+  mutate(n_pixels = if_else(is.na(n_pixels), 0, n_pixels))
+
+# Get the actual names of the CDL cover classes for this data frame.
+cdlclasses <- read_table(file.path(fp, 'raw_data/landuse/USDAcropland/CDL/cdlclasses.txt')) %>%
+  mutate(CDL_Code = map_chr(CDL_Code, str_extract, "[0-9]+"))
+
+cdlcfstnc2012 <- cdlcfstnc2012 %>%
+  left_join(cdlclasses, by = c('cdl_class' = 'CDL_Code'))
+
+write_csv(cdlcfstnc2012, file.path(fp_out, 'CDL_x_FAF_x_TNC_counts.csv'))
