@@ -13,7 +13,7 @@ fp_cfs <- file.path(fp, 'raw_data/commodity_flows/CFS')
 fp_faf <- file.path(fp, 'raw_data/commodity_flows/FAF')
 fp_crosswalk <- file.path(ifelse(is_local, 'Q:', '/nfs/qread-data'), 'crossreference_tables')
 fp_out <- file.path(ifelse(is_local, 'Q:', '/nfs/qread-data'), 'cfs_io_analysis')
-fp_fwe <- ifelse(is_local, '~/Documents/GitHub/fwe', '~/fwe')
+fp_github <- ifelse(is_local, '~/Documents/GitHub/foodwaste/virtualland', '~/virtualland')
 
 # Load FAF data
 load(file.path(fp_out, 'faf_by_bea.RData'))
@@ -153,3 +153,6 @@ p_landmap <- draw_cfsmap_divergent(map_land_net %>% mutate(land_flow = (cropland
                                   scale_name = parse(text='1000~km^2'),
                                   scale_breaks = c(-30,-10,0,10,30),
                                   add_theme = dark_theme)
+								  
+# Write maps to PNG output
+
