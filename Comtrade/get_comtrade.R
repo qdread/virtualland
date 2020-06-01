@@ -5,7 +5,7 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 
-base_url <- 'http://comtrade.un.org/api/get?'
+base_url <- 'https://comtrade.un.org/api/get?'
 
 # 100000 rows, 2 digit codes, year 2012, reporting area 842 means USA
 # px: Classification HS is harmonized system which looks like the most updated and best classification system
