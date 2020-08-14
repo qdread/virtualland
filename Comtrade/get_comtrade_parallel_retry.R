@@ -9,7 +9,7 @@ base_url <- 'https://comtrade.un.org/api/get?'
 
 years <- 2010:2019
 
-load('/nfs/qread-data/cfs_io_analysis/comtrade_rawdata.RData')
+load('/nfs/qread-data/cfs_io_analysis/comtrade_rawdata2020-06-04.RData')
 
 # Find all the country IDs and loop through them, getting data for each one for each year.
 all_countries <- read_csv('/nfs/qread-data/cfs_io_analysis/comtrade_country_lookup.csv')
@@ -23,7 +23,7 @@ partner_x_year <- expand_grid(year = years, country = partner_countries$results$
   filter(!country %in% c('all', '841', '842'))
 
 get_one_year <- function(year, detail, reporting, partner) {
-  Sys.sleep(5) # Slow things down to not overwhelm the API
+  Sys.sleep(30) # Slow things down to not overwhelm the API -- now do 30 seconds to limit to around 120 requests per hour.
   message('downloading data reported by ', reporting, ' from ', partner, ' in ', year)
   req <- try(GET(paste0(base_url, 'fmt=json&px=HS&freq=A&max=100000&r=', reporting, '&p=', partner, '&cc=AG', detail, '&ps=', year),
                  config(ssl_verifypeer = FALSE)), TRUE)
