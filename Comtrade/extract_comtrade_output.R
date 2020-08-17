@@ -103,5 +103,12 @@ partner_good_output <- map(all_partner, ~ if(class(.) == 'data.frame') . else NU
 reporting_world <- reporting_good_output %>% filter(ptTitle %in% 'World')
 reporting_countries <- reporting_good_output %>% filter(!ptTitle %in% 'World')
 
-reporting_world %>% group_by(yr, rgDesc) %>% summarize(value = sum(TradeValue)/1e9)
-reporting_countries %>% group_by(yr, rgDesc) %>% summarize(value = sum(TradeValue)/1e9) %>% filter(yr == 2018) # Does not match, much missing
+reporting_world %>% group_by(yr, rgDesc) %>% summarize(value = sum(TradeValue)/1e9) %>% filter(yr == 2018)
+reporting_countries %>% group_by(yr, rgDesc) %>% summarize(value = sum(TradeValue)/1e9) %>% filter(yr == 2018) 
+# The two match.
+
+
+# Write out the data to CSVs ----------------------------------------------
+
+write_csv(reporting_good_output, '/nfs/qread-data/cfs_io_analysis/comtrade_USAreported.csv')
+write_csv(partner_good_output, '/nfs/qread-data/cfs_io_analysis/comtrade_partnerreported.csv')
