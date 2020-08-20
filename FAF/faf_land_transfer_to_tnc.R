@@ -8,8 +8,8 @@
 # Prepare data ------------------------------------------------------------
 
 
+source('FAF/faf_land_transfers.R')
 
-# Run the first 54 lines of faf_land_transfers.R to load the FAF to FAF transfer data.
 # Next get the totals of cropland and pastureland by ecoregion-FAF intersection
 
 # land_cfs_tnc <- read_csv(file.path(fp_out, 'CDL_x_FAF_x_TNC_counts.csv'))
