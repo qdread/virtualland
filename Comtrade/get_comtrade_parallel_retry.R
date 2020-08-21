@@ -5,16 +5,16 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 
+fp_comtrade <- '/nfs/qread-data/raw_data/commodity_flows/Comtrade'
 base_url <- 'https://comtrade.un.org/api/get?'
 
 years <- 2010:2019
 
-load('/nfs/qread-data/cfs_io_analysis/comtrade_rawdata2020-06-04.RData')
-
+load(file.path(fp_comtrade, 'comtrade_rawdata2020-06-04.RData'))
 # Find all the country IDs and loop through them, getting data for each one for each year.
-all_countries <- read_csv('/nfs/qread-data/cfs_io_analysis/comtrade_country_lookup.csv')
-reporting_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/reporterAreas.json', simplifyDataFrame = TRUE)
-partner_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/partnerAreas.json', simplifyDataFrame = TRUE)
+all_countries <- read_csv(file.path(fp_comtrade, 'comtrade_country_lookup.csv'))
+reporting_countries <- fromJSON(file.path(fp_comtrade, 'reporterAreas.json'), simplifyDataFrame = TRUE)
+partner_countries <- fromJSON(file.path(fp_comtrade, 'partnerAreas.json'), simplifyDataFrame = TRUE)
 
 
 reporting_x_year <- expand_grid(year = years, country = reporting_countries$results$id) %>%
@@ -43,4 +43,4 @@ all_reporting <- map(1:length(all_reporting), function(i) {
   get_one_year(year = partner_x_year$year[i], detail = 4, reporting = 842, partner = partner_x_year$country[i])
 })
 
-save(all_partner, all_reporting, file = paste0('/nfs/qread-data/cfs_io_analysis/comtrade_rawdata', Sys.Date(), '.RData'))
+save(all_partner, all_reporting, file = paste0(fp_comtrade, 'comtrade_rawdata', Sys.Date(), '.RData'))

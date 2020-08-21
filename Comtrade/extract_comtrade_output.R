@@ -4,13 +4,14 @@ library(tidyverse)
 library(httr)
 library(jsonlite)
 
+fp_comtrade <- '/nfs/qread-data/raw_data/commodity_flows/Comtrade'
 base_url <- 'https://comtrade.un.org/api/get?'
 
-load('/nfs/qread-data/cfs_io_analysis/comtrade_rawdata2020-06-04.RData')
+load(file.path(fp_comtrade, 'comtrade_rawdata2020-06-04.RData'))
 
-all_countries <- read_csv('/nfs/qread-data/cfs_io_analysis/comtrade_country_lookup.csv')
-reporting_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/reporterAreas.json', simplifyDataFrame = TRUE)
-partner_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/partnerAreas.json', simplifyDataFrame = TRUE)
+all_countries <- read_csv(file.path(fp_comtrade, 'comtrade_country_lookup.csv'))
+reporting_countries <- fromJSON(file.path(fp_comtrade, 'reporterAreas.json'), simplifyDataFrame = TRUE)
+partner_countries <- fromJSON(file.path(fp_comtrade, 'partnerAreas.json'), simplifyDataFrame = TRUE)
 
 
 
@@ -110,5 +111,5 @@ reporting_countries %>% group_by(yr, rgDesc) %>% summarize(value = sum(TradeValu
 
 # Write out the data to CSVs ----------------------------------------------
 
-write_csv(reporting_good_output, '/nfs/qread-data/cfs_io_analysis/comtrade_USAreported.csv')
-write_csv(partner_good_output, '/nfs/qread-data/cfs_io_analysis/comtrade_partnerreported.csv')
+write_csv(reporting_good_output, file.path(fp_comtrade, 'comtrade_USAreported.csv'))
+write_csv(partner_good_output, file.path(fp_comtrade, 'comtrade_partnerreported.csv'))

@@ -6,12 +6,13 @@ library(jsonlite)
 library(tidyverse)
 
 base_url <- 'https://comtrade.un.org/api/get?'
+fp_comtrade <- '/nfs/qread-data/raw_data/commodity_flows/Comtrade'
 
 years <- 2010:2019
 
 # Find all the country IDs and loop through them, getting data for each one for each year.
-reporting_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/reporterAreas.json', simplifyDataFrame = TRUE)
-partner_countries <- fromJSON('/nfs/qread-data/cfs_io_analysis/partnerAreas.json', simplifyDataFrame = TRUE)
+reporting_countries <- fromJSON(file.path(fp_comtrade, 'reporterAreas.json'), simplifyDataFrame = TRUE)
+partner_countries <- fromJSON(file.path(fp_comtrade, 'partnerAreas.json'), simplifyDataFrame = TRUE)
 
 
 reporting_x_year <- expand_grid(year = years, country = reporting_countries$results$id) %>%
@@ -33,4 +34,4 @@ get_one_year <- function(year, detail, reporting, partner) {
 all_partner <- pmap(reporting_x_year, function(year, country) get_one_year(year = year, detail = 4, reporting = country, partner = 842))
 all_reporting <- pmap(partner_x_year, function(year, country) get_one_year(year = year, detail = 4, reporting = 842, partner = country))
 
-save(all_partner, all_reporting, file = '/nfs/qread-data/cfs_io_analysis/comtrade_rawdata.RData')
+save(all_partner, all_reporting, file = file.path(fp_comtrade, 'comtrade_rawdata.RData'))
