@@ -122,3 +122,39 @@ sum(faf_flows_all$cropland_flow, na.rm = TRUE) # A few got removed due to NA but
 
 write_csv(faf_flows_tnc_joined, file.path(fp_out, 'FAF_all_flows_x_TNC.csv'))
 
+
+# Use population weights to get transfers to TNC --------------------------
+
+# So far, we have transfers from TNC to FAF. We can also get TNC to TNC transfers by weighting by population grid.
+
+faf_lookup <- read_csv(file.path(fp_out, 'faf_region_lookup.csv'))
+faf_flows_all <- read_csv(file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
+nlcd_faf_tnc <- read_csv(file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
+faf_flows_tnc_joined <- read_csv(file.path(fp_out, 'FAF_all_flows_x_TNC.csv'))
+pop_faf_tnc <- read_csv(file.path(fp_out, 'population_FAF_x_TNC_3column.csv'))
+
+# Get the proportion population in each ecoregion in each FAF before joining.
+pop_faf_tnc <- pop_faf_tnc %>%
+  group_by(FAF) %>%
+  mutate(pop_proportion = pop / sum(pop, na.rm = TRUE)) %>%
+  ungroup
+
+faf_flows_tnc_pop_joined <- faf_flows_tnc_joined %>%
+ full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+
+# Convert flows based on population proportion
+faf_flows_tnc_pop_joined <- faf_flows_tnc_pop_joined %>%
+  mutate(cropland_flow = cropland_flow * pop_proportion,
+         pastureland_flow = pastureland_flow * pop_proportion) %>%
+  rename(TNC_orig = ECO_CODE,
+         TNC_dest = TNC)
+
+# Aggregate to only TNC x TNC flows
+tnc_flows_agg <- faf_flows_tnc_pop_joined %>%
+  group_by(TNC_orig, TNC_dest, trade_type) %>%
+  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+            pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
+
+# Write outputs.
+write_csv(faf_flows_tnc_pop_joined, file.path(fp_out, 'FAF_all_flows_TNC_x_TNC.csv'))
+write_csv(tnc_flows_agg, file.path(fp_out, 'TNC_x_TNC_all_flows.csv'))
