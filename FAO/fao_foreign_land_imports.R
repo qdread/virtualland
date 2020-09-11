@@ -31,7 +31,7 @@ fao_codes_table <- read_csv(file.path(fp_crosswalks, 'faostat_all_codes_harmoniz
 # Create a separate trade matrix for each item.
 
 # # Example for one item.
-# maize <- trade_matrix %>% filter(`Item Code` == 56)
+# maize <- trade_matrix %>% filter(item_code == 56)
 # 
 # # US reported, China partner
 # maize %>% filter(`Reporter Country Code` == 231, `Partner Country Code` == 41)
@@ -40,13 +40,13 @@ fao_codes_table <- read_csv(file.path(fp_crosswalks, 'faostat_all_codes_harmoniz
 # For each country, get the amount of exports they report sending to USA.
 
 # trade_matrix %>% 
-#   group_by(`Reporter Country Code`, `Reporter Countries`, `Item Code`, Item, `Element Code`, Element, Unit) %>%
+#   group_by(`Reporter Country Code`, `Reporter Countries`, item_code, Item, element, Element, Unit) %>%
   
 trade_tousa <- trade_matrix %>%
-  filter(`Partner Country Code` == 231)
+  filter(partner_country_code == 231)
 
-trade_tousa_qty <- trade_tousa %>% filter(Element == 'Export Quantity') # Mostly weight but a few in head and number
-trade_tousa_value <- trade_tousa %>% filter(Element == 'Export Value') # All in dollars
+trade_tousa_qty <- trade_tousa %>% filter(element == 'Export Quantity') # Mostly weight but a few in head and number
+trade_tousa_value <- trade_tousa %>% filter(element == 'Export Value') # All in dollars
 
 
 # Get total production of each item ---------------------------------------
@@ -54,19 +54,19 @@ trade_tousa_value <- trade_tousa %>% filter(Element == 'Export Value') # All in 
 # We will need to use the quantity data because the production is also in quantity.
 
 # Get all the item codes from trade to USA.
-codes_trade <- unique(trade_tousa_qty$`Item Code`)
+codes_trade <- unique(trade_tousa_qty$item_code)
 
 # Get all the item codes for production across the five production dataframes.
-codes_production <- Reduce(union, list(production_crops$`Item Code`, production_cropsprocessed$`Item Code`, production_livestock$`Item Code`, production_livestockprimary$`Item Code`, production_livestockprocessed$`Item Code`))
+codes_production <- Reduce(union, list(production_crops$item_code, production_cropsprocessed$item_code, production_livestock$item_code, production_livestockprimary$item_code, production_livestockprocessed$item_code))
 
 noprod_codes <- setdiff(codes_trade, codes_production)
 
 # What proportion of the weight of imports are not included in the production
 trade_tousa_qty %>% 
-  filter(Unit == 'tonnes') %>%
-  mutate(hasprod = !`Item Code` %in% noprod_codes) %>%
+  filter(unit == 'tonnes') %>%
+  mutate(hasprod = !item_code %in% noprod_codes) %>%
   group_by(hasprod) %>%
-  summarize(Value = sum(Value))
+  summarize(value = sum(value))
 # About 1/3 of it does not have production value, so that's problematic.
 
 # Use harmonization table to assign trade codes that are not in the production table to a different part of the production table
@@ -77,7 +77,7 @@ trade_tousa_qty %>%
 fao_codes_toassign <- fao_codes_table %>% filter(!is.na(trade_code_for_production))
 
 production_crops_joined_tradecodes <- production_crops %>%
-  left_join(fao_codes_table, by = c('Item Code' = 'code', 'Item' = 'name_production'))
+  left_join(fao_codes_table, by = c('item_code' = 'code', 'item' = 'name_production'))
 
 # All codes either already have a valid trade category or can be assigned one!
 # Convert trade code to a list column
@@ -86,19 +86,19 @@ production_crops_joined_tradecodes <- production_crops_joined_tradecodes %>%
 
 # Spread to wide
 production_crops_withcodes_wide <- production_crops_joined_tradecodes %>% 
-  select(-`Element Code`, -Flag, -Note, -parent_code, -Year, -Unit) %>%
-  pivot_wider(names_from = Element, values_from = Value, values_fill = NA)
+  select(-element_code, -parent_code, -unit) %>%
+  pivot_wider(names_from = element, values_from = value, values_fill = NA)
 
 # Expand out the rows with >1 entry in trade_code_for_production to more than one row.
 
 production_crops_withcodes_unnest <- production_crops_withcodes_wide %>%
   mutate(n_codes = map_int(trade_code_for_production, length)) %>%
   unnest(trade_code_for_production) %>%
-  mutate(trade_code_final = if_else(is.na(trade_code_for_production), `Item Code`, trade_code_for_production))
+  mutate(trade_code_final = if_else(is.na(trade_code_for_production), item_code, trade_code_for_production))
 
 # Divide area harvested and production evenly by the number of rows in each code.
 production_crops_retotaled <- production_crops_withcodes_unnest %>%
-  group_by(`Area Code`, Area, BEA_code, `Item Code`, Item) %>%
+  group_by(area_code, area, BEA_code, item_code, item) %>%
   mutate(`Area harvested` = `Area harvested`/n(),
          Production = Production/n())
 
@@ -111,23 +111,23 @@ production_crops_retotaled <- production_crops_withcodes_unnest %>%
 # Then multiply the area harvested by this ratio, to get the area virtually exported to the USA.
 
 production_crops_tojoin <- production_crops_retotaled %>% ungroup %>%
-  select(-`Item Code`, -Item, -name_trade, -trade_code_for_production) %>%
+  select(-item_code, -item, -name_trade, -trade_code_for_production) %>%
   filter(!BEA_code %in% "aggregate")
 
 # Sum up by trade code.
 production_crops_summed_tojoin <- production_crops_tojoin %>%
-  group_by(`Area Code`, Area, BEA_code, trade_code_final) %>%
+  group_by(area_code, area, BEA_code, trade_code_final) %>%
   summarize(Area_harvested = sum(`Area harvested`, na.rm = TRUE),
             Yield = weighted.mean(Yield, Production, na.rm = TRUE),
             Production = sum(Production, na.rm = TRUE))
 
 trade_tousa_byweight <- trade_tousa_qty %>%
-  filter(Unit %in% 'tonnes') %>%
-  select(-`Element Code`, -Element, -Year, -Unit, -Flag, -`Partner Country Code`, -`Partner Countries`) %>%
-  rename(Export_Qty = Value)
+  filter(unit %in% 'tonnes') %>%
+  select(-element_code, -element, -unit, -partner_country_code, -partner_country) %>%
+  rename(Export_Qty = value)
 
-trade_tousa_byweight %>% filter(!`Item Code` %in% production_crops_tojoin$trade_code_final)
-production_crops_summed_tojoin %>% filter(!trade_code_final %in% trade_tousa_byweight$`Item Code`) # All are in there!
+trade_tousa_byweight %>% filter(!item_code %in% production_crops_tojoin$trade_code_final)
+production_crops_summed_tojoin %>% filter(!trade_code_final %in% trade_tousa_byweight$item_code) # All are in there!
 
 # Join it up to get the % of each production sent to the US.
 
@@ -162,27 +162,27 @@ VLT_sums_crop <- production_crops_trade %>%
 # This will be the production of livestock that is pastured.
 
 # gross production in constant 2004-06 1000 I$
-grossprod <- valueprod_rawdata %>% 
-  filter(`Element Code` %in% 152, Year == 2016) %>%
-  left_join(fao_codes_table, by = c("Item Code" = "code"))
+grossprod <- value_production %>% 
+  filter(element_code %in% 152) %>%
+  left_join(fao_codes_table, by = c("item_code" = "code"))
 
 # Get grazer production in thousand dollars
 grazerproduction_bycountry <- grossprod %>% 
   filter(livestock == 'grazer') %>%
-  group_by(`Area Code`, Area) %>%
-  summarize(Value = sum(Value, na.rm = TRUE)) %>%
+  group_by(area_code, area) %>%
+  summarize(value = sum(value, na.rm = TRUE)) %>%
   setNames(c('country_code', 'country_name', 'value'))
 
 # Grazing production exported to USA
 trade_tousa_byvalue <- trade_tousa %>% 
-  filter(Element == 'Export Value') %>%
-  select(-`Element Code`, -Element, -Year, -Unit, -Flag, -`Partner Country Code`, -`Partner Countries`) %>%
-  rename(Export_Value = Value)
+  filter(element == 'Export Value') %>%
+  select(-element_code, -element, -unit, -partner_country_code, -partner_country) %>%
+  rename(Export_Value = value)
 
 grazerproduction_exportedtousa <- trade_tousa_byvalue %>%
-  left_join(fao_codes_table, by = c("Item Code" = "code")) %>%
+  left_join(fao_codes_table, by = c("item_code" = "code")) %>%
   filter(livestock == "grazer") %>%
-  rename(country_code = `Reporter Country Code`, country_name = `Reporter Countries`) %>%
+  rename(country_code = reporter_country_code, country_name = reporter_country) %>%
   group_by(country_code, country_name) %>%
   summarize(export_value = sum(Export_Value, na.rm = TRUE))
 
@@ -197,19 +197,19 @@ grazerproduction_bycountry <- left_join(grazerproduction_bycountry, grazerproduc
 
 # Sum up all just to see
 landuse_inputs %>% 
-  filter(Unit == "1000 ha") %>%
-  group_by(`Item Code`, Item) %>%
-  summarize(Value = sum(Value)) %>%
-  arrange(-Value)
+  filter(unit == "1000 ha") %>%
+  group_by(item_code, item) %>%
+  summarize(value = sum(value)) %>%
+  arrange(-value)
 
 # Cropland; land under permanent meadows and pastures, added up gives agricultural land area.
 landuse_inputs %>% 
-  filter(`Item Code` %in% c(6620, 6655))
+  filter(item_code %in% c(6620, 6655))
         
 # Just pastureland
 pastureland_totals <- landuse_inputs %>% 
-  filter(`Item Code` %in% 6655) %>%
-  select(`Area Code`, Area, Value) %>%
+  filter(item_code %in% 6655) %>%
+  select(area_code, area, value) %>%
   setNames(c('country_code', 'country_name', 'pastureland'))
 
 VLT_sums_pasture <- grazerproduction_bycountry %>% 
