@@ -135,11 +135,12 @@ production_crops_summed_tojoin %>% filter(!trade_code_final %in% trade_tousa_byw
 names(trade_tousa_byweight) <- c('country_code', 'country_name', 'item_code', 'item', 'export_qty')
 names(production_crops_summed_tojoin) <- c('country_code', 'country_name', 'BEA_code', 'item_code', 'area_harvested', 'yield', 'production')
 
+# Also correct for proportions greater than 1.
 production_crops_trade <- left_join(production_crops_summed_tojoin, trade_tousa_byweight) %>%
   filter(production > 0, area_harvested > 0) %>%
   mutate(export_qty = if_else(is.na(export_qty), 0, export_qty),
          proportion_sent_USA = export_qty/production,
-         virtual_land_transfer = area_harvested * proportion_sent_USA) 
+         virtual_land_transfer = area_harvested * min(proportion_sent_USA, 1)) 
 
 VLT_sums_crop <- production_crops_trade %>% 
   group_by(country_code, country_name) %>% 
@@ -158,40 +159,90 @@ VLT_sums_crop <- production_crops_trade %>%
 # 2. total grazing animal production value
 # 3. grazing animal production exported to USA
 
-# Grazing animal production
-# This will be the production of livestock that is pastured.
 
-# gross production in constant 2004-06 1000 I$
-grossprod <- value_production %>% 
-  filter(element_code %in% 152) %>%
-  left_join(fao_codes_table, by = c("item_code" = "code"))
+# Get proportion production sent by weight --------------------------------
 
-# Get grazer production in thousand dollars
-grazerproduction_bycountry <- grossprod %>% 
-  filter(livestock == 'grazer') %>%
-  group_by(area_code, area) %>%
-  summarize(value = sum(value, na.rm = TRUE)) %>%
-  setNames(c('country_code', 'country_name', 'value'))
 
-# Grazing production exported to USA
-trade_tousa_byvalue <- trade_tousa %>% 
-  filter(element == 'Export Value') %>%
+
+# Concatenate three livestock production dataframes and remove doublecounting codes.
+prod_animal_all <- bind_rows(production_livestock, production_livestockprimary, production_livestockprocessed) %>%
+  filter(!grepl('17..$|18..$', item_code))
+
+# Get production by weight only.
+prod_animal_wgt <- prod_animal_all %>% filter(unit == 'tonnes')
+
+# Get trade to usa by weight for the animal crops
+trade_tousa_byweight_animal <- trade_tousa_qty %>%
+  filter(unit %in% 'tonnes') %>%
   select(-element_code, -element, -unit, -partner_country_code, -partner_country) %>%
-  rename(Export_Value = value)
+  rename(export_qty = value) 
 
-grazerproduction_exportedtousa <- trade_tousa_byvalue %>%
-  left_join(fao_codes_table, by = c("item_code" = "code")) %>%
-  filter(livestock == "grazer") %>%
-  rename(country_code = reporter_country_code, country_name = reporter_country) %>%
-  group_by(country_code, country_name) %>%
-  summarize(export_value = sum(Export_Value, na.rm = TRUE))
+# Modified 14 Sept. Sum up trade and production codes by type of animal and type of product.
+# This is because the trade and production codes do not overlap in some cases.
+prod_animal_wgt_bytype <- prod_animal_wgt %>%
+  left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
+  filter(livestock == 'grazer') %>%
+  group_by(area_code, area, livestock_animal, livestock_product_type) %>%
+  summarize(production_qty = sum(value, na.rm = TRUE))
 
-grazerproduction_bycountry <- left_join(grazerproduction_bycountry, grazerproduction_exportedtousa) %>%
-  mutate(export_value = if_else(is.na(export_value), 0, export_value),
-         proportion_exported = export_value/value)
-# This has issues because some are >1 and some have extremely high numbers. Maybe some production is excluded from some
-# countries' total production.
-# Fix later
+trade_tousa_wgt_bytype <- trade_tousa_byweight_animal %>%
+  left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
+  filter(livestock == 'grazer') %>%
+  group_by(reporter_country_code, reporter_country, livestock_animal, livestock_product_type) %>%
+  summarize(export_qty = sum(export_qty, na.rm = TRUE))
+
+# Join the two.
+prod_animal_joined_trade <- left_join(prod_animal_wgt_bytype, trade_tousa_wgt_bytype, 
+                                      by = c('area_code' = 'reporter_country_code', 
+                                             'area' = 'reporter_country', 
+                                             'livestock_animal' = 'livestock_animal',
+                                             'livestock_product_type' = 'livestock_product_type')) %>%
+  mutate(export_qty = if_else(is.na(export_qty), 0, export_qty))
+         
+# Now calculate the proportion of the tonnage exported, if you sum up every single grazer product produced.
+
+grazer_prod_trade_totals <- prod_animal_joined_trade %>%
+  group_by(area_code, area) %>%
+  summarize(production_qty = sum(production_qty), export_qty = sum(export_qty)) %>%
+  mutate(proportion_sent_to_usa = export_qty/production_qty)
+
+
+# Get proportion production sent by value ---------------------------------
+
+# Get production by value only.
+prod_animal_value <- value_production %>% filter(element_code == 152) %>%
+  left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
+  filter(livestock == 'grazer')
+
+prod_animal_value_bytype <- prod_animal_value %>%
+  group_by(area_code, area, livestock_animal, livestock_product_type) %>%
+  summarize(production_value = sum(value, na.rm = TRUE))
+
+# Get trade to usa by weight for the animal crops
+trade_tousa_byvalue_animal <- trade_tousa_value %>%
+  select(-element_code, -element, -unit, -partner_country_code, -partner_country) %>%
+  rename(export_value = value) 
+
+trade_tousa_value_bytype <- trade_tousa_byvalue_animal %>%
+  left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
+  filter(livestock == 'grazer') %>%
+  group_by(reporter_country_code, reporter_country, livestock_animal, livestock_product_type) %>%
+  summarize(export_value = sum(export_value, na.rm = TRUE))
+
+# Join the two.
+prod_animal_value_joined_trade <- left_join(prod_animal_value_bytype, trade_tousa_value_bytype, 
+                                      by = c('area_code' = 'reporter_country_code', 
+                                             'area' = 'reporter_country', 
+                                             'livestock_animal' = 'livestock_animal',
+                                             'livestock_product_type' = 'livestock_product_type')) %>%
+  mutate(export_value = if_else(is.na(export_value), 0, export_value))
+
+# Now calculate the proportion of the value exported, if you sum up every single grazer product produced.
+grazer_prod_value_trade_totals <- prod_animal_value_joined_trade %>%
+  group_by(area_code, area) %>%
+  summarize(production_value = sum(production_value), export_value = sum(export_value)) %>%
+  mutate(proportion_sent_to_usa = export_value/production_value)
+# This is really strange so we should probably just do it by weight.
 
 # Total land use for each country -----------------------------------------
 
@@ -212,9 +263,10 @@ pastureland_totals <- landuse_inputs %>%
   select(area_code, area, value) %>%
   setNames(c('country_code', 'country_name', 'pastureland'))
 
-VLT_sums_pasture <- grazerproduction_bycountry %>% 
+VLT_sums_pasture <- grazer_prod_trade_totals %>% 
+  rename(country_code = area_code, country_name = area) %>%
   left_join(pastureland_totals) %>%
-  mutate(VLT_pasture = pastureland * proportion_exported)
+  mutate(VLT_pasture = 1000 * pastureland * proportion_sent_to_usa) # Convert to hectares for comparison with cropland.
 
 
 # Write outputs -----------------------------------------------------------
