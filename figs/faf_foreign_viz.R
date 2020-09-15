@@ -1,5 +1,7 @@
 # Summary Stats to visualize the foreign imports
 
+source('FAF/faf_land_transfers.R')
+
 # Which FAF regions receive the most imported virtual land transfers, as ports of entry
 port_of_entry <- faf_by_bea_foreign %>%
   group_by(FAF_foreign_region, fr_orig, dms_orig) %>%
