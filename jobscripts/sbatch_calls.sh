@@ -48,3 +48,20 @@ sbatch -J countbystate --export=vector_file=/nfs/qread-data/raw_data/landuse/USA
 
 # Extract cropland data layer for all years (2018 already done)
 sbatch --array=1-9 countcdlbyyear.sh
+
+#### Added 16 Sept 2020
+# Tabulate global pastureland, global cropland dominance, and global cropland mask by intersected TNC ecoregion X country boundaries.
+tnccountryvector="/nfs/qread-data/cfs_io_analysis/countries_tnc_intersect.gpkg"
+rasterdir="/nfs/qread-data/raw_data/landuse/global_aglands"
+
+sbatch -J countpasture --export=vector_file=${tnccountryvector},\
+	raster_file=${rasterdir}/pasture_equalarea.vrt,\
+	output_file=${outdir}/global_count_pasture.csv ${EXEC}
+	
+sbatch -J countcropd --export=vector_file=${tnccountryvector},\
+	raster_file=${rasterdir}/cropdominance_equalarea.vrt,\
+	output_file=${outdir}/global_count_cropdominance.csv ${EXEC}
+	
+sbatch -J countcropm --export=vector_file=${tnccountryvector},\
+	raster_file=${rasterdir}/cropmask_equalarea.vrt,\
+	output_file=${outdir}/global_count_cropmask.csv ${EXEC}
