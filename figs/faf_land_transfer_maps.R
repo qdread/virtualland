@@ -112,6 +112,7 @@ map_land_inbound <- cfsmap %>% left_join(land_inbound, by = c('Code' = 'dms_dest
 map_land_net <- cfsmap %>% left_join(land_netdomestic, by = c('Code' = 'region'))
 map_land_import <- cfsmap %>% left_join(land_import, by = c('Code' = 'dms_dest'))
 map_land_export <- cfsmap %>% left_join(land_export, by = c('Code' = 'dms_orig'))
+map_land_netall <- cfsmap %>% left_join(land_netall, by = c('Code' = 'region'))
 
 dark_theme <-  theme_void() +
   theme(panel.background = element_rect(fill = 'black', color = NA),
@@ -157,6 +158,12 @@ p_importmap <- draw_cfsmap_increasing(map_land_import %>% mutate(land_flow = (cr
                                         scale_breaks = c(1,3,10,30),
                                         add_theme = dark_theme)
 
+p_netallmap <- draw_cfsmap_divergent(map_land_netall %>% mutate(land_flow = (cropland_flow + pastureland_flow)/1000), 
+                                     variable = land_flow, 
+                                     title = 'Net virtual land transfers (domestic & foreign)',
+                                     scale_name = parse(text='1000~km^2'),
+                                     scale_breaks = c(-30,-10,0,10,30),
+                                     add_theme = dark_theme)
 
 # Cropland only
 p_landmap_crop <- draw_cfsmap_divergent(map_land_net %>% mutate(land_flow = (cropland_flow)/1000), 
@@ -194,6 +201,13 @@ p_importmap_crop <- draw_cfsmap_increasing(map_land_import %>% mutate(land_flow 
                                              scale_breaks = c(1,3,10,30),
                                              add_theme = dark_theme)
 
+p_netallmap_crop <- draw_cfsmap_divergent(map_land_netall %>% mutate(land_flow = (cropland_flow)/1000), 
+                                     variable = land_flow, 
+                                     title = 'Net virtual cropland transfers (domestic & foreign)',
+                                     scale_name = parse(text='1000~km^2'),
+                                     scale_breaks = c(-30,-10,0,10,30),
+                                     add_theme = dark_theme)
+
 # Pastureland only
 p_landmap_past <- draw_cfsmap_divergent(map_land_net %>% mutate(land_flow = (pastureland_flow)/1000), 
                                         variable = land_flow, 
@@ -230,12 +244,19 @@ p_importmap_past <- draw_cfsmap_increasing(map_land_import %>% mutate(land_flow 
                                            scale_breaks = c(1,3,10,30),
                                            add_theme = dark_theme)
 
+p_netallmap_past <- draw_cfsmap_divergent(map_land_netall %>% mutate(land_flow = (pastureland_flow)/1000), 
+                                          variable = land_flow, 
+                                          title = 'Net virtual pastureland transfers (domestic & foreign)',
+                                          scale_name = parse(text='1000~km^2'),
+                                          scale_breaks = c(-10,0,10),
+                                          add_theme = dark_theme)
+
 # Write maps to PNG output
 
 walk2(list(p_landmap, p_inboundmap, p_outboundmap, p_landmap_crop, p_inboundmap_crop, p_outboundmap_crop, p_landmap_past, p_inboundmap_past, p_outboundmap_past),
       c('netflows_total', 'inflows_total', 'outflows_total', 'netflows_cropland', 'inflows_cropland', 'outflows_cropland', 'netflows_pastureland', 'inflows_pastureland', 'outflows_pastureland'),
       ~ ggsave(file.path(fp, 'figures/fafmaps', paste0(.y, '.png')), .x, dpi = 300))
 
-walk2(list(p_exportmap, p_importmap, p_exportmap_crop, p_importmap_crop, p_exportmap_past, p_importmap_past),
-      c('exports_total', 'imports_total', 'exports_cropland', 'imports_cropland', 'exports_pastureland', 'imports_pastureland'),
+walk2(list(p_exportmap, p_importmap, p_netallmap, p_exportmap_crop, p_importmap_crop, p_netallmap_crop, p_exportmap_past, p_importmap_past, p_netallmap_past),
+      c('exports_total', 'imports_total', 'allnetflows_total', 'exports_cropland', 'imports_cropland', 'allnetflows_cropland', 'exports_pastureland', 'imports_pastureland', 'allnetflows_pastureland'),
       ~ ggsave(file.path(fp, 'figures/fafmaps', paste0(.y, '.png')), .x, dpi = 300))

@@ -126,3 +126,18 @@ land_export <- faf_by_bea %>%
 land_import <- faf_by_bea_foreign %>%
   group_by(dms_dest) %>%
   summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE), pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
+
+# Net foreign import-export balance
+land_netforeign <- left_join(land_export, land_import, by = c('dms_orig' = 'dms_dest')) %>%
+  mutate(cropland_flow = cropland_flow.y - cropland_flow.x,
+         pastureland_flow = pastureland_flow.y - pastureland_flow.x) %>%
+  select(dms_orig, cropland_flow, pastureland_flow) %>%
+  rename(region = dms_orig)
+
+
+# Net land transfers, including both domestic and foreign.
+
+land_netall <- left_join(land_netdomestic, land_netforeign, by = 'region') %>%
+  mutate(cropland_flow = cropland_flow.y + cropland_flow.x,
+         pastureland_flow = pastureland_flow.y + pastureland_flow.x) %>%
+  select(region, cropland_flow, pastureland_flow)
