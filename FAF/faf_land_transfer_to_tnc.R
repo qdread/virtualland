@@ -4,6 +4,7 @@
 # Needed: FAF to FAF cropland and pastureland transfers
 # Totals of cropland and pastureland by ecoregion by FAF
 
+# Modified 17 Sep 2020: Include foreign ecoregions (using data processed in fao_transfers_by_ecoregion.R)
 
 # Prepare data ------------------------------------------------------------
 
@@ -12,24 +13,7 @@ source('FAF/faf_land_transfers.R')
 
 # Next get the totals of cropland and pastureland by ecoregion-FAF intersection
 
-# land_cfs_tnc <- read_csv(file.path(fp_out, 'CDL_x_FAF_x_TNC_counts.csv'))
-# 
-# # Create a lookup table to categorize CDL land cover by cropland, pastureland, and other.
-# 
-# land_lookup <- unique(land_cfs_tnc %>% select(cdl_class, Land_Cover))
-# crops <- c(1:6, 10:14, 21:36, 38, 39, 41:61, 66:69, 71:77, 204:227, 229:250, 254)
-# 
-# # Check the hay category.
-# land_cfs_tnc %>%
-#   mutate(category = case_when(cdl_class %in% crops ~ 'crop',
-#                               cdl_class == 37 ~ 'pasture',
-#                               TRUE ~ 'other')) %>%
-#   group_by(FAF_Region, category) %>%
-#   summarize(n = sum(n_pixels)) %>%
-#   print(n=100)
-
-### Instead of using the CDL we can just use NLCD because we are only interested in a crude weighting.
-
+# Use NLCD weighting for domestic, global crop/pasture datalayers weighting for foreign
 nlcd_cfs_tnc <- read_csv(file.path(fp, 'raw_data/landuse/output_csvs/NLCD_2016_CFSTNC.csv'))
 
 # Reshape to long
@@ -70,12 +54,18 @@ write_csv(cfs_tnc_geo, file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
 # Write faf_by_bea with the flows to an object
 write_csv(faf_by_bea, file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
 
+# Write foreign faf with flows to an object
+write_csv(faf_by_bea_foreign, file.path(fp_out, 'FAF_foreign_flows_x_BEA.csv'))
 
 # For each FAF, split transfers by ecoregion ------------------------------
 
 faf_lookup <- read_csv(file.path(fp_out, 'faf_region_lookup.csv'))
 faf_flows_all <- read_csv(file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
+faf_flows_foreign <- read_csv(file.path(fp_out, 'FAF_foreign_flows_x_BEA.csv'))
 nlcd_faf_tnc <- read_csv(file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
+foreign_vlt_eco <- read_csv(file.path(fp_out, 'foreign_VLT_by_country_x_TNC.csv'))
+foreign_vlt_eco_sum <- read_csv(file.path(fp_out, 'foreign_VLT_by_region_x_TNC.csv'))
+foreign_tnc_land_by_faf <- read_csv(file.path(fp_out, 'foreign_ecoregion_land_by_FAF.csv'))
 
 # We can sum up the transfers by BEA code. Then, for all outgoing transfers, we can assign proportions of them to each 
 # ecoregion that the goods came from (based on crop and pastureland percentages in the ecoregions in each FAF.)
@@ -118,10 +108,29 @@ faf_flows_tnc_joined <- faf_flows_tnc_joined %>%
 sum(faf_flows_tnc_joined$cropland_flow, na.rm = TRUE)
 sum(faf_flows_all$cropland_flow, na.rm = TRUE) # A few got removed due to NA but otherwise fine
 
+### Foreign transfers: join the TNC x FAF foreign region land transfer data with the FAF flows (proportional)
+# Proportionally multiply out the FAF flows by proportional ecoregion flow data from the global cropland/pastureland stuff.
+faf_flows_foreign_tnc_joined <- faf_flows_foreign %>%
+  group_by(FAF_foreign_region, fr_orig, dms_orig, dms_dest) %>%
+  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+            pastureland_flow = sum(pastureland_flow, na.rm = TRUE)) %>%
+  left_join(foreign_tnc_land_by_faf, by = c('FAF_foreign_region' = 'FAF_foreign_region', 'fr_orig' = 'FAF_foreign_region_code')) %>%
+  ungroup %>%
+  mutate(cropland_flow = cropland_flow * crop_proportion_by_FAF_region,
+         pastureland_flow = pastureland_flow * pasture_proportion_by_FAF_region) %>%
+  group_by(FAF_foreign_region, fr_orig, dms_orig, dms_dest, ECO_CODE, ECO_NAME) %>%
+  summarize(cropland_flow = sum(cropland_flow),
+            pastureland_flow = sum(pastureland_flow)) %>%
+  ungroup %>%
+  filter(cropland_flow > 0 | pastureland_flow > 0)
+
+# Check grand totals
+sum(faf_flows_foreign_tnc_joined$cropland_flow, na.rm = TRUE) 
+
 # Save totals to a CSV
 
 write_csv(faf_flows_tnc_joined, file.path(fp_out, 'FAF_all_flows_x_TNC.csv'))
-
+write_csv(faf_flows_foreign_tnc_joined, file.path(fp_out, 'FAF_foreign_flows_x_TNC.csv'))
 
 # Use population weights to get transfers to TNC --------------------------
 
@@ -131,6 +140,7 @@ faf_lookup <- read_csv(file.path(fp_out, 'faf_region_lookup.csv'))
 faf_flows_all <- read_csv(file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
 nlcd_faf_tnc <- read_csv(file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
 faf_flows_tnc_joined <- read_csv(file.path(fp_out, 'FAF_all_flows_x_TNC.csv'))
+faf_flows_foreign_tnc_joined <- read_csv(file.path(fp_out, 'FAF_foreign_flows_x_TNC.csv'))
 pop_faf_tnc <- read_csv(file.path(fp_out, 'population_FAF_x_TNC_3column.csv'))
 
 # Get the proportion population in each ecoregion in each FAF before joining.
@@ -142,6 +152,10 @@ pop_faf_tnc <- pop_faf_tnc %>%
 faf_flows_tnc_pop_joined <- faf_flows_tnc_joined %>%
  full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
 
+faf_flows_foreign_tnc_pop_joined <- faf_flows_foreign_tnc_joined %>%
+  full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+
+# Domestic:
 # Convert flows based on population proportion
 faf_flows_tnc_pop_joined <- faf_flows_tnc_pop_joined %>%
   mutate(cropland_flow = cropland_flow * pop_proportion,
@@ -155,6 +169,24 @@ tnc_flows_agg <- faf_flows_tnc_pop_joined %>%
   summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
             pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 
+# Foreign imports:
+faf_flows_foreign_tnc_pop_joined <- faf_flows_foreign_tnc_pop_joined %>%
+  mutate(cropland_flow = cropland_flow * pop_proportion,
+         pastureland_flow = pastureland_flow * pop_proportion) %>%
+  rename(TNC_orig = ECO_CODE,
+         TNC_dest = TNC)
+
+tnc_flows_foreign_agg <- faf_flows_foreign_tnc_pop_joined %>%
+  group_by(TNC_orig, TNC_dest) %>%
+  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+            pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
+
 # Write outputs.
+# Domestic
 write_csv(faf_flows_tnc_pop_joined, file.path(fp_out, 'FAF_all_flows_TNC_x_TNC.csv'))
 write_csv(tnc_flows_agg, file.path(fp_out, 'TNC_x_TNC_all_flows.csv'))
+
+# Foreign
+write_csv(faf_flows_foreign_tnc_pop_joined, file.path(fp_out, 'FAF_all_foreign_flows_TNC_x_TNC.csv'))
+write_csv(tnc_flows_foreign_agg, file.path(fp_out, 'TNC_x_TNC_all_foreign_flows.csv'))
+

@@ -21,7 +21,11 @@ country_tnc <- st_intersection(tncmap, countrymap)
 country_tnc_nearctic <- filter(country_tnc, WWF_REALM2 %in% "Nearctic")
 plot(country_tnc_nearctic['ECO_CODE']) # Looks correct
 
+# Tabulate both the global cropland layer and the global pastureland layer by this intersected polygon layer.
+# This is done outside of R.
+
+# Areas of the intersected regions
+country_tnc$area <- st_area(country_tnc)
+
 # Write result as geopackage
 st_write(country_tnc, dsn = file.path(fp_out, 'countries_tnc_intersect.gpkg'))
-
-# Tabulate both the global cropland layer and the global pastureland layer by this intersected polygon layer.
