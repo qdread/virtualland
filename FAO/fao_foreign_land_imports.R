@@ -182,7 +182,7 @@ trade_tousa_byweight_animal <- trade_tousa_qty %>%
 prod_animal_wgt_bytype <- prod_animal_wgt %>%
   left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
   filter(livestock == 'grazer') %>%
-  group_by(area_code, area, livestock_animal, livestock_product_type) %>%
+  group_by(area_code, area, BEA_code, livestock_animal, livestock_product_type) %>%
   summarize(production_qty = sum(value, na.rm = TRUE))
 
 trade_tousa_wgt_bytype <- trade_tousa_byweight_animal %>%
@@ -226,7 +226,7 @@ trade_tousa_byvalue_animal <- trade_tousa_value %>%
 trade_tousa_value_bytype <- trade_tousa_byvalue_animal %>%
   left_join(fao_codes_table, by = c('item_code' = 'code')) %>%
   filter(livestock == 'grazer') %>%
-  group_by(reporter_country_code, reporter_country, livestock_animal, livestock_product_type) %>%
+  group_by(reporter_country_code, reporter_country, BEA_code, livestock_animal, livestock_product_type) %>%
   summarize(export_value = sum(export_value, na.rm = TRUE))
 
 # Join the two.
@@ -270,6 +270,11 @@ VLT_sums_pasture <- grazer_prod_trade_totals %>%
 
 
 # Write outputs -----------------------------------------------------------
+
+# Write the intermediate stuff to show the FAO flows by BEA code
+# Foreign production and trade of crops
+write_csv(production_crops_trade, '/nfs/qread-data/cfs_io_analysis/fao_production_trade_crops.csv')
+write_csv(prod_animal_joined_trade, '/nfs/qread-data/cfs_io_analysis/fao_production_trade_animals.csv')
 
 # Just write the very basic outputs
 VLT_all <- full_join(VLT_sums_crop, VLT_sums_pasture) %>%

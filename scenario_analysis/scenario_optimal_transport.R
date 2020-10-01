@@ -185,7 +185,7 @@ p_bars <- transport_dists %>%
 
 # Write results to file, and save figures
 save(faf_sums_paired_x_bea, faf_sums_destination_wide, faf_sums_origin_wide, transport_obs_opt, transport_obs_opt_toplot,
-     file = file.path(fp_out, 'optimal_transport_results.RData'))
+     file = file.path(fp_out, 'scenarios/optimal_transport_results.RData'))
 
 ggsave(file.path(fp_out, 'plots/optimal_transport_log_density.png'), p_logdists)
 ggsave(file.path(fp_out, 'plots/optimal_transport_bar_plots.png'), p_bars)
