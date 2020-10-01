@@ -189,3 +189,5 @@ save(faf_sums_paired_x_bea, faf_sums_destination_wide, faf_sums_origin_wide, tra
 
 ggsave(file.path(fp_out, 'plots/optimal_transport_log_density.png'), p_logdists)
 ggsave(file.path(fp_out, 'plots/optimal_transport_bar_plots.png'), p_bars)
+
+write_csv(transport_obs_opt, file.path(fp_out, 'scenarios/flows_optimaltransport_domestic_provisional.csv'))
