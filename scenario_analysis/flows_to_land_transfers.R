@@ -10,6 +10,7 @@
 
 library(tidyverse)
 library(units)
+library(sf)
 
 is_local <- dir.exists('Q:/')
 
@@ -26,10 +27,17 @@ flows_diet <- read_csv(file.path(fp_out, 'scenarios/flows_dietshift_domestic_pro
 flows_waste <- read_csv(file.path(fp_out, 'scenarios/flows_wastereduced_domestic_provisional.csv'))
 flows_transport <- read_csv(file.path(fp_out, 'scenarios/flows_optimaltransport_domestic_provisional.csv'))
 
+# FAF names lookup table
 faf_lookup <- read_csv(file.path(fp_out, 'faf_region_lookup.csv'))
 
 # load FAF by BEA cropland and pastureland
 nass_bea_land <- read_csv(file.path(fp_out, 'nass_bea_state_x_faf_land_totals.csv'))
+
+# NLCD pixel counts by the intersection of FAF region and TNC region in the USA
+nlcd_faf_tnc <- read_csv(file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
+
+# Population counts by the intersection of FAF region and TNC region in the USA
+pop_faf_tnc <- read_csv(file.path(fp_out, 'population_FAF_x_TNC_3column.csv'))
 
 # For each origin, assume all ag land is converted to goods, to convert the weight or value flow to a land flow
 nass_bea_land <- nass_bea_land %>%
@@ -151,3 +159,131 @@ write_csv(flowtotals_baseline, file.path(fp_out, 'scenarios/landflows_totals_bas
 write_csv(flowtotals_diet, file.path(fp_out, 'scenarios/landflows_totals_diet_provisional.csv'))
 write_csv(flowtotals_waste, file.path(fp_out, 'scenarios/landflows_totals_waste_provisional.csv'))
 write_csv(flowtotals_transport, file.path(fp_out, 'scenarios/landflows_totals_transport_provisional.csv'))
+
+
+# For each FAF, split transfers by ecoregion ------------------------------
+
+# Below this point is code derived from faf_land_transfer_to_tnc.R
+
+# We can sum up the land transfers by ecoregion (across codes). 
+# Then, for all outgoing transfers, we can assign proportions of them to each 
+# ecoregion that the goods came from (based on crop and pastureland percentages in the ecoregions in each FAF.)
+
+# Do not care which foreign region goods are going to, also do not care about transportation mode
+
+flow_totals_pairwise <- function(flows) {
+  flows %>%
+    select(-BEA_Code) %>%
+    group_by(dms_orig, dms_dest) %>%
+    summarize_all(sum)
+}
+
+pairwiseflows_baseline <- flows_baseline_std %>% flow_totals_pairwise
+pairwiseflows_diet <- flows_diet_std %>% flow_totals_pairwise
+pairwiseflows_waste <- flows_waste_std %>% flow_totals_pairwise
+pairwiseflows_transport <- flows_transport_std %>% flow_totals_pairwise
+
+# Only take essential rows from NLCD tally dataframe
+nlcd_faf_tnc_reduced <- nlcd_faf_tnc %>% select(Code, ECO_CODE, crop, other, pasture, water)
+
+# For each of the pairwise flows dataframes, check that all origin FAF regions besides Washington DC (111) are present
+nlcdfafcodes <- unique(nlcd_faf_tnc_reduced$Code) 
+nlcdfafcodes[!nlcdfafcodes %in% pairwiseflows_domestic$dms_orig]
+nlcdfafcodes[!nlcdfafcodes %in% pairwiseflows_diet$dms_orig]
+nlcdfafcodes[!nlcdfafcodes %in% pairwiseflows_waste$dms_orig]
+nlcdfafcodes[!nlcdfafcodes %in% pairwiseflows_transport$dms_orig]
+# All return only 111 (OK).
+
+# Get the proportion crop and pasture in each ecoregion in each FAF before joining.
+nlcd_faf_tnc_reduced <- nlcd_faf_tnc_reduced %>%
+  group_by(Code) %>%
+  mutate(cropland_ecoregion_proportion = crop / sum(crop, na.rm = TRUE),
+         pastureland_ecoregion_proportion = pasture / sum(pasture, na.rm = TRUE)) %>%
+  ungroup
+
+flows_tnc_joined_baseline <- full_join(pairwiseflows_baseline, nlcd_faf_tnc_reduced, by = c('dms_orig' = 'Code'))
+flows_tnc_joined_diet <- full_join(pairwiseflows_diet, nlcd_faf_tnc_reduced, by = c('dms_orig' = 'Code'))
+flows_tnc_joined_waste <- full_join(pairwiseflows_waste, nlcd_faf_tnc_reduced, by = c('dms_orig' = 'Code'))
+flows_tnc_joined_transport <- full_join(pairwiseflows_transport, nlcd_faf_tnc_reduced, by = c('dms_orig' = 'Code'))
+
+# Use the cropland and pastureland proportions to get the cropland and pastureland flows out of each ecoregion into each FAF.
+# Multiply cropland flow by cropland proportion, and pastureland flow by pastureland proportion
+multiply_tnc_flows <- function(flows) {
+  flows %>%
+    mutate(cropland_flow = cropland_flow * cropland_ecoregion_proportion,
+           pastureland_flow = pastureland_flow * pastureland_ecoregion_proportion)
+}
+
+flows_tnc_joined_baseline <- flows_tnc_joined_baseline %>% multiply_tnc_flows
+flows_tnc_joined_diet <- flows_tnc_joined_diet %>% multiply_tnc_flows
+flows_tnc_joined_waste <- flows_tnc_joined_waste %>% multiply_tnc_flows
+flows_tnc_joined_transport <- flows_tnc_joined_transport %>% multiply_tnc_flows
+
+# Check grand totals
+map(list(pairwiseflows_baseline, flows_tnc_joined_baseline,
+         pairwiseflows_diet, flows_tnc_joined_diet,
+         pairwiseflows_waste, flows_tnc_joined_waste,
+         pairwiseflows_transport, flows_tnc_joined_transport),
+    ~ sum(.$cropland_flow, na.rm = TRUE))
+# Good.
+
+# Save totals to CSVs
+write_csv(flows_tnc_joined_baseline, file.path(fp_out, 'landflows_faf_x_tnc_baseline_provisional.csv'))
+write_csv(flows_tnc_joined_diet, file.path(fp_out, 'landflows_faf_x_tnc_diet_provisional.csv'))
+write_csv(flows_tnc_joined_waste, file.path(fp_out, 'landflows_faf_x_tnc_waste_provisional.csv'))
+write_csv(flows_tnc_joined_transport, file.path(fp_out, 'landflows_faf_x_tnc_transport_provisional.csv'))
+
+
+# Use population weights to get TNC x TNC transfers -----------------------
+
+# Get the proportion population in each ecoregion in each FAF before joining.
+pop_faf_tnc <- pop_faf_tnc %>%
+  group_by(FAF) %>%
+  mutate(pop_proportion = pop / sum(pop, na.rm = TRUE)) %>%
+  ungroup
+
+# Join the flows with population weights
+flows_tnc_pop_baseline <- flows_tnc_joined_baseline %>% full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+flows_tnc_pop_diet <- flows_tnc_joined_diet %>% full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+flows_tnc_pop_waste <- flows_tnc_joined_waste %>% full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+flows_tnc_pop_transport <- flows_tnc_joined_transport %>% full_join(pop_faf_tnc, by = c('dms_dest' = 'FAF'))
+
+# Domestic:
+# Convert flows based on population proportion
+weight_flows_by_pop <- function(flows) {
+  flows %>%
+    mutate(cropland_flow = cropland_flow * pop_proportion,
+           pastureland_flow = pastureland_flow * pop_proportion) %>%
+    rename(TNC_orig = ECO_CODE,
+           TNC_dest = TNC)
+}
+
+flows_tnc_pop_baseline <- flows_tnc_pop_baseline %>% weight_flows_by_pop
+flows_tnc_pop_diet <- flows_tnc_pop_diet %>% weight_flows_by_pop
+flows_tnc_pop_waste <- flows_tnc_pop_waste %>% weight_flows_by_pop
+flows_tnc_pop_transport <- flows_tnc_pop_transport %>% weight_flows_by_pop
+
+# Aggregate to only TNC x TNC flows
+aggregate_tnc_flows <- function(flows) {
+  flows %>%
+    group_by(TNC_orig, TNC_dest) %>%
+    summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+              pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
+}
+
+flows_tnc_agg_baseline <- flows_tnc_pop_baseline %>% aggregate_tnc_flows
+flows_tnc_agg_diet <- flows_tnc_pop_diet %>% aggregate_tnc_flows
+flows_tnc_agg_waste <- flows_tnc_pop_waste %>% aggregate_tnc_flows
+flows_tnc_agg_transport <- flows_tnc_pop_transport %>% aggregate_tnc_flows
+
+# Save outputs to CSVs
+write_csv(flows_tnc_pop_baseline, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_baseline_provisional.csv'))
+write_csv(flows_tnc_pop_diet, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_diet_provisional.csv'))
+write_csv(flows_tnc_pop_waste, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_waste_provisional.csv'))
+write_csv(flows_tnc_pop_transport, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_transport_provisional.csv'))
+
+write_csv(flows_tnc_agg_baseline, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_baseline_provisional.csv'))
+write_csv(flows_tnc_agg_diet, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_diet_provisional.csv'))
+write_csv(flows_tnc_agg_waste, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_waste_provisional.csv'))
+write_csv(flows_tnc_agg_transport, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_transport_provisional.csv'))
+

@@ -4,58 +4,15 @@
 # Needed: FAF to FAF cropland and pastureland transfers
 # Totals of cropland and pastureland by ecoregion by FAF
 
+# Modified 01 Sep 2020: Move creation of tabulated nlcd faf x tnc CSV to another script
 # Modified 17 Sep 2020: Include foreign ecoregions (using data processed in fao_transfers_by_ecoregion.R)
 
 # Prepare data ------------------------------------------------------------
 
-
 source('FAF/faf_land_transfers.R')
 
-# Next get the totals of cropland and pastureland by ecoregion-FAF intersection
-
-# Use NLCD weighting for domestic, global crop/pasture datalayers weighting for foreign
-nlcd_cfs_tnc <- read_csv(file.path(fp, 'raw_data/landuse/output_csvs/NLCD_2016_CFSTNC.csv'))
-
-# Reshape to long
-# Aggregate by cropland, pastureland, and other codes. Pasture 81, Crop 82, Water 11, Other Land = all others.
-nlcd_cfs_tnc_long <- nlcd_cfs_tnc %>%
-  pivot_longer(-X1, names_to = 'NLCD', values_to = 'n_pixels') %>%
-  mutate(cover_class = case_when(NLCD == '81' ~ 'pasture',
-                                 NLCD == '82' ~ 'crop',
-                                 NLCD == '11' ~ 'water',
-                                 TRUE ~ 'other'))
-
-nlcd_cfs_tnc_ag <- nlcd_cfs_tnc_long %>%
-  group_by(X1, cover_class) %>%
-  summarize(n_pixels = sum(n_pixels, na.rm = TRUE))
-
-nlcd_cfs_tnc_ag_wide <- nlcd_cfs_tnc_ag %>%
-  pivot_wider(id_cols = X1, names_from = cover_class, values_from = n_pixels)
-
-# Load the intersected polygon shapefile to get the codes that go with the regions
-library(sf)
-cfs_tnc_geo <- st_read(file.path(fp_out, 'cfs_tnc_aea_intersect.gpkg'))
-
-cfs_tnc_geo <- cfs_tnc_geo %>%
-  mutate(X1 = 0:452) %>%
-  left_join(nlcd_cfs_tnc_ag_wide)
-
-# Test to see if crop pct makes sense 
-cfs_tnc_geo %>% 
-  mutate(croppct = crop / (crop+other+pasture)) %>%
-  ggplot() +
-  geom_sf(aes(fill = croppct))
-
-st_geometry(cfs_tnc_geo) <- NULL
-
-# Write intersected table to CSV
-write_csv(cfs_tnc_geo, file.path(fp_out, 'NLCDcrop_FAF_x_TNC.csv'))
-
-# Write faf_by_bea with the flows to an object
-write_csv(faf_by_bea, file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
-
-# Write foreign faf with flows to an object
-write_csv(faf_by_bea_foreign, file.path(fp_out, 'FAF_foreign_flows_x_BEA.csv'))
+# Code to write outputs of faf_land_transfers.R was, logically, moved to that script.
+# Code to create nlcd_faf_tnc was moved to another script.
 
 # For each FAF, split transfers by ecoregion ------------------------------
 

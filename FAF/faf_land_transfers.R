@@ -141,3 +141,10 @@ land_netall <- left_join(land_netdomestic, land_netforeign, by = 'region') %>%
   mutate(cropland_flow = cropland_flow.y + cropland_flow.x,
          pastureland_flow = pastureland_flow.y + pastureland_flow.x) %>%
   select(region, cropland_flow, pastureland_flow)
+
+# Write outputs
+# Write faf_by_bea with the flows to an object
+write_csv(faf_by_bea, file.path(fp_out, 'FAF_all_flows_x_BEA.csv'))
+
+# Write foreign faf with flows to an object
+write_csv(faf_by_bea_foreign, file.path(fp_out, 'FAF_foreign_flows_x_BEA.csv'))
