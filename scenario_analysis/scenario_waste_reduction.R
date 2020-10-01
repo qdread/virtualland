@@ -3,11 +3,6 @@
 # Waste reduction: We need the waste rates by BEA code from LAFA. 50% waste reduction at each of the 3 levels tracked by LAFA
 # Then we just reduce the shipments by the proportional amount across the board
 
-# Diet shifts: We need to determine, very roughly, how many "servings" per tonne are in each of the BEA codes
-# This is going to be difficult because we need the embedded landuse from crop and pastureland for each BEA code, and convert,
-# assuming that the production may occur in the same region.
-
-
 # Load data ---------------------------------------------------------------
 
 
@@ -119,8 +114,8 @@ total_new <- sum(animal_production_change$wt_new)
 # Production of oilseeds and grains can decrease by an additional factor of 0.57p
 crop_production_decrease <- 0.57 * (1-total_new/total_old) # About 5%
 
-flows_wastereduced_domestic_final <- flows_wastereduced_domestic %>%
+flows_wastereduced_domestic <- flows_wastereduced_domestic %>%
   mutate(crop_production_decrease = if_else(BEA_Code %in% c('1111A0', '1111B0'), 1-crop_production_decrease, 1),
-         tons_reduced_final = tons_reduced * crop_production_decrease)
+         tons_reduced = tons_reduced * crop_production_decrease)
 
-write_csv(flows_wastereduced_domestic_final, file.path(fp_out, 'scenarios/flows_wastereduced_domestic_provisional.RData'))
+write_csv(flows_wastereduced_domestic, file.path(fp_out, 'scenarios/flows_wastereduced_domestic_provisional.csv'))
