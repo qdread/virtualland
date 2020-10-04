@@ -238,5 +238,10 @@ aggregate_tnc_flows <- function(flows) {
 flows_tnc_agg <- flows_tnc_pop %>% aggregate_tnc_flows
 
 # Save outputs to CSVs
+
+# Intermediate result (standardized ag flows across scenarios)
+write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/agflows_scenarios_provisional.csv'))
+
+# Final result
 write_csv(flows_tnc_pop, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_scenarios_provisional.csv'))
 write_csv(flows_tnc_agg, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_scenarios_provisional.csv'))

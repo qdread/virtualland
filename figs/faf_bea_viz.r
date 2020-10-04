@@ -32,18 +32,18 @@ faf_by_bea <- faf_by_bea %>% mutate(dms_orig = as.character(dms_orig), dms_dest 
 # Exclude the ones where dms_orig and dms_dest are the same
 faf_outbound <- faf_by_bea %>%
   filter(trade_type == 1, dms_orig != dms_dest) %>%
-  group_by(dms_orig, BEA_code) %>%
+  group_by(dms_orig, BEA_Code) %>%
   summarize(value = sum(value_2012)) %>%
-  spread(BEA_code, value)
+  spread(BEA_Code, value)
 
 cfsmap_outbound <- cfsmap %>% left_join(faf_outbound, by = c('Code' = 'dms_orig'))
 
 
 faf_inbound <- faf_by_bea %>%
   filter(trade_type == 1, dms_orig != dms_dest) %>%
-  group_by(dms_dest, BEA_code) %>%
+  group_by(dms_dest, BEA_Code) %>%
   summarize(value = sum(value_2012)) %>%
-  spread(BEA_code, value)
+  spread(BEA_Code, value)
 
 cfsmap_inbound <- cfsmap %>% left_join(faf_inbound, by = c('Code' = 'dms_dest'))
 
@@ -57,20 +57,25 @@ faf_net[,-1] <- faf_inbound[,-1] - faf_outbound[,-1] # This might not be that in
 # Exports
 faf_exports <- faf_by_bea %>%
   filter(trade_type == 3) %>%
-  group_by(dms_orig, BEA_code) %>%
+  group_by(dms_orig, BEA_Code) %>%
   summarize(value = sum(value_2012)) %>%
-  spread(BEA_code, value)
+  spread(BEA_Code, value)
 
 cfsmap_exports <- cfsmap %>% left_join(faf_exports, by = c('Code' = 'dms_orig'))
 
 # Imports
 faf_imports <- faf_by_bea %>%
   filter(trade_type == 2) %>%
-  group_by(dms_dest, BEA_code) %>%
+  group_by(dms_dest, BEA_Code) %>%
   summarize(value = sum(value_2012)) %>%
-  spread(BEA_code, value)
+  spread(BEA_Code, value)
 
 cfsmap_imports <- cfsmap %>% left_join(faf_imports, by = c('Code' = 'dms_dest'))
+
+
+# Save plotting data for local use ----------------------------------------
+
+save(cfsmap, faf_exports, faf_imports, faf_inbound, faf_outbound, faf_net, concordance, file = '~/temp/fafmapplottingdata.RData')
 
 # Make some maps ----------------------------------------------------------
 
