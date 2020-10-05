@@ -339,21 +339,21 @@ landflows_inbound <- landflows %>%
   summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE), pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 
 # Join the map with each of the flow scenarios
-cfs_map_land_outbound <- left_join(cfs_map, landflows_outbound, by = c('Code' = 'dms_orig'))
-cfs_map_land_inbound <- left_join(cfs_map, landflows_inbound, by = c('Code' = 'dms_dest'))
+cfs_map_land_outbound <- left_join(cfs_map, landflows_outbound, by = c('Code' = 'dms_orig')) %>% filter(!is.na(scenario))
+cfs_map_land_inbound <- left_join(cfs_map, landflows_inbound, by = c('Code' = 'dms_dest')) %>% filter(!is.na(scenario))
 
 # Land transfers by TNC ecoregion
 # Summarize by origin and destination
 landflowstnc_outbound <- landflowstnc %>%
   group_by(scenario, TNC_orig) %>%
-  summarize(cropland_flow = sum(cropland_flow), pastureland_flow = sum(pastureland_flow))
+  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE), pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 landflowstnc_inbound <- landflowstnc %>%
   group_by(scenario, TNC_dest) %>%
-  summarize(cropland_flow = sum(cropland_flow), pastureland_flow = sum(pastureland_flow))
+  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE), pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 
 # Join the map with each of the flow scenarios
-tnc_map_land_outbound <- left_join(tnc_map48, landflowstnc_outbound, by = c('ECO_CODE' = 'TNC_orig'))
-tnc_map_land_inbound <- left_join(tnc_map48, landflowstnc_inbound, by = c('ECO_CODE' = 'TNC_dest'))
+tnc_map_land_outbound <- left_join(tnc_map48, landflowstnc_outbound, by = c('ECO_CODE' = 'TNC_orig')) %>% filter(!is.na(scenario))
+tnc_map_land_inbound <- left_join(tnc_map48, landflowstnc_inbound, by = c('ECO_CODE' = 'TNC_dest')) %>% filter(!is.na(scenario))
 
 maps_cfs_outbound_land_4scenarios <- draw_48map_scenarios(
   map_data = cfs_map_land_outbound %>% filter(!grepl('Alaska|Hawaii|Honolulu', FAF_Region), !is.na(scenario)) %>% mutate(land_flow = cropland_flow + pastureland_flow), 
@@ -421,6 +421,77 @@ ggplot(splost_byorigin %>% filter(CF == 'Occ_marginal_regional'), aes(x = specie
 ggplot(splost_byorigin %>% filter(CF == 'Occ_average_regional'), aes(x = scenario, fill = scenario, y = species_lost)) +
   geom_boxplot() +
   theme_minimal()
+
+# Median and quantiles by regions
+splost_byorigin_median <- splost_byorigin %>%
+  group_by(scenario, CF) %>%
+  group_modify(~ quantile(.$species_lost, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)) %>% t %>% as.data.frame)
+
+ggplot(splost_byorigin_median %>% filter(CF == 'Occ_average_regional'), aes(x = scenario,  y = `50%`, ymin = `5%`, ymax = `95%`)) +
+  geom_errorbar()
+
+# Calculate species loss relative to baseline.
+splost_byorigin_wide <- splost_byorigin %>%
+  pivot_wider(names_from = scenario, values_from = species_lost) %>%
+  mutate(diet = diet/baseline, transport = transport/baseline, waste = waste/baseline)
+
+# Make a plot.
+splost_relative <- splost_byorigin_wide %>%
+  filter(CF == 'Occ_average_regional') %>%
+  select(-baseline, -CF) %>%
+  pivot_longer(-TNC_orig, names_to = 'scenario', values_to = 'biodiversity_threat_decrease')
+
+source('~/Documents/R/theme_black.R')
+biothreat_boxplot <- ggplot(splost_relative, aes(x = scenario, y = biodiversity_threat_decrease)) +
+  geom_boxplot(aes(fill = scenario), color = 'gray50') +
+  scale_y_log10(name = 'biodiversity threat ratio') +
+  scale_x_discrete(labels = c('50% Vegetarian\nShift', 'Minimize\nTransport', '50% Waste\nReduction')) +
+  scale_fill_brewer(palette = 'Accent') +
+  theme_black() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = 'none')
+
+
+
+# Make maps of this.
+# Note: some of the regions don't have a threat factor since they were not originally present in Chaudhary SI.
+tnc_map_threat_reduction <- tnc_map48 %>% left_join(splost_byorigin_wide %>% filter(CF == 'Occ_average_regional'), by = c('ECO_CODE' = 'TNC_orig'))
+
+tnc_map_threat_reduction_long <- tnc_map_threat_reduction %>%
+  select(diet, transport, waste) %>%
+  gather(-geom, key = 'scenario', value = 'threat_reduction')
+
+# Create map outside of predefined function to use different color scales and layout.
+
+scale_range <- range(tnc_map_threat_reduction_long$threat_reduction, na.rm = TRUE)
+
+fill_scale_2color <- scale_fill_brewer(name = 'proportional threat\nreduction', type = 'div', palette = 'PuOr', limits = c(0.2, 1.5), na.value = 'gray75', guide = guide_colorbar(direction = 'horizontal'))
+
+fill_ramp <- RColorBrewer::brewer.pal(3, 'RdYlBu')
+fill_ramp <- c('goldenrod', 'white', 'darkgreen')
+
+fill_scale_2color <- scale_fill_gradient2(name = 'threat reduction\nratio', 
+                                          low = fill_ramp[3],
+                                          mid = fill_ramp[2],
+                                          high = fill_ramp[1],
+                                          midpoint = 1,
+                                          na.value = 'gray75', 
+                                          guide = guide_colorbar(direction = 'horizontal'))
+
+
+# Draw the three maps
+maps_tnc_threat_reduction <- ggplot(tnc_map_threat_reduction_long) +
+  geom_sf(aes(fill = threat_reduction), size = 0.25) +
+  facet_wrap(~ scenario, labeller = labeller(scenario = c(baseline = 'Baseline',
+                                                          diet = '50% Vegetarian Shift',
+                                                          waste = '50% Waste Reduction',
+                                                          transport = 'Minimize Transport'))) +
+  fill_scale_2color +
+  dark_theme_facet +
+  theme(legend.position = 'bottom') 
+
+
 
 # Write maps to files -----------------------------------------------------
 
