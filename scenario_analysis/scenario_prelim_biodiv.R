@@ -12,6 +12,9 @@
 
 # FIXME for now this is only with 4 of the 8 scenarios, and domestic only (not foreign)
 # FIXME also, for now, we are assuming all annual crops, not permanent crops
+# FIXME they have a land transformation part with some time to regeneration values per land type which I am ignoring right now
+# FIXME in later editions, better to calculate biodiversity damage from land use WITHIN each region, then proportionally allocate
+# FIXME the flows, rather than calculating the flows first and then the biodiversity damage, I think.
 
 # Load data ---------------------------------------------------------------
 
@@ -60,3 +63,9 @@ VLT_CF <- vlt_scenarios %>%
 # Write output
 write_csv(VLT_CF, file.path(fp_scen, 'species_lost_scenarios_provisional.csv'))
 
+# Write smaller file with subset of output for plotting
+# Ignore the land transformation part.
+splost_filtered <- VLT_CF %>%
+  filter(complete.cases(.), !grepl('Trans_', CF), grepl('regional', CF))
+
+write_csv(splost_filtered, file.path(fp_scen, 'species_lost_scenarios_provisional_regionalocc.csv'))

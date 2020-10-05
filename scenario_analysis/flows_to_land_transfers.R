@@ -50,6 +50,8 @@ nass_bea_land <- nass_bea_land %>%
 
 # Each scenario input data needs the same data structure
 # We should sum up across modes and give everything the same name
+# Modified 05 Oct 2020: we need to create a column of the weight change factor, relative to baseline
+# That way we can scale the land flows accordingly.
 
 flows_baseline_std <- flows_baseline %>%
   filter(trade_type == 1, BEA_Code %in% unique(nass_bea_land$BEA_Code)) %>%
@@ -77,6 +79,20 @@ flows_allscenarios <- bind_rows(list(baseline = flows_baseline_std,
                                      transport = flows_transport_std), 
                                 .id = 'scenario')
 
+# Reshape to get the scaling factors
+flows_allscenarios_wide <- flows_allscenarios %>%
+  pivot_wider(names_from = scenario, values_from = tons) %>%
+  mutate(diet_scalingfactor = diet/baseline,
+         waste_scalingfactor = waste/baseline,
+         transport_scalingfactor = transport/baseline)
+
+# Reshape back again so we can scale the land totals for diet and waste.
+flows_allscenarios <- flows_allscenarios_wide %>%
+  pivot_longer(baseline:transport_scalingfactor, names_to = 'scenario') %>%
+  separate(scenario, into = c('scenario', 'scalingfactor'), sep = '_') %>%
+  mutate(scalingfactor = if_else(is.na(scalingfactor), 'tons', scalingfactor)) %>%
+  pivot_wider(names_from = scalingfactor, values_from = value)
+  
 # Join tonnage flows with land areas --------------------------------------
 
 # Join flows with NASS land values
@@ -84,16 +100,23 @@ join_with_land <- function(flows) {
   flows %>% left_join(nass_bea_land %>% select(-FAF_Region), by = c('dms_orig' = 'FAF_Code', 'BEA_Code' = 'BEA_Code'))
 }
 
-flows_allscenarios <- flows_allscenarios %>% join_with_land
+# Join then scale the diet and waste cropland and pastureland values by the scaling factor calculated previously.
+flows_allscenarios <- flows_allscenarios %>% 
+  join_with_land %>%
+  mutate_at(vars(c(cropland, pastureland)), ~ if_else(scenario %in% c('diet', 'waste'), . * scalingfactor, .))
 
 # Convert to land flows ---------------------------------------------------
 
 # Functions to get the proportional crop and pasture flow originating from each FAF region,
 # and convert all land stocks and flows from acres to square kilometers.
+
+# Modified 05 Oct 2020: We need to reduce the diet and waste land flows based on how far 
+
 to_km2 <- function(x) x %>% set_units(acre) %>% set_units(km^2) %>% as.numeric
 
 land_flows_by_weight <- function(flows) {
   flows %>%
+    ungroup %>%
     filter(!is.na(cropland), !is.na(pastureland)) %>%
     group_by(scenario, dms_orig) %>%
     mutate(tons_proportion = tons / sum(tons, na.rm = TRUE)) %>%
