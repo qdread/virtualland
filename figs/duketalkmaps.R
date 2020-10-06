@@ -142,7 +142,7 @@ draw_48map <- function(map_data, variable, title, scale_name = 'Value\n(billion 
   scale_range <- map_data %>% pull(!!variable) %>% range(na.rm = TRUE)
   
   scale_trans <- ifelse(log_scale, 'pseudo_log', 'identity')
-  if (length(scale_breaks) == 0) scale_breaks <- seq(scale_range[1], scale_range[2], length.out = 3)
+  if (length(scale_breaks) == 0) scale_breaks <- seq(floor(scale_range[1]), ceiling(scale_range[2]), length.out = 3)
   
   # Draw the three maps
   us_map <- ggplot(map_data) +
@@ -167,8 +167,8 @@ dark_theme <-  theme_void() +
 
 dark_theme_notitle <- dark_theme + theme(plot.title = element_blank())
 dark_theme_facet <- dark_theme + theme(plot.title = element_blank(),
-                                       strip.text = element_text(color = 'white'),
-                                       strip.background = element_rect(fill = 'black'))
+                                       strip.background = element_blank(), 
+                                       strip.text = element_text(color = 'white', margin=margin(b=5)))
 
 # land stocks -------------------------------------------------------------
 
@@ -185,27 +185,31 @@ cfs_map_crop <- left_join(cfs_map, crop_cfs)
 map_crop_total <- draw_48map(map_data = cfs_map_crop[!(ak_idx_cfs | hi_idx_cfs),], 
                              variable = crop,
                              title = 'cropland',
-                             scale_name = parse(text = 'Cropland~(km^2)'),
-                             scale_factor = 1,
+                             scale_name = parse(text = 'Cropland~(1000~km^2)'),
+                             scale_factor = 1000,
+                             scale_breaks = c(0, 50, 100),
                              add_theme = dark_theme)
 map_crop_proportion <- draw_48map(map_data = cfs_map_crop[!(ak_idx_cfs | hi_idx_cfs),], 
                                   variable = crop_prop,
                                   title = 'cropland proportion',
                                   scale_name = 'Cropland\nproportion',
                                   scale_factor = 1,
+                                  scale_breaks = c(0, 0.25, 0.5, 0.75),
                                   add_theme = dark_theme)
 
 map_pasture_total <- draw_48map(map_data = cfs_map_crop[!(ak_idx_cfs | hi_idx_cfs),], 
                              variable = pasture,
                              title = 'pastureland',
-                             scale_name = parse(text = 'Pastureland~(km^2)'),
-                             scale_factor = 1,
+                             scale_name = parse(text = 'Pastureland~(1000~km^2)'),
+                             scale_factor = 1000,
+                             scale_breaks = c(0, 25, 50),
                              add_theme = dark_theme)
 map_pastureland_proportion <- draw_48map(map_data = cfs_map_crop[!(ak_idx_cfs | hi_idx_cfs),], 
                                   variable = pasture_prop,
                                   title = 'pastureland proportion',
                                   scale_name = 'Pastureland\nproportion',
                                   scale_factor = 1,
+                                  scale_breaks = c(0, 0.1, 0.2, 0.3),
                                   add_theme = dark_theme)
 
 
@@ -443,10 +447,10 @@ splost_relative <- splost_byorigin_wide %>%
 
 source('~/Documents/R/theme_black.R')
 biothreat_boxplot <- ggplot(splost_relative, aes(x = scenario, y = biodiversity_threat_decrease)) +
-  geom_boxplot(aes(fill = scenario), color = 'gray50') +
+  geom_boxplot(aes(fill = scenario), color = 'white') +
   scale_y_log10(name = 'biodiversity threat ratio') +
   scale_x_discrete(labels = c('50% Vegetarian\nShift', 'Minimize\nTransport', '50% Waste\nReduction')) +
-  scale_fill_brewer(palette = 'Accent') +
+  scale_fill_manual(values =  colorspace::sequential_hcl(5, 'Lajolla')[c(2,1,4)]) +
   theme_black() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -491,11 +495,34 @@ maps_tnc_threat_reduction <- ggplot(tnc_map_threat_reduction_long) +
   dark_theme_facet +
   theme(legend.position = 'bottom') 
 
-
-
 # Write maps to files -----------------------------------------------------
 
+fp_fig <- '~/Dropbox/Q/presentations/dook2020/plots'
 
+ggsave(file.path(fp_fig, 'biothreat_boxplot.png'), biothreat_boxplot, height = 4, width = 5, dpi = 400)
+
+# Plots with a single map on them
+ggsave(file.path(fp_fig, 'map_crop_total.png'), map_crop_total, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_crop_proportion.png'), map_crop_proportion, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_pasture_total.png'), map_pasture_total, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_pasture_proportion.png'), map_pastureland_proportion, height = 3.5, width = 4.5, dpi = 400)
+
+ggsave(file.path(fp_fig, 'map_grain_outbound.png'), map_grain_outbound, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_poultry_outbound.png'), map_poultry_outbound, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_bread_outbound.png'), map_bread_outbound, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_beer_outbound.png'), map_beer_outbound, height = 3.5, width = 4.5, dpi = 400)
+ggsave(file.path(fp_fig, 'map_cheese_outbound.png'), map_cheese_outbound, height = 3.5, width = 4.5, dpi = 400)
+
+# 2x2 maps
+ggsave(file.path(fp_fig, 'maps_outbound_cattle_4scenarios.png'), maps_outbound_cattle_4scenarios, height = 6, width = 6, dpi = 400)
+ggsave(file.path(fp_fig, 'maps_inbound_cattle_4scenarios.png'), maps_inbound_cattle_4scenarios, height = 6, width = 6, dpi = 400)
+ggsave(file.path(fp_fig, 'maps_cfs_outbound_land_4scenarios.png'), maps_cfs_outbound_land_4scenarios, height = 6, width = 6, dpi = 400)
+ggsave(file.path(fp_fig, 'maps_cfs_inbound_land_4scenarios.png'), maps_cfs_inbound_land_4scenarios, height = 6, width = 6, dpi = 400)
+ggsave(file.path(fp_fig, 'maps_tnc_outbound_land_4scenarios.png'), maps_tnc_outbound_land_4scenarios, height = 6, width = 6, dpi = 400)
+ggsave(file.path(fp_fig, 'maps_tnc_inbound_land_4scenarios.png'), maps_tnc_inbound_land_4scenarios, height = 6, width = 6, dpi = 400)
+
+# 1x3 maps
+ggsave(file.path(fp_fig, 'maps_tnc_threat_reduction.png'), maps_tnc_threat_reduction, height = 3, width = 9, dpi = 400)
 
 # test network diagram ----------------------------------------------------
 
