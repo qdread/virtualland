@@ -331,6 +331,17 @@ maps_inbound_cattle_4scenarios <- draw_48map_scenarios(
   add_theme = dark_theme_facet)
 
 
+# Remake maps without transport scenario, as it's the same as baseline.
+maps_outbound_cattle_3scenarios <- draw_48map_scenarios(
+  map_data = cfs_map_ag_outbound %>% filter(!grepl('Alaska|Hawaii|Honolulu', FAF_Region), !scenario %in% 'transport'), 
+  variable = `1121A0`,
+  title = 'cattle farming and ranching domestic outbound by weight',
+  scale_name = 'Outbound flows (tons)',
+  scale_factor = 1,
+  log_scale = FALSE,
+  scale_breaks = c(0, 2000, 4000),
+  add_theme = dark_theme_facet)
+
 # land transfers ----------------------------------------------------------
 
 # Land transfers by CFS(FAF) region
@@ -398,6 +409,16 @@ maps_tnc_inbound_land_4scenarios <- draw_48map_scenarios(
   scale_breaks = c(0, 25, 50, 75),
   add_theme = dark_theme_facet)
 
+# TNC land outbound without transport scenario
+maps_tnc_outbound_land_3scenarios <- draw_48map_scenarios(
+  map_data = tnc_map_land_outbound %>% filter(!is.na(scenario), !scenario %in% 'transport') %>% mutate(land_flow = cropland_flow + pastureland_flow), 
+  variable = land_flow,
+  title = 'domestic virtual land exports',
+  scale_name = parse(text = 'Land~flow~(1000~km^2)'),
+  scale_factor = 1000,
+  log_scale = FALSE,
+  scale_breaks = c(0, 25, 50, 75),
+  add_theme = dark_theme_facet)
 
 # Species lost (maps and/or summary data) ---------------------------------
 
@@ -413,26 +434,26 @@ splost_byorigin <- splost_alltaxa %>%
   group_by(scenario, TNC_orig, CF) %>%
   summarize(species_lost = sum(species_lost))
 
-# Plot density or histogram
-ggplot(splost_byorigin %>% filter(CF == 'Occ_marginal_regional'), aes(x = species_lost, fill = scenario)) +
-  geom_histogram(alpha = 0.4, position = 'identity', color = 'black', bins = 20) +
-  theme_minimal()
-ggplot(splost_byorigin %>% filter(CF == 'Occ_marginal_regional'), aes(x = species_lost, fill = scenario)) +
-  geom_density(alpha = 0.4, color = 'black') +
-  theme_minimal()
-
-# Boxplot
-ggplot(splost_byorigin %>% filter(CF == 'Occ_average_regional'), aes(x = scenario, fill = scenario, y = species_lost)) +
-  geom_boxplot() +
-  theme_minimal()
-
-# Median and quantiles by regions
-splost_byorigin_median <- splost_byorigin %>%
-  group_by(scenario, CF) %>%
-  group_modify(~ quantile(.$species_lost, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)) %>% t %>% as.data.frame)
-
-ggplot(splost_byorigin_median %>% filter(CF == 'Occ_average_regional'), aes(x = scenario,  y = `50%`, ymin = `5%`, ymax = `95%`)) +
-  geom_errorbar()
+# # Plot density or histogram
+# ggplot(splost_byorigin %>% filter(CF == 'Occ_marginal_regional'), aes(x = species_lost, fill = scenario)) +
+#   geom_histogram(alpha = 0.4, position = 'identity', color = 'black', bins = 20) +
+#   theme_minimal()
+# ggplot(splost_byorigin %>% filter(CF == 'Occ_marginal_regional'), aes(x = species_lost, fill = scenario)) +
+#   geom_density(alpha = 0.4, color = 'black') +
+#   theme_minimal()
+# 
+# # Boxplot
+# ggplot(splost_byorigin %>% filter(CF == 'Occ_average_regional'), aes(x = scenario, fill = scenario, y = species_lost)) +
+#   geom_boxplot() +
+#   theme_minimal()
+# 
+# # Median and quantiles by regions
+# splost_byorigin_median <- splost_byorigin %>%
+#   group_by(scenario, CF) %>%
+#   group_modify(~ quantile(.$species_lost, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)) %>% t %>% as.data.frame)
+# 
+# ggplot(splost_byorigin_median %>% filter(CF == 'Occ_average_regional'), aes(x = scenario,  y = `50%`, ymin = `5%`, ymax = `95%`)) +
+#   geom_errorbar()
 
 # Calculate species loss relative to baseline.
 splost_byorigin_wide <- splost_byorigin %>%
@@ -447,6 +468,7 @@ splost_relative <- splost_byorigin_wide %>%
 
 source('~/Documents/R/theme_black.R')
 biothreat_boxplot <- ggplot(splost_relative, aes(x = scenario, y = biodiversity_threat_decrease)) +
+  geom_hline(yintercept = 1, linetype = 'dotted', color = 'white') +
   geom_boxplot(aes(fill = scenario), color = 'white') +
   scale_y_log10(name = 'biodiversity threat ratio') +
   scale_x_discrete(labels = c('50% Vegetarian\nShift', 'Minimize\nTransport', '50% Waste\nReduction')) +
@@ -456,7 +478,17 @@ biothreat_boxplot <- ggplot(splost_relative, aes(x = scenario, y = biodiversity_
         panel.grid.minor = element_blank(),
         legend.position = 'none')
 
-
+# Boxplot without transport scenario
+biothreat_boxplot_2scenario <- ggplot(splost_relative %>% filter(!scenario %in% 'transport'), aes(x = scenario, y = biodiversity_threat_decrease)) +
+  geom_hline(yintercept = 1, linetype = 'dotted', color = 'white') +
+  geom_boxplot(aes(fill = scenario), color = 'white') +
+  scale_y_log10(name = 'biodiversity threat ratio') +
+  scale_x_discrete(labels = c('50% Vegetarian\nShift', '50% Waste\nReduction')) +
+  scale_fill_manual(values =  colorspace::sequential_hcl(5, 'Lajolla')[c(2,4)]) +
+  theme_black() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = 'none')
 
 # Make maps of this.
 # Note: some of the regions don't have a threat factor since they were not originally present in Chaudhary SI.
@@ -495,6 +527,17 @@ maps_tnc_threat_reduction <- ggplot(tnc_map_threat_reduction_long) +
   dark_theme_facet +
   theme(legend.position = 'bottom') 
 
+# Draw maps without transport scenario
+maps_tnc_threat_reduction_2scenario <- ggplot(tnc_map_threat_reduction_long %>% filter(!scenario %in% 'transport')) +
+  geom_sf(aes(fill = threat_reduction), size = 0.25) +
+  facet_wrap(~ scenario, labeller = labeller(scenario = c(baseline = 'Baseline',
+                                                          diet = '50% Vegetarian Shift',
+                                                          waste = '50% Waste Reduction',
+                                                          transport = 'Minimize Transport'))) +
+  fill_scale_2color +
+  dark_theme_facet +
+  theme(legend.position = 'bottom') 
+
 # Write maps to files -----------------------------------------------------
 
 fp_fig <- '~/Dropbox/Q/presentations/dook2020/plots'
@@ -523,6 +566,14 @@ ggsave(file.path(fp_fig, 'maps_tnc_inbound_land_4scenarios.png'), maps_tnc_inbou
 
 # 1x3 maps
 ggsave(file.path(fp_fig, 'maps_tnc_threat_reduction.png'), maps_tnc_threat_reduction, height = 3, width = 9, dpi = 400)
+
+# Plots with transport scenario removed, for simplicity, and increased strip label size
+biglabel <- theme(strip.text = element_text(color = 'white', margin=margin(b=5), size = rel(1.5)))
+
+ggsave(file.path(fp_fig, 'notransport_biothreat_boxplot.png'), biothreat_boxplot_2scenario, height = 3.5, width = 3.5, dpi = 400)
+ggsave(file.path(fp_fig, 'notransport_maps_outbound_cattle_3scenarios.png'), maps_outbound_cattle_3scenarios + biglabel, height = 3, width = 9, dpi = 400)
+ggsave(file.path(fp_fig, 'notransport_maps_tnc_outbound_land_3scenarios.png'), maps_tnc_outbound_land_3scenarios + biglabel, height = 3, width = 9, dpi = 400)
+ggsave(file.path(fp_fig, 'notransport_maps_tnc_threat_reduction.png'), maps_tnc_threat_reduction_2scenario + biglabel, height = 3, width = 6, dpi = 400)
 
 # test network diagram ----------------------------------------------------
 
