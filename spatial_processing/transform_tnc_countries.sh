@@ -26,3 +26,7 @@ cropmproj=`gdalsrsinfo GFSAD1KCM.2010.001.2016348142550.tif -o proj4 | xargs`
 gdalwarp -t_srs "${proj_moll}" -s_srs "${pastureproj}" -of "VRT" pasture.tif pasture_equalarea.vrt
 gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" -of "VRT" GFSAD1KCD.2010.001.2016348142525.tif cropdominance_equalarea.vrt
 gdalwarp -t_srs "${proj_moll}" -s_srs "${cropmproj}" -of "VRT" GFSAD1KCM.2010.001.2016348142550.tif cropmask_equalarea.vrt
+
+# Also transform cropland as TIF so that it can be read in R.
+gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" GFSAD1KCD.2010.001.2016348142525.tif cropdominance_equalarea.tif
+gdalwarp -t_srs "${proj_moll}" -s_srs "${cropmproj}" GFSAD1KCM.2010.001.2016348142550.tif cropmask_equalarea.tif
