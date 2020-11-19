@@ -10,8 +10,8 @@
 # and the CFs are in species lost per meter squared.
 # So we just need to join them, then multiply the virtual land transfers (area) by the CFs (species lost per area)
 
+# Modified 19 Nov 2020: Separate annual and permanent crop transformation factors.
 # FIXME for now this is only with 4 of the 8 scenarios, and domestic only (not foreign)
-# FIXME also, for now, we are assuming all annual crops, not permanent crops
 # FIXME they have a land transformation part with some time to regeneration values per land type which I am ignoring right now
 # FIXME in later editions, better to calculate biodiversity damage from land use WITHIN each region, then proportionally allocate
 # FIXME the flows, rather than calculating the flows first and then the biodiversity damage, I think.
@@ -46,17 +46,16 @@ chaudsi <- read_csv(file.path(fp_chaud, 'chaud2015SI2.csv'))
 # This is a preliminary value that will be changed.
 # Later I'll separate annual and perennial crops
 chaudsi_coarse <- chaudsi %>%
-  filter(landuse %in% c('Annual crops', 'Pasture')) %>%
+  filter(landuse %in% c('Annual crops', 'Permanent crops', 'Pasture')) %>%
   mutate(landuse = tolower(gsub(' ', '_', landuse))) %>%
   pivot_wider(names_from = landuse, values_from = c(lower95ci, median, upper95ci)) %>%
   pivot_longer(-c(CF, ecoregion, taxon)) %>%
-  mutate(name = gsub('annual_', '', name)) %>%
   separate(name, into = c('stat', 'landuse'), sep = '_')
 
 # Join land transfers and characterization factors for each scenario
 VLT_CF <- vlt_scenarios %>%
-    rename(crops = cropland_flow, pasture = pastureland_flow) %>%
-    pivot_longer(c(crops, pasture), names_to = 'landuse', values_to = 'VLT') %>%
+    rename(annual = annual_cropland_flow, permanent = permanent_cropland_flow, pasture = pastureland_flow) %>%
+    pivot_longer(c(annual, permanent, pasture), names_to = 'landuse', values_to = 'VLT') %>%
     full_join(chaudsi_coarse, by = c('TNC_orig' = 'ecoregion', 'landuse' = 'landuse')) %>%
     mutate(species_lost = VLT * value * 1e6)
 
