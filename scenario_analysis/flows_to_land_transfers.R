@@ -3,6 +3,8 @@
 # Generalization of code in faf_land_transfers.R and faf_land_transfer_to_tnc.R
 # QDR / Virtualland / 01 Oct 2020
 
+# Modified 19 Nov 2020: Separate annual and permanent cropland.
+
 # FIXME starts with domestic only; later foreign will be added. (We remove all trade type 2 and 3, fr_orig, and fr_dest)
 # FIXME cropland flows in non-raw material shipments? So far all 3x codes are removed.
 
@@ -42,8 +44,8 @@ pop_faf_tnc <- read_csv(file.path(fp_out, 'population_FAF_x_TNC_3column.csv'))
 # For each origin, assume all ag land is converted to goods, to convert the weight or value flow to a land flow
 nass_bea_land <- nass_bea_land %>%
   left_join(faf_lookup) %>%
-  select(Code, FAF_Region, BEA_code, cropland_normalized, pastureland_normalized) %>%
-  setNames(c('FAF_Code', 'FAF_Region', 'BEA_Code', 'cropland', 'pastureland'))
+  select(Code, FAF_Region, BEA_code, annual_cropland_normalized, permanent_cropland_normalized, pastureland_normalized) %>%
+  setNames(c('FAF_Code', 'FAF_Region', 'BEA_Code', 'annual_cropland', 'permanent_cropland', 'pastureland'))
 
 
 # Standardize input data (flows) ------------------------------------------
@@ -103,7 +105,7 @@ join_with_land <- function(flows) {
 # Join then scale the diet and waste cropland and pastureland values by the scaling factor calculated previously.
 flows_allscenarios <- flows_allscenarios %>% 
   join_with_land %>%
-  mutate_at(vars(c(cropland, pastureland)), ~ if_else(scenario %in% c('diet', 'waste'), . * scalingfactor, .))
+  mutate_at(vars(c(annual_cropland, permanent_cropland, pastureland)), ~ if_else(scenario %in% c('diet', 'waste'), . * scalingfactor, .))
 
 # Convert to land flows ---------------------------------------------------
 
@@ -117,11 +119,12 @@ to_km2 <- function(x) x %>% set_units(acre) %>% set_units(km^2) %>% as.numeric
 land_flows_by_weight <- function(flows) {
   flows %>%
     ungroup %>%
-    filter(!is.na(cropland), !is.na(pastureland)) %>%
+    filter(!is.na(annual_cropland), !is.na(permanent_cropland), !is.na(pastureland)) %>%
     group_by(scenario, dms_orig) %>%
     mutate(tons_proportion = tons / sum(tons, na.rm = TRUE)) %>%
     ungroup %>%
-    mutate(cropland_flow = tons_proportion * cropland,
+    mutate(annual_cropland_flow = tons_proportion * annual_cropland,
+           permanent_cropland_flow = tons_proportion * permanent_cropland,
            pastureland_flow = tons_proportion * pastureland) %>%
     mutate_at(vars(contains('land')), to_km2)
 }
@@ -135,29 +138,36 @@ calculate_flow_totals <- function(flows) {
   land_outbound <- flows %>%
     filter(dms_orig != dms_dest) %>%
     group_by(dms_orig) %>%
-    summarize(cropland_flow = sum(cropland_flow), pastureland_flow = sum(pastureland_flow)) %>%
-    add_row(dms_orig = '111', cropland_flow = 0, pastureland_flow = 0) %>% # Washington DC
+    summarize(annual_cropland_flow = sum(annual_cropland_flow), 
+              permanent_cropland_flow = sum(permanent_cropland_flow), 
+              pastureland_flow = sum(pastureland_flow)) %>%
+    add_row(dms_orig = '111', annual_cropland_flow = 0, permanent_cropland_flow = 0, pastureland_flow = 0) %>% # Washington DC
     rename(region = dms_orig)
   
   # Domestic inbound
   land_inbound <- flows %>%
     filter(dms_orig != dms_dest) %>%
     group_by(dms_dest) %>%
-    summarize(cropland_flow = sum(cropland_flow), pastureland_flow = sum(pastureland_flow)) %>%
+    summarize(annual_cropland_flow = sum(annual_cropland_flow), 
+              permanent_cropland_flow = sum(permanent_cropland_flow), 
+              pastureland_flow = sum(pastureland_flow)) %>%
     rename(region = dms_dest)
   
   # Domestic net
   land_netdomestic <- left_join(land_outbound, land_inbound, by = 'region') %>%
-    mutate(cropland_flow = cropland_flow.y - cropland_flow.x,
+    mutate(annual_cropland_flow = annual_cropland_flow.y - annual_cropland_flow.x,
+           permanent_cropland_flow = permanent_cropland_flow.y - permanent_cropland_flow.x,
            pastureland_flow = pastureland_flow.y - pastureland_flow.x) %>%
-    select(region, cropland_flow, pastureland_flow) 
+    select(region, annual_cropland_flow, permanent_cropland_flow, pastureland_flow) 
   
   # Domestic within region
   land_within <- flows %>%
     filter(dms_orig == dms_dest) %>%
     group_by(dms_orig) %>%
-    summarize(cropland_flow = sum(cropland_flow), pastureland_flow = sum(pastureland_flow)) %>%
-    add_row(dms_orig = '111', cropland_flow = 0, pastureland_flow = 0) %>% # Washington DC
+    summarize(annual_cropland_flow = sum(annual_cropland_flow), 
+              permanent_cropland_flow = sum(permanent_cropland_flow), 
+              pastureland_flow = sum(pastureland_flow)) %>%
+    add_row(dms_orig = '111', annual_cropland_flow = 0, permanent_cropland_flow = 0, pastureland_flow = 0) %>% # Washington DC
     rename(region = dms_orig)
   
   return(bind_rows(list(outbound = land_outbound, inbound = land_inbound, netdomestic = land_netdomestic, within = land_within), .id = 'flow_type'))
@@ -213,15 +223,16 @@ flows_tnc_joined <- full_join(pairwiseflows, nlcd_faf_tnc_reduced, by = c('dms_o
 # Multiply cropland flow by cropland proportion, and pastureland flow by pastureland proportion
 multiply_tnc_flows <- function(flows) {
   flows %>%
-    mutate(cropland_flow = cropland_flow * cropland_ecoregion_proportion,
+    mutate(annual_cropland_flow = annual_cropland_flow * cropland_ecoregion_proportion,
+           permanent_cropland_flow = permanent_cropland_flow * cropland_ecoregion_proportion,
            pastureland_flow = pastureland_flow * pastureland_ecoregion_proportion)
 }
 
 flows_tnc_joined <- flows_tnc_joined %>% multiply_tnc_flows %>% filter(!is.na(scenario))
 
 # Check grand totals
-pairwiseflows %>% group_by(scenario) %>% summarize(crop = sum(cropland_flow, na.rm = TRUE))
-flows_tnc_joined %>% group_by(scenario) %>% summarize(crop = sum(cropland_flow, na.rm = TRUE))
+pairwiseflows %>% group_by(scenario) %>% summarize(crop = sum(annual_cropland_flow, na.rm = TRUE))
+flows_tnc_joined %>% group_by(scenario) %>% summarize(crop = sum(annual_cropland_flow, na.rm = TRUE))
 # Good.
 
 # Save totals to CSVs
@@ -242,7 +253,8 @@ flows_tnc_pop <- flows_tnc_joined %>% full_join(pop_faf_tnc, by = c('dms_dest' =
 # Convert flows based on population proportion
 weight_flows_by_pop <- function(flows) {
   flows %>%
-    mutate(cropland_flow = cropland_flow * pop_proportion,
+    mutate(annual_cropland_flow = annual_cropland_flow * pop_proportion,
+           permanent_cropland_flow = permanent_cropland_flow * pop_proportion,
            pastureland_flow = pastureland_flow * pop_proportion) %>%
     rename(TNC_orig = ECO_CODE,
            TNC_dest = TNC)
@@ -254,7 +266,8 @@ flows_tnc_pop <- flows_tnc_pop %>% weight_flows_by_pop
 aggregate_tnc_flows <- function(flows) {
   flows %>%
     group_by(scenario, TNC_orig, TNC_dest) %>%
-    summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+    summarize(annual_cropland_flow = sum(annual_cropland_flow, na.rm = TRUE),
+              permanent_cropland_flow = sum(permanent_cropland_flow, na.rm = TRUE),
               pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 }
 
