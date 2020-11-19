@@ -30,7 +30,7 @@ foreign_tnc_land_by_faf <- read_csv(file.path(fp_out, 'foreign_ecoregion_land_by
 # Do not care which foreign region goods are going to, also do not care about transportation mode
 
 faf_flows_by_regions <- faf_flows_all %>%
-  select(-SCTG_Code, -BEA_Code, -fr_dest, -fr_inmode, -dms_mode, -fr_outmode, -cropland, -pastureland) %>%
+  select(-SCTG_Code, -BEA_Code, -fr_dest, -fr_inmode, -dms_mode, -fr_outmode, -annual_cropland, -permanent_cropland, -pastureland) %>%
   group_by(fr_orig, dms_orig, dms_dest, trade_type) %>%
   summarize_all(sum)
   
@@ -56,33 +56,37 @@ faf_flows_tnc_joined <- full_join(faf_flows_by_regions, nlcd_faf_tnc_reduced, by
 
 # Use the cropland and pastureland proportions to get the cropland and pastureland flows out of each ecoregion into each FAF.
 # Multiply cropland flow by cropland proportion, and pastureland flow by pastureland proportion
-
+# Use the same proportion for annual and permanent cropland.
 faf_flows_tnc_joined <- faf_flows_tnc_joined %>%
-  mutate(cropland_flow = cropland_flow * cropland_ecoregion_proportion,
+  mutate(annual_cropland_flow = annual_cropland_flow * cropland_ecoregion_proportion,
+         permanent_cropland_flow = permanent_cropland_flow * cropland_ecoregion_proportion,
          pastureland_flow = pastureland_flow * pastureland_ecoregion_proportion)
 
 # Check grand totals
-sum(faf_flows_tnc_joined$cropland_flow, na.rm = TRUE)
-sum(faf_flows_all$cropland_flow, na.rm = TRUE) # A few got removed due to NA but otherwise fine
+sum(faf_flows_tnc_joined$annual_cropland_flow, na.rm = TRUE)
+sum(faf_flows_all$annual_cropland_flow, na.rm = TRUE) # A few got removed due to NA but otherwise fine
 
 ### Foreign transfers: join the TNC x FAF foreign region land transfer data with the FAF flows (proportional)
 # Proportionally multiply out the FAF flows by proportional ecoregion flow data from the global cropland/pastureland stuff.
 faf_flows_foreign_tnc_joined <- faf_flows_foreign %>%
   group_by(FAF_foreign_region, fr_orig, dms_orig, dms_dest) %>%
-  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+  summarize(annual_cropland_flow = sum(annual_cropland_flow, na.rm = TRUE),
+            permanent_cropland_flow = sum(permanent_cropland_flow, na.rm = TRUE),
             pastureland_flow = sum(pastureland_flow, na.rm = TRUE)) %>%
   left_join(foreign_tnc_land_by_faf, by = c('FAF_foreign_region' = 'FAF_foreign_region', 'fr_orig' = 'FAF_foreign_region_code')) %>%
   ungroup %>%
-  mutate(cropland_flow = cropland_flow * crop_proportion_by_FAF_region,
+  mutate(annual_cropland_flow = annual_cropland_flow * crop_proportion_by_FAF_region,
+         permanent_cropland_flow = permanent_cropland_flow * crop_proportion_by_FAF_region,
          pastureland_flow = pastureland_flow * pasture_proportion_by_FAF_region) %>%
   group_by(FAF_foreign_region, fr_orig, dms_orig, dms_dest, ECO_CODE, ECO_NAME) %>%
-  summarize(cropland_flow = sum(cropland_flow),
+  summarize(annual_cropland_flow = sum(annual_cropland_flow),
+            permanent_cropland_flow = sum(permanent_cropland_flow),
             pastureland_flow = sum(pastureland_flow)) %>%
   ungroup %>%
-  filter(cropland_flow > 0 | pastureland_flow > 0)
+  filter(annual_cropland_flow > 0 | permanent_cropland_flow > 0 | pastureland_flow > 0)
 
 # Check grand totals
-sum(faf_flows_foreign_tnc_joined$cropland_flow, na.rm = TRUE) 
+sum(faf_flows_foreign_tnc_joined$annual_cropland_flow, na.rm = TRUE) 
 
 # Save totals to a CSV
 
@@ -115,7 +119,8 @@ faf_flows_foreign_tnc_pop_joined <- faf_flows_foreign_tnc_joined %>%
 # Domestic:
 # Convert flows based on population proportion
 faf_flows_tnc_pop_joined <- faf_flows_tnc_pop_joined %>%
-  mutate(cropland_flow = cropland_flow * pop_proportion,
+  mutate(annual_cropland_flow = annual_cropland_flow * pop_proportion,
+         permanent_cropland_flow = permanent_cropland_flow * pop_proportion,
          pastureland_flow = pastureland_flow * pop_proportion) %>%
   rename(TNC_orig = ECO_CODE,
          TNC_dest = TNC)
@@ -123,19 +128,22 @@ faf_flows_tnc_pop_joined <- faf_flows_tnc_pop_joined %>%
 # Aggregate to only TNC x TNC flows
 tnc_flows_agg <- faf_flows_tnc_pop_joined %>%
   group_by(TNC_orig, TNC_dest, trade_type) %>%
-  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+  summarize(annual_cropland_flow = sum(annual_cropland_flow, na.rm = TRUE),
+            permanent_cropland_flow = sum(permanent_cropland_flow, na.rm = TRUE),
             pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 
 # Foreign imports:
 faf_flows_foreign_tnc_pop_joined <- faf_flows_foreign_tnc_pop_joined %>%
-  mutate(cropland_flow = cropland_flow * pop_proportion,
+  mutate(annual_cropland_flow = annual_cropland_flow * pop_proportion,
+         permanent_cropland_flow = permanent_cropland_flow * pop_proportion,
          pastureland_flow = pastureland_flow * pop_proportion) %>%
   rename(TNC_orig = ECO_CODE,
          TNC_dest = TNC)
 
 tnc_flows_foreign_agg <- faf_flows_foreign_tnc_pop_joined %>%
   group_by(TNC_orig, TNC_dest) %>%
-  summarize(cropland_flow = sum(cropland_flow, na.rm = TRUE),
+  summarize(annual_cropland_flow = sum(annual_cropland_flow, na.rm = TRUE),
+            permanent_cropland_flow = sum(permanent_cropland_flow, na.rm = TRUE),
             pastureland_flow = sum(pastureland_flow, na.rm = TRUE))
 
 # Write outputs.
