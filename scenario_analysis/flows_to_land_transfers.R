@@ -3,6 +3,7 @@
 # Generalization of code in faf_land_transfers.R and faf_land_transfer_to_tnc.R
 # QDR / Virtualland / 01 Oct 2020
 
+# Modified 23 Nov 2020: replace individual scenario input data with all possibilities from 2x2x2 factorial.
 # Modified 19 Nov 2020: Separate annual and permanent cropland.
 
 # FIXME starts with domestic only; later foreign will be added. (We remove all trade type 2 and 3, fr_orig, and fr_dest)
@@ -24,10 +25,7 @@ fp_out <- file.path(ifelse(is_local, 'Q:', '/nfs/qread-data'), 'cfs_io_analysis'
 fp_github <- ifelse(is_local, '~/Documents/GitHub/foodwaste/virtualland', '~/virtualland')
 
 # Read flows for each scenario.
-flows_baseline <- read_csv(file.path(fp_out, 'scenarios/flows_baseline_domestic.csv'))
-flows_diet <- read_csv(file.path(fp_out, 'scenarios/flows_dietshift_domestic_provisional.csv'))
-flows_waste <- read_csv(file.path(fp_out, 'scenarios/flows_wastereduced_domestic_provisional.csv'))
-flows_transport <- read_csv(file.path(fp_out, 'scenarios/flows_optimaltransport_domestic_provisional.csv'))
+flows_allscenarios <- read_csv(file.path(fp_out, 'scenarios/flows_2x2x2_factorial_domestic.csv'))
 
 # FAF names lookup table
 faf_lookup <- read_csv(file.path(fp_out, 'faf_region_lookup.csv'))
@@ -48,53 +46,7 @@ nass_bea_land <- nass_bea_land %>%
   setNames(c('FAF_Code', 'FAF_Region', 'BEA_Code', 'annual_cropland', 'permanent_cropland', 'pastureland'))
 
 
-# Standardize input data (flows) ------------------------------------------
 
-# Each scenario input data needs the same data structure
-# We should sum up across modes and give everything the same name
-# Modified 05 Oct 2020: we need to create a column of the weight change factor, relative to baseline
-# That way we can scale the land flows accordingly.
-
-flows_baseline_std <- flows_baseline %>%
-  filter(trade_type == 1, BEA_Code %in% unique(nass_bea_land$BEA_Code)) %>%
-  group_by( dms_orig, dms_dest, BEA_Code) %>%
-  summarize(tons = sum(tons_2012, na.rm = TRUE))
-
-flows_diet_std <- flows_diet %>%
-  filter(trade_type == 1) %>%
-  group_by(dms_orig, dms_dest, BEA_Code) %>%
-  summarize(tons = sum(tons_reduced, na.rm = TRUE))
-
-flows_waste_std <- flows_waste %>%
-  filter(trade_type == 1) %>%
-  group_by(dms_orig, dms_dest, BEA_Code) %>%
-  summarize(tons = sum(tons_reduced, na.rm = TRUE))
-
-flows_transport_std <- flows_transport %>%
-  group_by(dms_orig, dms_dest, BEA_Code) %>%
-  summarize(tons = sum(mass_optimal, na.rm = TRUE))
-
-# Join the individual scenario dataframes into one.
-flows_allscenarios <- bind_rows(list(baseline = flows_baseline_std, 
-                                     diet = flows_diet_std, 
-                                     waste = flows_waste_std, 
-                                     transport = flows_transport_std), 
-                                .id = 'scenario')
-
-# Reshape to get the scaling factors
-flows_allscenarios_wide <- flows_allscenarios %>%
-  pivot_wider(names_from = scenario, values_from = tons) %>%
-  mutate(diet_scalingfactor = diet/baseline,
-         waste_scalingfactor = waste/baseline,
-         transport_scalingfactor = transport/baseline)
-
-# Reshape back again so we can scale the land totals for diet and waste.
-flows_allscenarios <- flows_allscenarios_wide %>%
-  pivot_longer(baseline:transport_scalingfactor, names_to = 'scenario') %>%
-  separate(scenario, into = c('scenario', 'scalingfactor'), sep = '_') %>%
-  mutate(scalingfactor = if_else(is.na(scalingfactor), 'tons', scalingfactor)) %>%
-  pivot_wider(names_from = scalingfactor, values_from = value)
-  
 # Join tonnage flows with land areas --------------------------------------
 
 # Join flows with NASS land values
@@ -105,14 +57,12 @@ join_with_land <- function(flows) {
 # Join then scale the diet and waste cropland and pastureland values by the scaling factor calculated previously.
 flows_allscenarios <- flows_allscenarios %>% 
   join_with_land %>%
-  mutate_at(vars(c(annual_cropland, permanent_cropland, pastureland)), ~ if_else(scenario %in% c('diet', 'waste'), . * scalingfactor, .))
+  mutate_at(vars(c(annual_cropland, permanent_cropland, pastureland)), ~ . * scalingfactor)
 
 # Convert to land flows ---------------------------------------------------
 
 # Functions to get the proportional crop and pasture flow originating from each FAF region,
 # and convert all land stocks and flows from acres to square kilometers.
-
-# Modified 05 Oct 2020: We need to reduce the diet and waste land flows based on how far 
 
 to_km2 <- function(x) x %>% set_units(acre) %>% set_units(km^2) %>% as.numeric
 
@@ -120,8 +70,8 @@ land_flows_by_weight <- function(flows) {
   flows %>%
     ungroup %>%
     filter(!is.na(annual_cropland), !is.na(permanent_cropland), !is.na(pastureland)) %>%
-    group_by(scenario, dms_orig) %>%
-    mutate(tons_proportion = tons / sum(tons, na.rm = TRUE)) %>%
+    group_by(scenario, diet_shift, waste_reduction, optimal_transport, dms_orig, BEA_Code) %>%
+    mutate(tons_proportion = tons_reduced / sum(tons_reduced, na.rm = TRUE)) %>%
     ungroup %>%
     mutate(annual_cropland_flow = tons_proportion * annual_cropland,
            permanent_cropland_flow = tons_proportion * permanent_cropland,
@@ -177,8 +127,8 @@ flowtotals_allscenarios <- flows_allscenarios %>% group_by(scenario) %>% group_m
 
 # Write outputs -----------------------------------------------------------
 
-write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/landflows_allscenarios_provisional.csv'))
-write_csv(flowtotals_allscenarios, file.path(fp_out, 'scenarios/landflows_totals_allscenarios_provisional.csv'))
+write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/landflows_2x2x2_factorial_provisional.csv'))
+write_csv(flowtotals_allscenarios, file.path(fp_out, 'scenarios/landflows_2x2x2_factorial_provisional.csv'))
 
 # For each FAF, split transfers by ecoregion ------------------------------
 
@@ -236,7 +186,7 @@ flows_tnc_joined %>% group_by(scenario) %>% summarize(crop = sum(annual_cropland
 # Good.
 
 # Save totals to CSVs
-write_csv(flows_tnc_joined, file.path(fp_out, 'landflows_faf_x_tnc_scenarios_provisional.csv'))
+write_csv(flows_tnc_joined, file.path(fp_out, 'landflows_faf_x_tnc_2x2x2_factorial_provisional.csv'))
 
 # Use population weights to get TNC x TNC transfers -----------------------
 

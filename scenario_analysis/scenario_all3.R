@@ -261,20 +261,21 @@ optimal_transport <- function(flows) {
 
 # Apply all scenarios in 2x2x2 factorial design
 
-scenarios <- cbind(scenario = 1:8,
-                   expand_grid(diet_shift = c(FALSE, TRUE),
-                               waste_reduction = c(FALSE, TRUE),
-                               optimal_transport = c(FALSE, TRUE)))
+scenario_grid <- cbind(scenario = 1:8,
+                       expand_grid(diet_shift = c(FALSE, TRUE),
+                                   waste_reduction = c(FALSE, TRUE),
+                                   optimal_transport = c(FALSE, TRUE)))
 
 # Function to apply functions only if TRUE
 apply_scenarios <- function(diet_shift, waste_reduction, optimal_transport, flows) {
   if (diet_shift) flows <- diet_shift(flows)
   if (waste_reduction) flows <- waste_reduction(flows)
+  flows <- flows %>% mutate(scalingfactor = tons_reduced/tons_baseline)
   if (optimal_transport) flows <- optimal_transport(flows)
   return(flows)
 }
 
-scenarios <- scenarios %>%
+scenarios <- scenario_grid %>%
   group_by_all %>%
   group_modify(~ apply_scenarios(.$diet_shift, .$waste_reduction, .$optimal_transport, flows = faf_flows_domestic), .keep = TRUE)
 
