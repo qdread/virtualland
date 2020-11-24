@@ -7,7 +7,7 @@
 # Modified 19 Nov 2020: Separate annual and permanent cropland.
 
 # FIXME starts with domestic only; later foreign will be added. (We remove all trade type 2 and 3, fr_orig, and fr_dest)
-# FIXME cropland flows in non-raw material shipments? So far all 3x codes are removed.
+# FIXME cropland flows in non-raw material shipments? So far all 3x codes are removed. THIS ONE IS V IMPORTANT
 
 # Load data ---------------------------------------------------------------
 
@@ -226,8 +226,8 @@ flows_tnc_agg <- flows_tnc_pop %>% aggregate_tnc_flows
 # Save outputs to CSVs
 
 # Intermediate result (standardized ag flows across scenarios)
-write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/agflows_scenarios_provisional.csv'))
+write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/agflows_2x2x2_factorial_provisional.csv'))
 
 # Final result
-write_csv(flows_tnc_pop, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_scenarios_provisional.csv'))
-write_csv(flows_tnc_agg, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_scenarios_provisional.csv'))
+write_csv(flows_tnc_pop, file.path(fp_out, 'scenarios/landflows_faf_tnc_x_tnc_2x2x2_factorial_provisional.csv'))
+write_csv(flows_tnc_agg, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_2x2x2_factorial_provisional.csv'))

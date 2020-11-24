@@ -10,8 +10,9 @@
 # and the CFs are in species lost per meter squared.
 # So we just need to join them, then multiply the virtual land transfers (area) by the CFs (species lost per area)
 
+# Modified 24 Nov 2020: Run for all eight scenarios (2x2x2 factorial)
 # Modified 19 Nov 2020: Separate annual and permanent crop transformation factors.
-# FIXME for now this is only with 4 of the 8 scenarios, and domestic only (not foreign)
+# FIXME for now this is domestic only (not foreign)
 # FIXME they have a land transformation part with some time to regeneration values per land type which I am ignoring right now
 # FIXME in later editions, better to calculate biodiversity damage from land use WITHIN each region, then proportionally allocate
 # FIXME the flows, rather than calculating the flows first and then the biodiversity damage, I think.
@@ -34,7 +35,7 @@ fp_scen <- file.path(fp_out, 'scenarios')
 # Needed data to load: domestic (later foreign) virtual land transfers, characterization factors from Chaudhary
 
 # VLT for the four scenarios, TNC x TNC
-vlt_scenarios <- read_csv(file.path(fp_scen, 'landflows_tnc_x_tnc_scenarios_provisional.csv'))
+vlt_scenarios <- read_csv(file.path(fp_scen, 'landflows_tnc_x_tnc_2x2x2_factorial_provisional.csv'))
 
 # Characterization factors (from read_chaudh_si.R)
 chaudsi <- read_csv(file.path(fp_chaud, 'chaud2015SI2.csv'))
@@ -60,11 +61,11 @@ VLT_CF <- vlt_scenarios %>%
     mutate(species_lost = VLT * value * 1e6)
 
 # Write output
-write_csv(VLT_CF, file.path(fp_scen, 'species_lost_scenarios_provisional.csv'))
+write_csv(VLT_CF, file.path(fp_scen, 'species_lost_2x2x2_factorial_provisional.csv'))
 
 # Write smaller file with subset of output for plotting
 # Ignore the land transformation part.
 splost_filtered <- VLT_CF %>%
   filter(complete.cases(.), !grepl('Trans_', CF), grepl('regional', CF))
 
-write_csv(splost_filtered, file.path(fp_scen, 'species_lost_scenarios_provisional_regionalocc.csv'))
+write_csv(splost_filtered, file.path(fp_scen, 'species_lost_2x2x2_factorial_provisional_regionalocc.csv'))
