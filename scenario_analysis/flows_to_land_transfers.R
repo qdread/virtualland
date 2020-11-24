@@ -128,7 +128,7 @@ flowtotals_allscenarios <- flows_allscenarios %>% group_by(scenario) %>% group_m
 # Write outputs -----------------------------------------------------------
 
 write_csv(flows_allscenarios, file.path(fp_out, 'scenarios/landflows_2x2x2_factorial_provisional.csv'))
-write_csv(flowtotals_allscenarios, file.path(fp_out, 'scenarios/landflows_2x2x2_factorial_provisional.csv'))
+write_csv(flowtotals_allscenarios, file.path(fp_out, 'scenarios/landflows_totals_2x2x2_factorial_provisional.csv'))
 
 # For each FAF, split transfers by ecoregion ------------------------------
 
