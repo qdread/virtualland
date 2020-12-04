@@ -32,3 +32,22 @@ This is an update to `biodiversitythreatprocedure.md` but does not necessarily r
 - The derivative of the SAR is used to get the marginal species loss of modifying one square meter of land, from which we get the regional CF.
 - They also get a global CF by getting the fraction of endemic species for each taxon in each ecoregion, converting that into a vulnerability score, then multiplying the regional CF by the vulnerability score. (This seems like an underestimate because if a species could be lost globally even if it's not endemic to a single ecoregion, if it's extirpated from multiple regions.)
 - We multiply our land area flows by the species lost per unit land area for each ecoregion in each scenario.
+
+# Things that still need to be done to improve the methods
+
+Summarized on 04 Dec 2020 from the [github issues page](https://github.com/qdread/virtualland/issues).
+
+## Big things
+
+- It might be good to change the order of how biodiversity threats are calculated. Now, we calculate exported flows and convert them to biodiversity threat. Instead, we should calculate biodiversity threat from production within each ecoregion, allocate the exports to the "trading partners" of the ecoregion, and assign them proportionally. That might help with the raw vs. non-raw materials.
+- Land flows from non-raw materials. This may be addressed by the above point. Right now we can fairly easily track where raw goods are produced then shipped. Once they are transformed into other types of materials, the problem begins. How to keep track of the original production/resources embodied in those shipments?
+- Alternative biodiversity models: we currently only use one (Chaudhary) but studies like Leclere use an ensemble approach which is likely to be more robust.
+- Better treatment of foreign imports and exports
+
+## Small technical things
+
+- The original plan was to use an input-output approach with BEA tables so all categories were harmonized to BEA. If we end up using a LCA approach, this is probably not necessary and only adds to uncertainty. This could also improve the optimal transport scenario.
+- Food waste rates are a mix of LAFA and FAO. We need to make sure appropriate data is used.
+- Land transformation characterization factors could be used in addition to occupation.
+- Use a better model (optimization based on constraints of being as close as possible to the nutrients of meat) to reallocate meat calories to plants
+- Ensure that there is no double-dipping in the way the land flows are adjusted for each scenario. This may be the reason why the diet x waste has such a big effect.
