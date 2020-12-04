@@ -246,7 +246,7 @@ optimal_transport <- function(flows) {
     select(dms_orig, dms_dest, BEA_Code, mass_optimal) %>%
     rename(tons_reduced = mass_optimal)
   
-  # This requires a different procedure than the other ones because there may be some flows that are zero in baseline
+  # This requires a different procedure than the other ones because there may be some flows that are zero in baseline,
   # but increase in the alternative scenario.
   
   flows %>%
