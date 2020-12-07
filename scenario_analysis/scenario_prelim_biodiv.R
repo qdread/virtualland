@@ -48,7 +48,7 @@ chaudsi2019 <- read_csv(file.path(fp_chaud, 'chaud2019CFs.csv'))
 
 # Join CF and VLT ---------------------------------------------------------
 
-# Chaudhary 2015 CFs reshape
+# Chaudhary 2015 CFs reshape (with annual nad permanent cropland separated)
 chaudsi_coarse <- chaudsi %>%
   filter(landuse %in% c('Annual crops', 'Permanent crops', 'Pasture')) %>%
   mutate(landuse = tolower(gsub(' ', '_', landuse))) %>%
