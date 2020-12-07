@@ -41,10 +41,8 @@ vlt_scenarios <- read_csv(file.path(fp_scen, 'landflows_tnc_x_tnc_2x2x2_factoria
 # Characterization factors (from read_chaudh_si.R)
 chaudsi <- read_csv(file.path(fp_chaud, 'chaud2015SI2.csv'))
 
-# 2019 characterization factors
-chaudsi2019 <- read_csv(file.path(fp_chaud, 'chaud2019CFs.csv'))
-
-### Here, source script to join 2019 characterization factors with the ecoregions (names don't all match)
+# Updated characterization factors from Chaudhary and Brooks 2018
+chaudsi2018 <- read_csv(file.path(fp_chaud, 'chaud2018si_CFs.csv'))
 
 # Join CF and VLT ---------------------------------------------------------
 
@@ -56,11 +54,20 @@ chaudsi_coarse <- chaudsi %>%
   pivot_longer(-c(CF, ecoregion, taxon)) %>%
   separate(name, into = c('stat', 'landuse'), sep = '_')
 
+# Process Chaudhary 2018 CFs data in preparation for joining with VLT data
+# Plantation = permanent cropland, Crop = annual cropland
+# Keep different intensity levels for now, and include 
+chaudsi_processed <- chaudsi2018 %>%
+  filter(region_type %in% 'ecoregion', land_use %in% c('crop', 'pasture', 'plantation'), unit %in% 'potential species loss y m-2') %>%
+  mutate(land_use = case_when(land_use == 'crop' ~ 'annual',
+                              land_use == 'plantation' ~ 'permanent')) %>%
+  select(-region_type, -unit)
+
 # Join land transfers and characterization factors for each scenario
 VLT_CF <- vlt_scenarios %>%
     rename(annual = annual_cropland_flow, permanent = permanent_cropland_flow, pasture = pastureland_flow) %>%
-    pivot_longer(c(annual, permanent, pasture), names_to = 'landuse', values_to = 'VLT') %>%
-    full_join(chaudsi_coarse, by = c('TNC_orig' = 'ecoregion', 'landuse' = 'landuse')) %>%
+    pivot_longer(c(annual, permanent, pasture), names_to = 'land_use', values_to = 'VLT') %>%
+    full_join(chaudsi_processed, by = c('TNC_orig' = 'ecoregion_code', 'land_use' = 'land_use')) %>%
     mutate(species_lost = VLT * value * 1e6)
 
 # Write output
@@ -68,7 +75,8 @@ write_csv(VLT_CF, file.path(fp_scen, 'species_lost_2x2x2_factorial_provisional.c
 
 # Write smaller file with subset of output for plotting
 # Ignore the land transformation part.
+# Now we only are using global characterization factors, not regional. Regional were not included in this table.
 splost_filtered <- VLT_CF %>%
-  filter(complete.cases(.), !grepl('Trans_', CF), grepl('regional', CF))
+  filter(complete.cases(.), CF_type %in% 'occupation')
 
-write_csv(splost_filtered, file.path(fp_scen, 'species_lost_2x2x2_factorial_provisional_regionalocc.csv'))
+write_csv(splost_filtered, file.path(fp_scen, 'species_lost_2x2x2_factorial_provisional_occ.csv'))
