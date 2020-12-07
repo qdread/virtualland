@@ -10,6 +10,7 @@
 # and the CFs are in species lost per meter squared.
 # So we just need to join them, then multiply the virtual land transfers (area) by the CFs (species lost per area)
 
+# Modified 04 Dec 2020: Also include the CFs from 2019 (no conf interval)
 # Modified 24 Nov 2020: Run for all eight scenarios (2x2x2 factorial)
 # Modified 19 Nov 2020: Separate annual and permanent crop transformation factors.
 # FIXME for now this is domestic only (not foreign)
@@ -40,12 +41,14 @@ vlt_scenarios <- read_csv(file.path(fp_scen, 'landflows_tnc_x_tnc_2x2x2_factoria
 # Characterization factors (from read_chaudh_si.R)
 chaudsi <- read_csv(file.path(fp_chaud, 'chaud2015SI2.csv'))
 
+# 2019 characterization factors
+chaudsi2019 <- read_csv(file.path(fp_chaud, 'chaud2019CFs.csv'))
+
+### Here, source script to join 2019 characterization factors with the ecoregions (names don't all match)
 
 # Join CF and VLT ---------------------------------------------------------
 
-# Coarsen Chaudhary by using only annual cropland value
-# This is a preliminary value that will be changed.
-# Later I'll separate annual and perennial crops
+# Chaudhary 2015 CFs reshape
 chaudsi_coarse <- chaudsi %>%
   filter(landuse %in% c('Annual crops', 'Permanent crops', 'Pasture')) %>%
   mutate(landuse = tolower(gsub(' ', '_', landuse))) %>%
