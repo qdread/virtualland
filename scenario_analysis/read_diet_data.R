@@ -67,4 +67,45 @@ for (i in 1:3) names(us_diet_cleaned[[i]]) <- sapply(names(us_diet_cleaned[[i]])
 
 us_diet_final <- map2(us_diet_cleaned, c('us_style', 'med_style', 'vegetarian'), ~ tibble(diet = .y, .x)) %>% bind_rows
   
-                     
+# Keep track of all the units that each column is in, plus which columns are aggregations of other columns
+# All are per day except that subgroups of veg. and protein are per week.
+# fruit, dairy, and oil have no subgroup
+# grain subgroups are whole and refined
+# protein food subgroups are seafood, meat+eggs, eggs (separated for veg diet), nut/seed/soy, nut/seed (sep. for veg), soy (sep. for veg), legumes, and legumes as protein (sep. for veg)
+# vegetable food subgroups are anything with vegetable in the name
+
+# Remove aggregated groups
+agg_groups <- c('vegetables', 'grains', 'protein_foods')
+us_diet_final <- us_diet_final %>% select(-all_of(agg_groups))
+
+# Remove the string "__c_eq_wk_" from some of the names
+us_diet_final <- us_diet_final %>% rename_with(function(x) gsub('__c_eq_wk_', '', x, fixed = TRUE))
+
+# Divide the weekly requirements by 7 to get all into daily units.
+weekly_groups <- c('dark_green_vegetables', 'red_and_orange_vegetables', 'legumes', 'starchy_vegetables', 'other_vegetables', 'seafood', 'meat_poultry_eggs', 'nuts_seeds_soy', 'nuts_seeds', 'soy', 'eggs', 'legumes_as_protein')
+
+us_diet_final <- us_diet_final %>% mutate_at(all_of(weekly_groups), ~ ./7)
+
+# Keep everything in the pattern equivalent for now (cups and ounces)
+# Also keep the categories separated for the veg diet.
+# Units: veg cup eq, fruit cup eq, grains oz eq, dairy cup eq, protein oz eq, oils grams, other calories.
+
+veg_groups <- c('dark_green_vegetables', 'red_and_orange_vegetables', 'legumes', 'starchy_vegetables', 'other_vegetables')
+grain_groups <- c('refined_grains', 'whole_grains')
+protein_groups <- c('seafood', 'meat_poultry_eggs', 'nuts_seeds_soy', 'nuts_seeds', 'soy', 'eggs', 'legumes_as_protein')
+
+us_diet_final_long <- us_diet_final %>%
+  pivot_longer(-c(diet, calorie_level)) %>%
+  mutate(food_group = case_when(name %in% veg_groups ~ 'vegetables',
+                                name %in% grain_groups ~ 'grains',
+                                name %in% protein_groups ~ 'protein',
+                                name %in% c('dairy', 'fruits', 'oils') ~ name,
+                                name %in% c('calories_other', 'proportion_other') ~ 'other'),
+         unit = case_when(food_group %in% c('vegetables', 'fruits', 'dairy') ~ 'c-eq',
+                          food_group %in% c('grains', 'protein') ~ 'oz-eq',
+                          food_group %in% 'oils' ~ 'g',
+                          name == 'calories_other' ~ 'cal'))
+
+# Write output
+write_csv(us_diet_final, file.path(fp_diet, 'us_dietary_guidelines_wide.csv'))
+write_csv(us_diet_final_long, file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
