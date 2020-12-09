@@ -32,4 +32,8 @@ county_income_norm2012 <- setNames(county_income$total_income_2012/sum(county_in
 
 county_consumption2012 <- pce2012 %*% t(county_income_norm2012) # 389 x 3142 matrix, each row is a good and each column a county.
 # Units are million USD.
-                    
+
+# Add column for the BEA code
+county_consumption2012 <- cbind(BEA_code = names(pce2012), as.data.frame(county_consumption2012))
+
+write_csv(county_consumption2012, file.path(fp, 'cfs_io_analysis/county_consumption2012.csv'))                    
