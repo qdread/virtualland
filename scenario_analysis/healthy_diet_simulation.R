@@ -17,9 +17,9 @@ fp <- ifelse(is_local, 'Q:', '/nfs/qread-data')
 fp_diet <- file.path(fp, 'raw_data/food_consumption/diet_guidelines')
 
 # Read Lancet dietary guidelines
-
+diet_lancet <- read_csv(file.path(fp_diet, 'lancet_planetary_health_diet.csv'))
 # Read USA dietary guidelines
-
+diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
 
 # Convert to common units -------------------------------------------------
 
