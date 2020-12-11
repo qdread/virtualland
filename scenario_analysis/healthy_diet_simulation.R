@@ -37,6 +37,7 @@ lafa <- list(dairy, fat, fruit, grain, meat, sugar, veg)
 # Process LAFA to single year and no aggregates ---------------------------
 
 # We only want the most recent year with complete data, and only the primary (not aggregated) categories
+# Note that the aggregated groups do not have any individual loss rates for stages, only "total"
 
 lafa_agg_groups <- lafa_cat_lookup %>% select(starts_with('subgroup')) %>% unlist %>% unique
 
