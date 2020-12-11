@@ -80,6 +80,7 @@ veg <- read_lafa_workbook(file.path(fp_lafa, 'veg.xls'))
 # calories.xls and servings.xls have the same structure but are idiosyncratically formatted.
 library(tidyxl)
 library(unpivotr)
+library(zoo)
 
 calories_raw <- xlsx_cells(file.path(fp_lafa, 'calories.xlsx')) %>% filter(!sheet %in% 'TableofContents')
 servings_raw <- xlsx_cells(file.path(fp_lafa, 'servings.xlsx')) %>% filter(!sheet %in% 'TableofContents')
@@ -91,8 +92,76 @@ calories_raw <- filter(calories_raw, row != 1)
 servings_raw <- filter(servings_raw, row != 1)
 
 # Totals sheet has only one header row but it's merged from several rows, and one unit row.
-calories_raw_total <- calories_raw %>%
+# The most recent year with complete data is 2010.
+calories_total <- calories_raw %>%
   filter(sheet == 'Totals') %>%
   behead(direction = 'W', name = 'year') %>%
   behead(direction = 'N', name = 'food_group') %>%
-  behead(direction = 'N', name = 'unit')
+  select(year, food_group, numeric) %>%
+  filter(!is.na(numeric))
+
+calories_percent <- calories_raw %>%
+  filter(sheet == 'Percents') %>%
+  behead(direction = 'W', name = 'year') %>%
+  behead(direction = 'N', name = 'food_group') %>%
+  select(year, food_group, numeric) %>%
+  filter(!is.na(numeric))
+
+# Servings total is similar but has units
+servings_total <- servings_raw %>%
+  filter(sheet == 'Totals', !is_blank) %>%
+  behead(direction = 'W', name = 'year') %>%
+  behead(direction = 'N', name = 'food_group') %>%
+  behead(direction = 'N', name = 'unit') %>%
+  mutate(unit = gsub('-', '', unit) %>% trimws %>% na.locf) %>%
+  select(year, food_group, unit, numeric) 
+  
+# The different food groups have multiple header rows with both horizontal and vertical merges.
+# Servings sheet has a unit row, calories sheet doesn't.
+clean_sheet <- function(x, has_unit_row = TRUE) {
+  
+  x <- x %>%
+    filter(!is_blank) %>%
+    mutate(character = na.locf(character))
+  
+  # Find number of header rows as maximum number of character entries in each column before unit row index.
+  # Unit row index is one before the first non numeric entry in first column.
+  first_data_row_idx <- x$row[x$col == 1 & !is.na(x$numeric)][1]
+  
+  n_header_rows <- x %>%
+    filter(row < first_data_row_idx) %>%
+    group_by(col) %>%
+    summarize(nheader = length(unique(character))) %>%
+    pull(nheader) %>%
+    max
+  if (has_unit_row) n_header_rows <- n_header_rows - 1
+  
+  x <- x %>%
+    behead(direction = 'W', name = 'year')
+  
+  for (i in 1:n_header_rows) {
+    x <- x %>%
+      behead(direction = 'N', name = !!paste('group', i, sep = '_'))
+  }
+  
+  if (has_unit_row) {
+    x %>%
+      behead(direction = 'N', name = 'unit') %>%
+      mutate(unit = gsub('-', '', unit) %>% trimws %>% na.locf(na.rm = FALSE)) %>%
+      select(year, starts_with('group'), unit, numeric) 
+  } else {
+    x %>%
+      select(year, starts_with('group'), numeric) 
+  }
+  
+}
+
+calories_bygroup <- calories_raw %>%
+  filter(!sheet %in% c('Totals','Percents')) %>%
+  group_by(sheet) %>%
+  group_modify(~ clean_sheet(., has_unit_row = FALSE))
+
+servings_bygroup <- servings_raw %>%
+  filter(!sheet %in% c('Totals','Percents')) %>%
+  group_by(sheet) %>%
+  group_modify(~ clean_sheet(., has_unit_row = TRUE))
