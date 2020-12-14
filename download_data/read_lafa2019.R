@@ -156,12 +156,14 @@ clean_sheet <- function(x, has_unit_row = TRUE) {
   
 }
 
-calories_bygroup <- calories_raw %>%
+calories <- calories_raw %>%
   filter(!sheet %in% c('Totals','Percents')) %>%
   group_by(sheet) %>%
   group_modify(~ clean_sheet(., has_unit_row = FALSE))
 
-servings_bygroup <- servings_raw %>%
+servings <- servings_raw %>%
   filter(!sheet %in% c('Totals','Percents')) %>%
   group_by(sheet) %>%
   group_modify(~ clean_sheet(., has_unit_row = TRUE))
+
+rm(calories_raw, servings_raw, clean_sheet)
