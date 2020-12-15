@@ -29,92 +29,8 @@ diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
 # Also note that we are not going to distinguish between saturated and unsaturated oil/fat because LAFA is by food category not fat type.
 lafa_cat_lookup <- read_csv(file.path(fp_crosswalk, 'lafa_dietary_guidelines_crosswalk.csv'))
 
-# Read LAFA
-source('~/virtualland/download_data/read_lafa2019.R')
-# Remove eggnog and half and half from fats (they are already included in dairy)
-fat <- filter(fat, !Category %in% c('Eggnog', 'Half and half'))
-
-# Names in meat have a duplicated column where one is ounceeq and one is ounceseq
-# Make sure there is no overlap
-# with(meat, table(is.na(Food_pattern_equivalents_Ounceeq), is.na(Food_pattern_equivalents_Ounceseq))) # No overlap
-
-meat <- meat %>%
-  mutate(Food_pattern_equivalents_Ounceeq = coalesce(Food_pattern_equivalents_Ounceeq, Food_pattern_equivalents_Ounceseq)) %>%
-  select(-Food_pattern_equivalents_Ounceseq)
-
-# Names in fruit have a duplicated column where one has two underscores
-# Make sure there is no overlap
-# with(fruit, table(is.na(Primary_weight_Lbs.year), is.na(Primary_weight__Lbs.year))) # No overlap of non-missing items.
-
-fruit <- fruit %>%
-  mutate(Primary_weight_Lbs.year = coalesce(Primary_weight_Lbs.year, Primary_weight__Lbs.year)) %>%
-  select(-Primary_weight__Lbs.year)
-
-# For each LAFA list element, correct the names so that they will join properly.
-# Separate the units as well.
-# Units: 
-# dairy: lbs.yr, gals.yr, oz.day, g.day, gals.day, food pattern in cups
-# Fat: lbs.yr, oz.day, g.day, daily fat grams, in grams and in number (the same?), no food pattern provided
-# fruit: lbs. year, oz.day, g.day, there is also a column for gain from primary to retail weight!, edible weight in lbs, and per capita avail in lbs and gals for some items like juice
-# grain: lbs.year, oz.day, g.day, food pattern in oz, edible weight in lbs
-# meat: FPE in ounces
-# sugar: No FPE
-# veg: FPE in cups
-
-dairy <- dairy %>% mutate(fpe_units = 'cup-eq')
-fruit <- fruit %>% mutate(fpe_units = 'cup-eq')
-grain <- grain %>% mutate(fpe_units = 'oz-eq')
-meat <- meat %>% mutate(fpe_units = 'oz-eq')
-veg <- veg %>% mutate(fpe_units = 'cup-eq')
-
-
-lafa <- list(dairy, fat, fruit, grain, meat, sugar, veg)
-# Note we also have calories, servings, calories_total, servings_total, and calories_percent loaded.
-
-# Weights are always in lb/year. 
-# Losses are expressed as percents and weights. Loss primary to retail, retail to consumer, consumer nonedible, consumer other: percent.
-# Loss consumer edible weight as weight in lbs.
-# We want per capita availability in lb/year as well, for consistency across weights. Can be converted to other units later.
-# Per capita availability may be in different units, as well as food pattern equivalents.
-clean_lafa <- function(dat) {
-  
-  # Remove duplicated per capita avail columns
-  dat <- select(dat, !(starts_with('Per_capita_availability') & !contains('Lbs.year')))
-  
-  ns <- names(dat)
-  ns[grepl('^Primary_weight', ns)] <- 'primary_weight_lb_y'
-  ns[grepl('^Retail_weight', ns)] <- 'retail_weight_lb_y'
-  ns[grepl('^Consumer_weight', ns)] <- 'consumer_weight_lb_y'
-  ns[grepl('^Loss_from_primary', ns)] <- 'loss_primary_to_retail_percent'
-  ns[grepl('^Loss_from_retail', ns)] <- 'loss_retail_to_consumer_percent'
-  ns[grepl('^Loss_at_consumer', ns) & grepl('Nonedible', ns)] <- 'loss_consumer_nonedible_percent'
-  ns[grepl('^Loss_at_consumer', ns) & grepl('Edible', ns)] <- 'loss_consumer_edible_lb_y'
-  ns[grepl('^Loss_at_consumer', ns) & grepl('Other', ns)] <- 'loss_consumer_other_percent'
-  ns[grepl('^Total_loss', ns)] <- 'loss_total_percent'
-  ns[grepl('^Per_capita_availability', ns)] <- 'per_capita_availability_lb_y'
-  ns[grepl('^Edible_weight', ns)] <- 'edible_weight_lb_y'
-  ns[grepl('^Food_pattern', ns)] <- 'food_pattern_equivalents'
-  ns[grepl('^Calories_available', ns)] <- 'calories_available_cal_day'
-    setNames(dat, ns)
-}
-lafa_clean_names <- map(lafa, clean_lafa)
-
-# Process LAFA to single year and no aggregates ---------------------------
-
-# We only want the most recent year with complete data, and only the primary (not aggregated) categories
-# Note that the aggregated groups do not have any individual loss rates for stages, only "total"
-
-lafa_agg_groups <- lafa_cat_lookup %>% select(starts_with('subgroup')) %>% unlist %>% unique
-
-lafa_df <- bind_rows(lafa_clean_names) %>%
-  filter(!Category %in% lafa_agg_groups) %>%
-  filter(!is.na('primary_weight_lb_y')) %>%
-  group_by(Category) %>%
-  filter(Year == max(Year))
-
-# Legumes should be removed (misclassified as a primary food when it is in fact a category). So in total there are 214 categories.
-lafa_df <- lafa_df %>% filter(!Category %in% 'Legumes')
-
+# Read and clean LAFA
+source(file.path(ifelse(is_local, '~/Documents/GitHub/foodwaste', '~'), 'virtualland/download_data/clean_lafa2019.R'))
 
 # Join lafa data with lookups ---------------------------------------------
 
@@ -125,6 +41,14 @@ lafa_cat_lookup_tojoin <- lafa_cat_lookup %>%
 
 lafa_df <- lafa_df %>%
   left_join(lafa_cat_lookup_tojoin)
+
+# Manually add the four categories that aren't in the lookup table.
+#lafa_df %>% filter(is.na(category_lancet) | is.na(category_dietary_guidelines)) %>% pull(Category) %>% dput
+cats_add <- data.frame(Category = c("White and whole wheat flour", "Durum flour", "Fresh brussels sprouts", "Other processed vegetables"),
+                       category_lancet = c('whole grains', 'whole grains', 'vegetables', 'vegetables'),
+                       category_dietary_guidelines = c('grains', 'grains', 'dark_green_vegetables', 'other_vegetables'))
+                       
+lafa_df[is.na(lafa_df$category_lancet),c('category_lancet','category_dietary_guidelines')] <- cats_add[,c('category_lancet','category_dietary_guidelines')]                    
 
 # Harmonize with USA guidelines -------------------------------------------
 
@@ -139,10 +63,125 @@ lafa_df <- lafa_df %>%
 # write_csv(calories2010, '/nfs/qread-data/cfs_io_analysis/lafa_output/calories2010.csv')
 
 # Put the three diets into wide form so they can all be joined.
+# Use 2600 cal which is the closest to the LAFA sum of calories available.
 diet_usa_wide <- diet_usa %>%
-  filter(calorie_level == 2000) %>%
+  filter(calorie_level == 2600) %>%
   select(name, food_group, unit, diet, value) %>%
   replace_na(list(value = 0)) %>%
   pivot_wider(id_cols = c(name, food_group, unit), names_from = diet, values_from = value) %>%
   filter(!name %in% 'proportion_other')
 
+# "Coarsen" and "refine" the diet usa wide data where appropriate:
+# whole and refined grains are not distinguished.
+# The "other" category is equivalent to calories_other and is all sugar/sweeteners.
+# Add soy and nuts&seeds for vegetarians, since LAFA has no data on soy anyway.
+# Also, add legumes as protein to legumes for vegetarians.
+# Finally, eggs are separated for vegetarians. Use LAFA proportion of eggs versus other foods to split out eggs for non-vegetarian diets.
+
+diet_usa_wide_fixed <- diet_usa_wide
+
+# Aggregate the two groups (note that legumes as protein is in oz-eq.) 
+# The document on page 107 states divide the protein entry by 4 before adding to the vegetable entry.
+
+diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'legumes_as_protein'] <- 
+  diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'legumes_as_protein'] / 4
+
+diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
+  mutate(name = case_when(name == 'legumes_as_protein' ~ 'legumes',
+                          name %in% c('whole_grains','refined_grains') ~ 'grains',
+                          TRUE ~ name),
+         food_group = if_else(name == 'legumes', 'vegetables', food_group),
+         unit = if_else(name == 'legumes', 'c-eq', unit)) %>%
+  group_by_if(is.character) %>%
+  summarize_if(is.numeric, sum) %>%
+  ungroup
+
+# Add soy to nuts seeds and soy for vegetarians, because the two aren't distinguished in LAFA.
+diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'nuts_seeds_soy'] <- diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'nuts_seeds'] + diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'soy']
+
+diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
+  filter(!name %in% c('nuts_seeds', 'soy'))
+
+# Split eggs from meat, poultry, and eggs for the us style and Mediterranean diets.
+# Use the same relative proportion of meat vs. eggs from the baseline diet. (by weight)
+proportion_eggs <- lafa_df %>% 
+  filter(category_dietary_guidelines %in% c('meat_poultry_eggs', 'eggs')) %>% 
+  group_by(category_dietary_guidelines) %>%
+  summarize(weight = sum(per_capita_availability_lb_y)) %>%
+  mutate(weight = weight/sum(weight))
+# About 14% by weight is eggs.
+
+diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('eggs', 'meat_poultry_eggs'), c('us_style', 'med_style')] <- 
+  proportion_eggs$weight %*% t(as.numeric(diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('meat_poultry_eggs'), c('us_style', 'med_style')]))
+
+# Sum lafa data food patterns by USA diet categories. 
+# For those that aren't food pattern equivalents (sugars and fats), sum by calories (sugar) and grams (oils/fats)
+# For oils and fats, we need to reverse engineer the lb/y to g/day.
+lafa_sum_usa_diet <- lafa_df %>%
+  group_by(category_dietary_guidelines, fpe_units) %>%
+  summarize(food_pattern_equivalents = sum(food_pattern_equivalents), calories_available_cal_day = sum(calories_available_cal_day), per_capita_availability_lb_y = sum(per_capita_availability_lb_y)) %>%
+  mutate(per_capita_availability_g_day = per_capita_availability_lb_y %>% units::set_units(lb/yr) %>% units::set_units(g/day) %>% as.numeric)
+
+# Join summed lafa usa diet with the three healthy diets.
+lafa_sum_usa_diet_tojoin <- lafa_sum_usa_diet %>%
+  filter(!(category_dietary_guidelines %in% 'oils' & fpe_units %in% 'oz-eq')) %>% # Double counted
+  mutate(baseline = case_when(category_dietary_guidelines == 'oils' ~ per_capita_availability_g_day,
+                              category_dietary_guidelines == 'other' ~ calories_available_cal_day,
+                              TRUE ~ food_pattern_equivalents)) %>%
+  rename(name = category_dietary_guidelines) %>%
+  select(name, baseline) %>%
+  mutate(name = case_when(name == 'nuts_seeds' ~ 'nuts_seeds_soy',
+                          name == 'other' ~ 'calories_other',
+                          TRUE ~ name))
+
+diet_usa_joined <- left_join(diet_usa_wide_fixed, lafa_sum_usa_diet_tojoin) %>%
+  mutate(name = if_else(name == 'meat_poultry_eggs', 'meat_poultry', name))
+
+# We can't scale the guideline diets vs baseline because they're in all different units. But it is almost exactly the same.
+
+# Make a plot.
+diet_usa_joined_long <- diet_usa_joined %>% pivot_longer(c(us_style,med_style,vegetarian,baseline), names_to = 'diet', values_to = 'value')
+
+ggplot(diet_usa_joined_long, aes(y = value, x = name, group = diet, fill = diet)) +
+  facet_wrap(~ unit, scales = 'free') +
+  geom_col(position = 'dodge') +
+  scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+  scale_fill_brewer(palette = 'Dark2') +
+  theme_bw() +
+  ggtitle('Comparison of baseline USA diet with the three guideline diets')
+
+# Harmonize with Lancet diet ----------------------------------------------
+
+# Everything needs to be linked by calories in this case.
+lafa_sum_lancet_diet <- lafa_df %>%
+  mutate(category_lancet = if_else(category_lancet == 'whole grains', 'grains', category_lancet)) %>%
+  group_by(category_lancet) %>%
+  summarize(calories_available_cal_day = sum(calories_available_cal_day)) %>%
+  rename(name = category_lancet)
+
+# Must sum unsaturated and saturated oils, and change the name whole grains to grains
+diet_lancet_tojoin <- diet_lancet %>%
+  select(food_group, calories_g_per_day) %>%
+  rename(name = food_group, planetary_health = calories_g_per_day)
+
+diet_lancet_tojoin$planetary_health[diet_lancet_tojoin$name == 'unsaturated oils'] <- sum(diet_lancet_tojoin$planetary_health[diet_lancet_tojoin$name %in% c('unsaturated oils', 'saturated oils')])
+
+diet_lancet_tojoin <- diet_lancet_tojoin %>%
+  mutate(name = case_when(name == 'whole grains' ~ 'grains',
+                          name == 'unsaturated oils' ~ 'oils',
+                          TRUE ~ name)) %>%
+  filter(!name %in% 'saturated oils')
+
+diet_lancet_joined <- left_join(diet_lancet_tojoin, lafa_sum_lancet_diet) %>%
+  rename(baseline = calories_available_cal_day)
+
+# Make a plot
+diet_lancet_joined_long <- diet_lancet_joined %>%
+  pivot_longer(cols = c(planetary_health, baseline), names_to = 'diet', values_to = 'calories')
+  
+ggplot(diet_lancet_joined_long, aes(y = calories, x = name, group = diet, fill = diet)) +
+  geom_col(position = 'dodge') +
+  scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+  scale_fill_brewer(palette = 'Dark2') +
+  theme_bw() +
+  ggtitle('Comparison of baseline USA diet with the Lancet planetary health diet')
