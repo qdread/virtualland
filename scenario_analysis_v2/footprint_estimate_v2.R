@@ -96,3 +96,5 @@ county_land_consumption <- map2_dfr(county_demand_vectors, names(county_totaldem
 
 # Write the result to CSV
 write_csv(county_land_consumption, file.path(fp_out, 'county_landconsumption2012.csv'))
+####FIXME THIS IS NOT CORRECT! Obviously the county level exchange is not right.
+#### We need to instead begin with county-level consumption of goods, figure out where those were produced, and only then get the land footprint.
