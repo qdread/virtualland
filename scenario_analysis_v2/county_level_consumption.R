@@ -22,7 +22,8 @@ county_income <- read_xlsx(file.path(fp_lin, 'County Personal Income.xlsx'), she
 names(county_income) <- c('FIPS', 'state_FIPS', 'county_FIPS', 'state_name', 'county_name', paste('per_capita_income', 2012:2014, sep = '_'), 'per_capita_rank_2014', 'percent_change_2013', 'percent_change_2014', 'percent_change_rank_2014', 'total_income_2012')
 
 # Remove state total rows
-county_income <- county_income %>% filter(county_FIPS != 0) %>% select(-state_name)
+# Modified 17 Dec 2020: do not remove DC.
+county_income <- county_income %>% filter(county_FIPS != 0 | state_FIPS == 11) %>% select(-state_name)
 
 # Read the input-output BEA table to get the personal consumption expenditure for each good.
 use2012 <- read_csv(file.path(fp_bea, 'use2012.csv'))
@@ -33,7 +34,7 @@ pce2012 <- setNames(use2012$F01000[1:389], use2012$X1[1:389])
 # Cross product of PCE 2012 vector and the normalized county income 2012 vector
 county_income_norm2012 <- setNames(county_income$total_income_2012/sum(county_income$total_income_2012), county_income$FIPS)
 
-county_consumption2012 <- pce2012 %*% t(county_income_norm2012) # 389 x 3142 matrix, each row is a good and each column a county.
+county_consumption2012 <- pce2012 %*% t(county_income_norm2012) # 389 x 3143 matrix, each row is a good and each column a county.
 # Units are million USD.
 
 # Add column for the BEA code
