@@ -1,5 +1,5 @@
 # Read LAFA
-source(file.path(ifelse(is_local, '~/Documents/GitHub/foodwaste', '~'), 'virtualland/download_data/read_lafa2019.R'))
+source('download_data/read_lafa2019.R')
 # Remove eggnog and half and half from fats (they are already included in dairy)
 fat <- filter(fat, !Category %in% c('Eggnog', 'Half and half'))
 

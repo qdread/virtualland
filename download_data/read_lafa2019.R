@@ -64,7 +64,7 @@ read_lafa_workbook <- function(file) {
 
 # Read data ---------------------------------------------------------------
 
-fp_lafa <- file.path(fp, 'raw_data/USDA/LAFA')
+fp_lafa <- 'data/raw_data/USDA/LAFA'
 
 dairy <- read_lafa_workbook(file.path(fp_lafa, 'Dairy.xls'))
 fat <- read_lafa_workbook(file.path(fp_lafa, 'fat.xls'))

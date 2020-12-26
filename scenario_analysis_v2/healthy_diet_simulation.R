@@ -11,12 +11,9 @@
 
 library(tidyverse)
 
-is_local <- dir.exists('Q:/')
-
-fp <- ifelse(is_local, 'Q:', '/nfs/qread-data')
-fp_diet <- file.path(fp, 'raw_data/food_consumption/diet_guidelines')
-fp_crosswalk <- file.path(fp, 'crossreference_tables')
-fp_out <- file.path(fp, 'cfs_io_analysis')
+fp_diet <- 'data/raw_data/food_consumption/diet_guidelines'
+fp_crosswalk <- 'data/crossreference_tables'
+fp_out <- 'data/cfs_io_analysis'
 
 # Read Lancet dietary guidelines
 diet_lancet <- read_csv(file.path(fp_diet, 'lancet_planetary_health_diet.csv'))
@@ -30,7 +27,7 @@ diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
 lafa_cat_lookup <- read_csv(file.path(fp_crosswalk, 'lafa_dietary_guidelines_crosswalk.csv'))
 
 # Read and clean LAFA
-source(file.path(ifelse(is_local, '~/Documents/GitHub/foodwaste', '~'), 'virtualland/download_data/clean_lafa2019.R'))
+source('download_data/clean_lafa2019.R')
 
 # Join lafa data with lookups ---------------------------------------------
 
@@ -74,8 +71,8 @@ diet_usa_wide <- diet_usa %>%
 # "Coarsen" and "refine" the diet usa wide data where appropriate:
 # whole and refined grains are not distinguished.
 # The "other" category is equivalent to calories_other and is all sugar/sweeteners.
-# Add soy and nuts&seeds for vegetarians, since LAFA has no data on soy anyway.
-# Also, add legumes as protein to legumes for vegetarians.
+# Add legumes as protein to legumes for vegetarians.
+# Note that soy is classed with nuts and seeds for the non-vegetarian diets, but needs to be separated then added to legumes for LAFA (since it will have the waste pattern of legumes).
 # Finally, eggs are separated for vegetarians. Use LAFA proportion of eggs versus other foods to split out eggs for non-vegetarian diets.
 
 diet_usa_wide_fixed <- diet_usa_wide
@@ -96,11 +93,24 @@ diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
   summarize_if(is.numeric, sum) %>%
   ungroup
 
-# Add soy to nuts seeds and soy for vegetarians, because the two aren't distinguished in LAFA.
-diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'nuts_seeds_soy'] <- diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'nuts_seeds'] + diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name == 'soy']
+# Separate soy from nuts_seeds_soy for the non-vegetarian diets
+# Then for all diets, add it to legumes (since LAFA does not distinguish soy from other legumes)
+# Use the same ratio of other nuts and seeds to soy for the veg diet, for the other two
+nut_seed_soy_veg_diet <- diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy')]
+proportion_soy_veg_diet <- nut_seed_soy_veg_diet[2] / sum(nut_seed_soy_veg_diet) # About 50%
+
+diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy'), c('us_style')] <- as.numeric(diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds_soy'), c('us_style')]) * c(1 - proportion_soy_veg_diet, proportion_soy_veg_diet)
+diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy'), c('med_style')] <- as.numeric(diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds_soy'), c('med_style')]) * c(1 - proportion_soy_veg_diet, proportion_soy_veg_diet)
 
 diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
-  filter(!name %in% c('nuts_seeds', 'soy'))
+  filter(!name %in% c('nuts_seeds_soy'))
+
+# Now add soy to legumes.
+diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'legumes', c('us_style', 'med_style', 'vegetarian')] <- diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'legumes', c('us_style', 'med_style', 'vegetarian')] + diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'soy', c('us_style', 'med_style', 'vegetarian')]
+
+# Remove soy
+diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
+  filter(!name %in% c('soy'))
 
 # Split eggs from meat, poultry, and eggs for the us style and Mediterranean diets.
 # Use the same relative proportion of meat vs. eggs from the baseline diet. (by weight)
@@ -185,3 +195,29 @@ ggplot(diet_lancet_joined_long, aes(y = calories, x = name, group = diet, fill =
   scale_fill_brewer(palette = 'Dark2') +
   theme_bw() +
   ggtitle('Comparison of baseline USA diet with the Lancet planetary health diet')
+
+
+
+# Join all with lafa ------------------------------------------------------
+###FIXME BELOW THIS LINE MUST BE EDITED
+# We need the calories per day for each of the five diets: the lafa baseline, the lancet diet, and the 3 dietary guidelines diets
+
+# For the Lancet diet and the planetary health diets, get the ratio
+
+diet_lancet_proportion <- diet_lancet_joined %>%
+  mutate(planetary_health = planetary_health / baseline) %>% 
+  select(-baseline)
+
+diet_usa_proportion <- diet_usa_joined %>%
+  mutate_at(vars(us_style, med_style, vegetarian), ~ ./baseline) %>%
+  select(-baseline, -food_group) %>%
+  rename(unit_convert_usa_diet = unit)
+
+# Correct the category names again so that they match between the lafa data frame and the diet to join data frames.
+setdiff(y=lafa_df$category_dietary_guidelines, x=diet_usa_proportion$name)
+lafa_df %>%
+  mutate(category_dietary_guidelines = case_when(
+    category_dietary_guidelines == 'other' ~ 'calories_other',
+    category_dietary_guidelines == 'meat_poultry_eggs' ~ 'meat_poultry',
+    
+  ))
