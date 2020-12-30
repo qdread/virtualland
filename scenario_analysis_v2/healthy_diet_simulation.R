@@ -140,8 +140,7 @@ lafa_sum_usa_diet_tojoin <- lafa_sum_usa_diet %>%
                               TRUE ~ food_pattern_equivalents)) %>%
   rename(name = category_dietary_guidelines) %>%
   select(name, baseline) %>%
-  mutate(name = case_when(name == 'nuts_seeds' ~ 'nuts_seeds_soy',
-                          name == 'other' ~ 'calories_other',
+  mutate(name = case_when(name == 'other' ~ 'calories_other',
                           TRUE ~ name))
 
 diet_usa_joined <- left_join(diet_usa_wide_fixed, lafa_sum_usa_diet_tojoin) %>%
@@ -199,7 +198,6 @@ ggplot(diet_lancet_joined_long, aes(y = calories, x = name, group = diet, fill =
 
 
 # Join all with lafa ------------------------------------------------------
-###FIXME BELOW THIS LINE MUST BE EDITED
 # We need the calories per day for each of the five diets: the lafa baseline, the lancet diet, and the 3 dietary guidelines diets
 
 # For the Lancet diet and the planetary health diets, get the ratio
@@ -215,9 +213,20 @@ diet_usa_proportion <- diet_usa_joined %>%
 
 # Correct the category names again so that they match between the lafa data frame and the diet to join data frames.
 setdiff(y=lafa_df$category_dietary_guidelines, x=diet_usa_proportion$name)
-lafa_df %>%
-  mutate(category_dietary_guidelines = case_when(
-    category_dietary_guidelines == 'other' ~ 'calories_other',
-    category_dietary_guidelines == 'meat_poultry_eggs' ~ 'meat_poultry',
-    
-  ))
+setdiff(y=lafa_df$category_lancet, x=diet_lancet_proportion$name)
+lafa_df_fixnames <- lafa_df %>%
+  mutate(
+    category_dietary_guidelines = case_when(
+      category_dietary_guidelines == 'other' ~ 'calories_other',
+      category_dietary_guidelines == 'meat_poultry_eggs' ~ 'meat_poultry',
+      TRUE ~ category_dietary_guidelines
+    ),
+    category_lancet = if_else(category_lancet == 'whole grains', 'grains', category_lancet)
+  )
+
+# Join up the LAFA DF with the category ratios for each diet type.
+lafa_df_joindiets <- lafa_df_fixnames %>%
+  left_join(diet_lancet_proportion, by = c('category_lancet' = 'name')) %>%
+  left_join(diet_usa_proportion %>% select(-unit_convert_usa_diet), by = c('category_dietary_guidelines' = 'name'))
+
+write_csv(lafa_df_joindiets, file.path(fp_out, 'lafa_joined_with_diet_proportions.csv'))
