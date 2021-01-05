@@ -40,17 +40,22 @@ lafa_df_joindiets <- lafa_df_joindiets %>%
 # function if baseline waste rate is expressed as a percentage
 calc_prod_factor <- function(wbase) (1 - wbase/100) / (1 - wbase/200)
 
+# Recalculate the total waste rate when modifying (1) preconsumer avoidable waste, (2) consumer avoidable waste, and (3) both
+# Based on this, calculate the production factor.
 lafa_df_joindiets <- lafa_df_joindiets %>%
-  mutate(preconsumer_waste_reduction = calc_prod_factor(loss_preconsumer_percent),
-         consumer_waste_reduction = calc_prod_factor(loss_consumer_other_percent),
-         allavoidable_waste_reduction = calc_prod_factor(loss_allavoidable_percent))
+  mutate(loss_total_percent_preconsumerreduced = 100 * (1 - (1 - loss_preconsumer_percent/200)*(1 - loss_consumer_other_percent/100)*(1 - loss_consumer_nonedible_percent/100)),
+         loss_total_percent_consumerreduced = 100 * (1 - (1 - loss_preconsumer_percent/100)*(1 - loss_consumer_other_percent/200)*(1 - loss_consumer_nonedible_percent/100)),
+         loss_total_percent_bothreduced = 100 * (1 - (1 - loss_preconsumer_percent/200)*(1 - loss_consumer_other_percent/200)*(1 - loss_consumer_nonedible_percent/100)),
+         preconsumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_preconsumerreduced),
+         consumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_consumerreduced),
+         allavoidable_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_bothreduced))
 
 # Calculate production factors for diet x waste
 # Just multiply the appropriate factors by one another. This will result in 12 additional scenarios because we have 4 alternative diets x 3 waste reduction scenarios
 diet_cols <- c('planetary_health', 'us_style', 'med_style', 'vegetarian')
-waste_cols <- c('preconsumer_waste_reduction', 'consumer_waste_reduction', 'allavoidable_waste_reduction')
+waste_cols <- c('preconsumer_waste_reduction_prod_factor', 'consumer_waste_reduction_prod_factor', 'allavoidable_waste_reduction_prod_factor')
 
-cols_df <- expand_grid(diet_cols, waste_cols) %>% mutate(newname = pmap_chr(., function(diet_cols, waste_cols) paste(diet_cols, gsub('_waste_reduction', '', waste_cols), sep = '_x_')))
+cols_df <- expand_grid(diet_cols, waste_cols) %>% mutate(newname = pmap_chr(., function(diet_cols, waste_cols) paste(diet_cols, gsub('_waste_reduction_prod_factor', '', waste_cols), sep = '_x_')))
 
 for (i in 1:nrow(cols_df)) {
   name_i <- cols_df$newname[i]
@@ -61,8 +66,4 @@ for (i in 1:nrow(cols_df)) {
 
 # Write the data frame with all production factors to CSV
 write_csv(lafa_df_joindiets, file.path(fp_out, 'lafa_with_production_factors_diet_x_waste.csv'))
-
-# FIXME Harmonize with BEA categories
-
-# FIXME Add FAO waste rates for the categories present in BEA but not LAFA (beverages)
 
