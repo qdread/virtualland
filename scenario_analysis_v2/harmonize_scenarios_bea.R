@@ -40,10 +40,12 @@ names(scenario_production_weights)[-1] <- new_names
 
 # Some code modified from the script lafa_rate_conversion.R from the foodwasteinterventions project
 
-# Load the two necessary crosswalks and LAFA category structure lookup table
+# Load the necessary crosswalks and LAFA category structure lookup table
 bea2qfahpd <- read_csv(file.path(fp_crosswalk, 'bea_qfahpd_crosswalk.csv'))
 qfahpd2lafa <- read_csv(file.path(fp_crosswalk, 'qfahpd_lafa_crosswalk.csv'))
+lafa2bea <- read_csv(file.path(fp_crosswalk, 'lafa_qfahpd_naics_crosswalk.csv'))
 lafa_struct <- read_csv(file.path(fp_crosswalk, 'lafa_category_structure.csv'))
+bea2lafa <- read_csv(file.path(fp_crosswalk, 'bea_lafa_crosswalk.csv'))
 
 # Also load the QFAHPD data so that we can get the prices.
 qfahpd2 <- read_csv('~/foodwasteinterventions/data/intermediate_output/qfahpd2.csv')
@@ -115,11 +117,106 @@ setdiff(scenario_production_weights$Category, lafa_priceperpound_all$Food)
 # Four LAFA foods still do not have a price per pound.
 # Assign the two missing flour categories a price equal to the average flour price.
 # Assign the missing fresh and processed vegetables categories the average fresh and processed vegetable prices, respectively.
-# FIXME
+extra_prices <- data.frame(Food = setdiff(scenario_production_weights$Category, lafa_priceperpound_all$Food),
+                           price = c(rep(qfahpd_agg$price[qfahpd_agg$foodgroup == 'Whole grain flour and mixes'], 2), 
+                                     lafa_priceperpound_all$price[lafa_priceperpound_all$Food == 'Fresh cabbage'],
+                                     lafa_priceperpound_all$price[lafa_priceperpound_all$Food == 'Potato chips']))
+
+lafa_priceperpound_all <- rbind(lafa_priceperpound_all, extra_prices)
 
 # Pivot longer the lafa scenario weights and join with price per pound
-scenario_weights_long <- pivot_longer(scenario_production_weights, -Category, names_to = 'scenario', values_to = 'weight') %>%
-  left_join(lafa_priceperpound_all, by = c('Category' = 'Food'))
+# These are the dollars per capita per year spent.
+# Add a category number
+scenario_weights_long <- scenario_production_weights %>%
+  mutate(LAFA_number = 1:nrow(.)) %>%
+  pivot_longer(-c(Category, LAFA_number), names_to = 'scenario', values_to = 'weight') %>%
+  left_join(lafa_priceperpound_all, by = c('Category' = 'Food')) %>%
+  mutate(value = weight * price)
 
-# FIXME Add FAO waste rates for the categories present in BEA but not LAFA (beverages)
+# Determine the LAFA categories to average, to create each BEA category.
 
+# Create list column
+string_to_number_vector <- function(x) {
+ if (x == 'all') return(1:nrow(lafa_df))
+ if (x == 'beverage') return('beverage')
+ eval(parse(text = paste0('c(', gsub(';', ',', x, fixed = TRUE), ')')))
+}
+
+bea2lafa_long <- bea2lafa %>% 
+  mutate(LAFA_codes = map(LAFA_codes, string_to_number_vector)) 
+
+bea2lafa_notbeverage <- bea2lafa_long %>% filter(map_lgl(LAFA_codes, is.numeric))
+bea2lafa_beverage <- bea2lafa_long %>% filter(!map_lgl(LAFA_codes, is.numeric))
+
+# Calculate weighted average of production rates for each BEA category other than beverages.
+scenario_values_bea_notbeverage <- bea2lafa_notbeverage %>%
+  unnest(cols = LAFA_codes) %>%
+  left_join(scenario_weights_long, by = c('LAFA_codes' = 'LAFA_number')) %>%
+  group_by(BEA_389_code, BEA_389_def, scenario) %>%
+  summarize(value = sum(value))
+  
+# Add production factors for the categories present in BEA but not LAFA (beverages)
+# For waste scenarios, use the waste rates we compiled for the Stoten paper.
+# For diet scenarios, use the production factors for sugar for soft drinks and flavored drinks. For coffee, tea, and alcohol, assume unchanged with diet.
+
+stoten_waste_rates <- read_csv('~/halvingfoodwaste/data/flw_rates.csv') # Waste rates
+diet_lancet_proportion <- read_csv('data/cfs_io_analysis/proportion_diet_lancet.csv') # Diet proportions for planetary health
+diet_usa_proportion <- read_csv('data/cfs_io_analysis/proportion_diet_usaguidelines.csv') # Diet proportions for USA guidelines
+
+# Do similar computations as in waste_reduction_simulation.R but for the beverages, and all relative to baseline of 1.
+beverage_preconsumer_waste_rates <- as.numeric(stoten_waste_rates[stoten_waste_rates$category == 'beverages', c('loss_processing_packaging', 'loss_distribution')])
+beverage_preconsumer_waste <-  1 - prod(1 - beverage_preconsumer_waste_rates) # Appx 9%
+beverage_consumer_waste <- as.numeric(stoten_waste_rates[stoten_waste_rates$category == 'beverages', c('loss_consumption')]) # 8%
+beverage_allavoidable_waste <- 1 - prod(1 - c(beverage_preconsumer_waste, beverage_consumer_waste)) # 16.5%
+
+beverage_waste_factors <- c(baseline = 1, 
+                            preconsumer = (1 - beverage_preconsumer_waste)/(1 - beverage_preconsumer_waste/2),
+                            consumer = (1 - beverage_consumer_waste)/(1 - beverage_consumer_waste/2),
+                            allavoidable = (1 - beverage_allavoidable_waste)/(1 - beverage_allavoidable_waste/2))
+
+# Diet proportions
+beverage_diet_factors <- c(baseline = 1,
+                           planetaryhealth = diet_lancet_proportion$planetary_health[diet_lancet_proportion$name == 'added sugars'],
+                           usstyle = diet_usa_proportion$us_style[diet_usa_proportion$name == 'calories_other'],
+                           medstyle = diet_usa_proportion$med_style[diet_usa_proportion$name == 'calories_other'],
+                           vegetarian = diet_usa_proportion$vegetarian[diet_usa_proportion$name == 'calories_other'])
+
+# Product
+beverage_waste_x_diet <- outer(beverage_waste_factors, beverage_diet_factors)
+# Names
+beverage_waste_x_diet_names <- outer(names(beverage_waste_factors), names(beverage_diet_factors), function(w, d) paste('D', d, 'WR', w, sep = '_')) %>%
+  as.vector
+
+softdrink_factors <- as.vector(beverage_waste_x_diet)
+
+# Non soft drinks: diet factors are 1
+harddrinks_diet_factors <- rep(1, 5)
+harddrinks_waste_x_diet <- outer(beverage_waste_factors, harddrinks_diet_factors)
+harddrink_factors <- as.vector(harddrinks_waste_x_diet)
+
+# rbind the non-beverage with beverage.
+softdrink_codes <- c('311930', '312110')
+harddrink_codes <- c('311920', '312120', '312130', '312140')
+softdrink_names <- bea2lafa$BEA_389_def[bea2lafa$BEA_389_code %in% softdrink_codes]
+harddrink_names <- bea2lafa$BEA_389_def[bea2lafa$BEA_389_code %in% harddrink_codes]
+
+scenario_values_bea_softdrinks <- map2_dfr(softdrink_codes, softdrink_names, ~ data.frame(BEA_389_code = .x,
+                                                                                          BEA_389_def = .y,
+                                                                                          scenario = beverage_waste_x_diet_names,
+                                                                                          value  = softdrink_factors))
+scenario_values_bea_harddrinks <- map2_dfr(harddrink_codes, harddrink_names, ~ data.frame(BEA_389_code = .x,
+                                                                                          BEA_389_def = .y,
+                                                                                          scenario = beverage_waste_x_diet_names,
+                                                                                          value  = harddrink_factors))
+
+scenario_values_bea <- bind_rows(scenario_values_bea_notbeverage, scenario_values_bea_softdrinks, scenario_values_bea_harddrinks)
+
+# Reshape to wide then divide everything by the baseline to get the normalized consumption factors.
+scenario_values_bea_wide <- scenario_values_bea %>%
+  pivot_wider(id_cols = c(BEA_389_code, BEA_389_def), names_from = scenario) %>%
+  select(BEA_389_code, BEA_389_def, D_baseline_WR_baseline, everything())
+
+scenario_factors_bea <- scenario_values_bea_wide %>%
+  mutate(across(where(is.numeric), ~ ./D_baseline_WR_baseline))
+
+write_csv(scenario_factors_bea, 'data/cfs_io_analysis/bea_consumption_factors_diet_waste_scenarios.csv')
