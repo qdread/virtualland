@@ -3,20 +3,20 @@
 
 # Data needed:
 # We have the county-level direct and indirect consumption, for all scenarios, with the county it originates from. (see county_level_consumption.R)
-# We have the land exchanges. (see eeio_landdata.R and impute_exchanges.R)
+# We have the land exchanges by state. (see eeio_landdata.R and impute_exchanges.R)
 
 
 # Load data ---------------------------------------------------------------
 
 library(tidyverse)
 
-is_local <- dir.exists('Q:/')
-
-fp <- ifelse(is_local, 'Q:', '/nfs/qread-data')
-fp_out <- file.path(fp, 'cfs_io_analysis')
+fp_out <- 'data/cfs_io_analysis'
 
 land_exch_imputed <- read_csv(file.path(fp_out, 'land_imputed_exchanges_wide.csv'))
-county_totaldemand2012 <- read_csv(file.path(fp_out, 'county_totaldemand2012.csv'))
+
+ag_codes <- read_csv('data/crossreference_tables/naics_crosswalk_final.csv') %>%
+  filter(substr(BEA_389_code, 1, 3) %in% c('111', '112')) %>%
+  pull(BEA_389_code)
 
 # Convert land exchanges to a satellite table -----------------------------
 
@@ -35,28 +35,11 @@ land_exch_tables <- land_exch_imputed %>%
   group_by(state, Landuse_type) %>%
   pivot_wider(names_from = Code, values_from = exchange)
 
-# state_fips <- unique(fips_codes[,c('state','state_code')]) %>%
-#   mutate(state = paste0('US_', state))
-# 
-# land_exch_tables <- land_exch_tables %>%
-#   left_join(state_fips) %>%
-#   select(state,state_code,everything())
-
-
-# Multiply state satellite tables by county vectors -----------------------
-
 # Get FIPS code of each state
 data(fips_codes,package='tidycensus')
 
 state_fips_table <- unique(fips_codes[,c('state','state_code')]) %>%
   mutate(state = paste0('US_', state))
-
-# Convert county total demand data frame to a list of vectors
-county_agdemand_2012 <- county_totaldemand2012 %>%
-  filter(BEA_code %in% names(land_exch_tables)) 
-
-county_demand_vectors <- county_agdemand_2012 %>%
-  select(-BEA_code) %>% as.list
 
 # Convert land exchange tables to a list of matrices
 # Ensure the matrix's row names are sorted the same way as the demand vectors.
@@ -65,24 +48,59 @@ land_exch_matrices <- land_exch_tables %>%
   mutate(data = map(data, function(x) {
     dat <- as.matrix(x[,-1])
     row.names(dat) <- x$Landuse_type
-    dat[, county_agdemand_2012$BEA_code]
+    dat[, ag_codes]
   }))
 
-get_county_land_consumption <- function(demand, county_code) {
-  # find the state the county belongs to
-  state_fips <- sprintf('%02d', as.integer(substr(county_code, 1, nchar(county_code) - 3)))
-  state_abbr <- state_fips_table$state[state_fips_table$state_code == state_fips]
-  # multiply the appropriate matrix by the demand vector
-  result <- land_exch_matrices$data[[which(land_exch_matrices$state == state_abbr)]] %*% demand
-  tibble(county_code = sprintf('%05d', as.integer(county_code)),
-         landuse_type = row.names(result),
-         consumption = result[,1])
+
+# Loop through scenarios and get land consumption -------------------------
+
+# We need to get the total land consumption for all counties in all scenarios, attributable to each good.
+
+consumption <- read_csv(file.path(fp_out, 'county_consumption_csvs/D_baseline_WR_baseline_wide.csv'))
+
+# Pivot consumption matrix to long form
+# Sum up incoming consumption of each county by state (land exchanges are only resolved at state level)
+
+consumption_fromstate <- consumption %>%
+  pivot_longer(-c(BEA_code, scenario, county_fips), names_to = 'county_from', values_to = 'consumption') %>%
+  mutate(state_from = substr(county_from, 1, 2)) %>%
+  group_by(BEA_code, scenario, county_fips, state_from) %>%
+  summarize(consumption = sum(consumption))
+
+# Convert this long form consumption matrix to a list of vectors
+consumption_vectors <- consumption_fromstate %>%
+  group_by(scenario, county_fips, state_from) %>%
+  nest %>%
+  mutate(data = map(data, ~ setNames(as.numeric(.$consumption), .$BEA_code)))
+
+# Get state abbreviation for the fips codes
+consumption_vectors <- consumption_vectors %>% left_join(state_fips_table, by = c('state_from' = 'state_code'))
+
+# Join consumption vectors with the land exchange table for the appropriate state
+consumption_vectors <- consumption_vectors %>%
+  left_join(land_exch_matrices, by = 'state')
+
+# Get rid of null entries for production (DC)
+consumption_vectors <- consumption_vectors %>%
+  filter(!map_lgl(data.y, is.null))
+
+# Here, data.x are the total consumption vectors and data.y are the exchange tables
+
+# Function to get properly formatted land consumption for each row
+get_land_consumption = function(data.x, data.y) {
+  data.x <- data.x[dimnames(data.y)[[2]]]
+  p <- data.y %*% data.x
+  data.frame(land_type = dimnames(data.y)[[1]], land_consumption = p)
 }
 
-# Actually do the multiplication to find county land consumption!
-county_land_consumption <- map2_dfr(county_demand_vectors, names(county_totaldemand2012)[-1], get_county_land_consumption)
 
-# Write the result to CSV
-write_csv(county_land_consumption, file.path(fp_out, 'county_landconsumption2012.csv'))
-####FIXME THIS IS NOT CORRECT! Obviously the county level exchange is not right.
-#### We need to instead begin with county-level consumption of goods, figure out where those were produced, and only then get the land footprint.
+# Do the matrix multiplication for each row to get the land consumption!
+consumption_vectors <- consumption_vectors %>%
+  mutate(land_consumption = map2(data.x, data.y, get_land_consumption))
+
+# Unnest list column
+land_consumption <- consumption_vectors %>%
+  select(scenario, county_fips, state_from, land_consumption) %>%
+  unnest(land_consumption)
+
+
