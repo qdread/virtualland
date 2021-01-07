@@ -110,6 +110,7 @@ county_consumption_allocated_wide_df <- county_consumption_allocated_wide %>%
 
 # To make this slightly more feasible, split by scenario and write to csvs individually per scenario (longform)
 county_consumption_allocated_wide_df %>%
+  ungroup %>%
   group_split(scenario, .keep = TRUE) %>%
   walk(~ write_csv(., file.path(fp_out, 'county_consumption_csvs', paste0(.$scenario[1], '_wide.csv'))))
   
