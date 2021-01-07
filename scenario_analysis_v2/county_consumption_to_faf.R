@@ -2,17 +2,16 @@
 # Aggregate and/or downscale BEA county production to FAF region
 # QDR / Virtualland / 17 Dec 2020
 
+# Modified 07 Jan 2021: also write out county level production because we don't necessarily need to aggregate to FAF.
+
 # Load data ---------------------------------------------------------------
 
 library(tidyverse)
 library(sf)
 
-is_local <- dir.exists('Q:/')
-
-fp <- ifelse(is_local, 'Q:', '/nfs/qread-data')
-fp_out <- file.path(fp, 'cfs_io_analysis')   
-fp_crosswalk <- file.path(fp, 'crossreference_tables')
-fp_faf <- file.path(fp, 'raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions')
+fp_out <- 'data/cfs_io_analysis'
+fp_crosswalk <- 'data/crossreference_tables'
+fp_faf <- 'data/raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions'
 
 # Consumption by county
 county_totaldemand2012 <- read_csv(file.path(fp_out, 'county_totaldemand2012.csv'))
@@ -70,6 +69,9 @@ production_counties <- inner_join(county_weightings, production_states, by = c('
   mutate(production_county_downscaled = production * n_establishments/sum(n_establishments)) %>%
   replace_na(list(production_county_downscaled= 0)) %>%
   mutate(county_fips = paste0(state_fips, county_fips))
+
+# Write county production to CSV
+write_csv(production_counties, file.path(fp_out, 'county_production2012.csv'))
 
 # Reaggregate downscaled county production to faf -------------------------
 
