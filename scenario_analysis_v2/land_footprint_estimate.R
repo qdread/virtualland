@@ -22,8 +22,8 @@ ag_codes <- read_csv('data/crossreference_tables/naics_crosswalk_final.csv') %>%
 
 # N rows = 3 (subset land exchanges for only annual crops, pasture, and permanent crops)
 # There are only 10 BEA codes accounted for in those land use types. (other crops are split between annual and permanent)
-# So each satellite table will be 3x11 for each state.
-# Then, multiply the appropriate state's satellite table by each county's vector (again subset for the 11 codes)
+# So each satellite table will be 3x10 for each state.
+# Then, multiply the appropriate state's satellite table by each county's vector (again subset for the 10 codes)
 
 land_exch_tables <- land_exch_imputed %>%
   filter(Landuse_type %in% c('Annual crops', 'Permanent crops', 'Pasture')) %>%
@@ -55,55 +55,79 @@ land_exch_matrices <- land_exch_tables %>%
 # Loop through scenarios and get land consumption -------------------------
 
 # We need to get the total land consumption for all counties in all scenarios, attributable to each good.
-
-consumption <- read_csv(file.path(fp_out, 'county_consumption_csvs/D_baseline_WR_baseline_wide.csv'))
-
-# Consumption: convert to USD (currently in million USD)
-consumption <- consumption %>% mutate(across(where(is.numeric), ~ . * 1e6))
-
-# Pivot consumption matrix to long form
-# Sum up incoming consumption of each county by state (land exchanges are only resolved at state level)
-
-consumption_fromstate <- consumption %>%
-  pivot_longer(-c(BEA_code, scenario, county_fips), names_to = 'county_from', values_to = 'consumption') %>%
-  mutate(state_from = substr(county_from, 1, 2)) %>%
-  group_by(BEA_code, scenario, county_fips, state_from) %>%
-  summarize(consumption = sum(consumption))
-
-# Convert this long form consumption matrix to a list of vectors
-consumption_vectors <- consumption_fromstate %>%
-  group_by(scenario, county_fips, state_from) %>%
-  nest %>%
-  mutate(data = map(data, ~ setNames(as.numeric(.$consumption), .$BEA_code)))
-
-# Get state abbreviation for the fips codes
-consumption_vectors <- consumption_vectors %>% left_join(state_fips_table, by = c('state_from' = 'state_code'))
-
-# Join consumption vectors with the land exchange table for the appropriate state
-consumption_vectors <- consumption_vectors %>%
-  left_join(land_exch_matrices, by = 'state')
-
-# Get rid of null entries for production (DC)
-consumption_vectors <- consumption_vectors %>%
-  filter(!map_lgl(data.y, is.null))
-
-# Here, data.x are the total consumption vectors and data.y are the exchange tables
-
-# Function to get properly formatted land consumption for each row
-get_land_consumption = function(data.x, data.y) {
-  data.x <- data.x[dimnames(data.y)[[2]]]
-  p <- data.y %*% data.x
-  data.frame(land_type = dimnames(data.y)[[1]], land_consumption = p)
+# Define function to do this for a single scenario.
+land_consumption_by_scenario <- function(diet, waste) {
+  
+  consumption <- read_csv(file.path('/nfs/qread-data/cfs_io_analysis/county_consumption_csvs', paste('D', diet, 'WR', waste, 'wide.csv', sep = '_')))
+  
+  # Consumption: convert to USD (currently in million USD)
+  consumption <- consumption %>% mutate(across(where(is.numeric), ~ . * 1e6))
+  
+  # Pivot consumption matrix to long form
+  # Sum up incoming consumption of each county by state (land exchanges are only resolved at state level)
+  
+  consumption_fromstate <- consumption %>%
+    pivot_longer(-c(BEA_code, scenario, county_fips), names_to = 'county_from', values_to = 'consumption') %>%
+    mutate(state_from = substr(county_from, 1, 2)) %>%
+    group_by(BEA_code, scenario, county_fips, state_from) %>%
+    summarize(consumption = sum(consumption))
+  
+  # Convert this long form consumption matrix to a list of vectors
+  consumption_vectors <- consumption_fromstate %>%
+    group_by(scenario, county_fips, state_from) %>%
+    nest %>%
+    mutate(data = map(data, ~ setNames(as.numeric(.$consumption), .$BEA_code)))
+  
+  # Get state abbreviation for the fips codes
+  consumption_vectors <- consumption_vectors %>% left_join(state_fips_table, by = c('state_from' = 'state_code'))
+  
+  # Join consumption vectors with the land exchange table for the appropriate state
+  consumption_vectors <- consumption_vectors %>%
+    left_join(land_exch_matrices, by = 'state')
+  
+  # Get rid of null entries for production (DC)
+  consumption_vectors <- consumption_vectors %>%
+    filter(!map_lgl(data.y, is.null))
+  
+  # Here, data.x are the total consumption vectors and data.y are the exchange tables
+  
+  # Function to get properly formatted land consumption for each row
+  get_land_consumption = function(data.x, data.y) {
+    data.x <- data.x[dimnames(data.y)[[2]]]
+    p <- data.y %*% data.x
+    data.frame(land_type = dimnames(data.y)[[1]], land_consumption = p)
+  }
+  
+  
+  # Do the matrix multiplication for each row to get the land consumption!
+  consumption_vectors <- consumption_vectors %>%
+    mutate(land_consumption = map2(data.x, data.y, get_land_consumption))
+  
+  # Unnest list column
+  land_consumption <- consumption_vectors %>%
+    select(scenario, county_fips, state_from, land_consumption) %>%
+    unnest(land_consumption) 
+  
+  write_csv(land_consumption, file.path('/nfs/qread-data/cfs_io_analysis/county_land_consumption_csvs', paste('D', diet, 'WR', waste, 'landconsumption.csv', sep = '_')))
+  
 }
 
+scenario_combos <- expand_grid(diet = c('baseline','planetaryhealth','usstyle','medstyle','vegetarian'),
+                               waste = c('baseline','preconsumer','consumer','allavoidable'))
 
-# Do the matrix multiplication for each row to get the land consumption!
-consumption_vectors <- consumption_vectors %>%
-  mutate(land_consumption = map2(data.x, data.y, get_land_consumption))
+library(rslurm)
 
-# Unnest list column
-land_consumption <- consumption_vectors %>%
-  select(scenario, county_fips, state_from, land_consumption) %>%
-  unnest(land_consumption)
+sjob <- slurm_apply(land_consumption_by_scenario, scenario_combos, 
+                    jobname = 'county_land', nodes = 4, cpus_per_node = 2, 
+                    global_objects = c('land_exch_matrices', 'state_fips_table'),
+                    slurm_options = list(partition = 'sesync'))
 
+
+# Read in results and combine to one DF -----------------------------------
+
+output_files <- dir('data/cfs_io_analysis/county_land_consumption_csvs', full.names = TRUE)
+
+land_consumption_allscenarios <- map_dfr(output_files, read_csv)
+
+write_csv(land_consumption_allscenarios, 'data/cfs_io_analysis/county_land_consumption_allscenarios.csv')
 
