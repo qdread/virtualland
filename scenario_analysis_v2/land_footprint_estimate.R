@@ -58,6 +58,9 @@ land_exch_matrices <- land_exch_tables %>%
 
 consumption <- read_csv(file.path(fp_out, 'county_consumption_csvs/D_baseline_WR_baseline_wide.csv'))
 
+# Consumption: convert to USD (currently in million USD)
+consumption <- consumption %>% mutate(across(where(is.numeric), ~ . * 1e6))
+
 # Pivot consumption matrix to long form
 # Sum up incoming consumption of each county by state (land exchanges are only resolved at state level)
 

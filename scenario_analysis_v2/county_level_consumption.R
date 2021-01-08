@@ -49,13 +49,14 @@ scenario_vectors_bea <- scenario_factors_bea %>%
   nest(data = c(BEA_389_code, BEA_389_def, value)) %>%
   mutate(consumption_factor = map(data, ~ expand_vec(.$BEA_389_code, .$value)))
 
-# Cross product of PCE 2012 vector and the normalized county income 2012 vector
+# Normalize the county income 2012 vector
 county_income_norm2012 <- setNames(county_income$total_income_2012/sum(county_income$total_income_2012), county_income$FIPS)
 
-# County consumption for each scenario.
+# County consumption for each scenario: personal consumption vector multiplied elementwise by the consumption factor for the scenario
+# then take the cross product with the county income normalized vector.
 county_consumption2012 <- scenario_vectors_bea %>%
   select(-data) %>%
-  mutate(county_consumption = map(consumption_factor, ~ . %*% t(county_income_norm2012)))
+  mutate(county_consumption = map(consumption_factor, ~ pce2012 * . %*% t(county_income_norm2012)))
 # Each element of the consumption list is a 389 x 3143 matrix, each row is a good and each column a county.
 # It represents the consumption in each of the 20 scenarios.
 # Units are million USD.
