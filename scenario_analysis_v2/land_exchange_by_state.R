@@ -27,10 +27,14 @@ nass_bea <- nass_bea %>%
 
 nass_bea <- nass_bea %>%
   mutate(total_land = annual_cropland + permanent_cropland + pastureland,
-         land_exchange = total_land/receipts,
+         land_exchange = total_land / receipts,
          annual_cropland_exchange = annual_cropland / receipts,
          permanent_cropland_exchange = permanent_cropland / receipts,
          pastureland_exchange = pastureland / receipts)
+
+# Replace NA with zeroes
+nass_bea <- nass_bea %>%
+  mutate(across(contains('exchange'), ~ if_else(is.nan(.), 0, .)))
 
 # Reshape data to desired format ------------------------------------------
 

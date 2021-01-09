@@ -83,6 +83,7 @@ sjob <- slurm_apply(land_consumption_by_scenario, scenario_combos,
                     global_objects = c('land_exch_tables'),
                     slurm_options = list(partition = 'sesync'))
 
+cleanup_files(sjob)
 
 # Read in results and combine to one DF -----------------------------------
 
