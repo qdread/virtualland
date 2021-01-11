@@ -109,7 +109,7 @@ cdqt_imputed <- mice(data = as.data.frame(cdqt_to_impute), m = 10, seed = 222, m
 
 cdqt_imputed_complete <- complete(cdqt_imputed) %>%
   mutate_at(vars(n_operations:n_workers), ~ round(exp(.) - 1)) %>%
-  rename_at(vars(labor_hired_expense:n_workers), ~ paste(., 'imputed', sep = '_'))
+  rename_at(vars(receipts:n_workers), ~ paste(., 'imputed', sep = '_'))
 
 
 # Join imputed with real data and replace ---------------------------------
@@ -117,7 +117,7 @@ cdqt_imputed_complete <- complete(cdqt_imputed) %>%
 # Only replace the ones that are needed to replace
 
 cdqt_naics_wide_withimp <- cdqt_naics_wide %>%
-  left_join(cdqt_imputed_complete)
+  left_join(cdqt_imputed_complete %>% select(-n_operations))
 
 # Manipulate this wide DF to long form to put the imputed column side by side with the non imputed column.
 cdqt_naics_withimp <- cdqt_naics_wide_withimp %>%
