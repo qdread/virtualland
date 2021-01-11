@@ -142,6 +142,7 @@ nass1111 <- nass_naics %>%
   select(-grain, -oilseed) %>%
   pivot_longer(cols = c(proportion_grain, proportion_oilseed), names_to = 'crop', values_to = 'proportion') %>%
   mutate(receipts = round(receipts * proportion),
+         income = round(income * proportion),
          n_workers = round(n_workers * proportion),
          cropland = round(cropland * proportion),
          pastureland = round(pastureland * proportion))

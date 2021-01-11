@@ -1,6 +1,6 @@
 # Annual and permanent cropland.
 
-source('FAF/combine_nass_susb_weightings.r') # To produce nass_naics_edited
+source('FAF/combine_nass_susb_weightings.r') # To produce nass_naics_edited, nass_naics_notredundant_modified, and nass_bea_lookup
 
 nass_naics_join_bea <- nass_naics_edited %>%
   filter(NAICS %in% nass_naics_notredundant_modified) %>%
@@ -18,6 +18,6 @@ nass_naics_join_bea <- nass_naics_join_bea %>%
 
 nass_bea_receipts_land <- nass_naics_join_bea %>%
   group_by(state_fips, state_abbrev, state_name, BEA_code) %>%
-  summarize(across(c(n_operations, labor_hired_expense, labor_contract_expense, receipts, n_workers, annual_cropland, permanent_cropland, pastureland), sum))
+  summarize(across(c(n_operations, labor_hired_expense, labor_contract_expense, income, receipts, n_workers, annual_cropland, permanent_cropland, pastureland), sum))
 
 write_csv(nass_bea_receipts_land, 'data/cfs_io_analysis/nass_workers_receipts_3landtypes_bea.csv')
