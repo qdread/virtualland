@@ -99,6 +99,9 @@ all(county_consumption2012$BEA_code[1:388] == dimnames(drc2012)[[1]]) # Already 
 
 drc2012_mat <- as.matrix(drc2012)
 
+# Take Leontief inverse
+leontief_inverse2012 <- solve(diag(nrow(drc2012_mat)) - drc2012_mat)
+
 # Convert county consumption data frame back to a list column of matrices.
 county_demand2012 <- county_consumption2012 %>%
   group_by(scenario) %>%
@@ -108,13 +111,10 @@ county_demand2012 <- county_consumption2012 %>%
 # Then sum indirect and total demand.
 county_demand2012 <- county_demand2012 %>%
   mutate(directdemand = map(directdemand, ~ as.matrix(.x[, -1]))) %>%
-  mutate(indirectdemand = map(directdemand, ~ apply(.x, 2, function(f) drc2012_mat %*% f))) %>%
-  mutate(totaldemand = map2(directdemand, indirectdemand, ~ .x + .y))
+  mutate(totaldemand = map(directdemand, ~ apply(.x, 2, function(f) leontief_inverse2012 %*% f))) 
 
 # Combine everything into a single data frame for each demand type.
 
-county_indirectdemand2012 <- cbind(county_consumption2012[,c('BEA_code', 'scenario')], do.call(rbind, county_demand2012$indirectdemand))
 county_totaldemand2012 <- cbind(county_consumption2012[,c('BEA_code', 'scenario')], do.call(rbind, county_demand2012$totaldemand))
 
-write_csv(county_indirectdemand2012, 'data/cfs_io_analysis/county_indirectdemand2012_allscenarios.csv')  
 write_csv(county_totaldemand2012, 'data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv')

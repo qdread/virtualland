@@ -51,3 +51,16 @@ demand_ag <- demand[dimnames(demand)[[1]] %in% names(land_exch_tables), ]
 cal_land_exch <- land_exch_matrices$data[[6]]
 
 cal_land_exch %*% demand_ag / 1e6
+
+
+# Check consumption totals ------------------------------------------------
+
+totaldemand <- read_csv('data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv')
+# Summed by code and scenario.
+demandlong <- totaldemand %>% pivot_longer(-c(BEA_code,scenario),names_to='county')
+demandsums <- demandlong %>% group_by(BEA_code, scenario) %>%
+  summarize(value=sum(value))
+
+demandbase <- demandsums %>% filter(scenario == "D_baseline_WR_baseline")
+
+# Check how this compares to the receipts for the whole country. For example we have 20BN 1111A0, 72BN 1111B0, etc.

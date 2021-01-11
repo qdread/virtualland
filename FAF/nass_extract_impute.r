@@ -3,6 +3,7 @@
 # QDR / FWE / 09 Dec 2019
 
 # Modified 19 May 2020: include land area in the variables to impute
+# Modified 11 Jan 2021: include commodity total receipts in the variables to impute
 
 library(tidyverse)
 library(mice)
@@ -27,7 +28,7 @@ cdqt_land <- cdqt %>%
 cdqt_naics <- cdqt %>%
   filter(grepl('^NAICS', X14)) %>%
   filter(!grepl('AND', X14)) %>%
-  filter(grepl('FARM OPERATIONS|LABOR|INCOME|ACRES', X6)) %>%
+  filter(grepl('FARM OPERATIONS|LABOR|INCOME|ACRES|COMMODITY TOTALS', X6)) %>%
   filter(!grepl('ENVIRONMENTAL', X5)) %>%
   filter(!grepl('PRACTICES', X6)) %>%
   filter(!grepl('FARM OPERATIONS, ORGANIZATION', X6, fixed = TRUE)) %>% # this seems fairly unnecessary.
@@ -59,10 +60,11 @@ vars_to_use <- c('FARM OPERATIONS - NUMBER OF OPERATIONS',
                  'LABOR, HIRED - EXPENSE, MEASURED IN $',
                  'LABOR, CONTRACT - EXPENSE, MEASURED IN $',
                  'INCOME, FARM-RELATED - RECEIPTS, MEASURED IN $',
+                 'COMMODITY TOTALS, INCL GOVT PROGRAMS - RECEIPTS, MEASURED IN $',
                  'LABOR, HIRED - NUMBER OF WORKERS',
                  'AG LAND, CROPLAND - ACRES',
                  'AG LAND, PASTURELAND, (EXCL CROPLAND & WOODLAND) - ACRES')
-vars_shortnames <- c('n_operations', 'labor_hired_expense', 'labor_contract_expense', 'receipts', 'n_workers', 'cropland', 'pastureland')
+vars_shortnames <- c('n_operations', 'labor_hired_expense', 'labor_contract_expense', 'income', 'receipts', 'n_workers', 'cropland', 'pastureland')
 
 
 cdqt_naics <- cdqt_naics %>%
@@ -80,13 +82,13 @@ naicstoremove <- cdqt_naics_wide %>% group_by(NAICS) %>%
   summarize(no_data = all(labor_hired_expense == 0 & labor_contract_expense == 0 & receipts == 0 & n_workers == 0))
 
 cdqt_naics_wide <- cdqt_naics_wide %>%
-  filter(!NAICS %in% naicstoremove$NAICS[naicstoremove$no_data]) # There are 304 missing values out of 4858 so can be imputed.
+  filter(!NAICS %in% naicstoremove$NAICS[naicstoremove$no_data]) # There are 374 missing values out of 5552 (694*8) so can be imputed.
 
 # If there are spurious zeroes, convert them to NA.
 map(cdqt_naics_wide, ~ sum(. == 0, na.rm = TRUE))
 
 cdqt_naics_wide <- cdqt_naics_wide %>%
-  mutate_at(vars(labor_hired_expense, receipts, cropland, pastureland, n_workers), ~ if_else(. == 0, as.numeric(NA), .))
+  mutate_at(vars(labor_hired_expense, income, receipts, cropland, pastureland, n_workers), ~ if_else(. == 0, as.numeric(NA), .))
 
 # Repivot to long form.
 cdqt_naics <- cdqt_naics_wide %>%

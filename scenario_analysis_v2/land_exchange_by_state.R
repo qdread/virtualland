@@ -1,6 +1,7 @@
 # Calculation of land exchanges for states
 # QDR / Virtualland / 08 Jan 2021
 
+# Modified 11 Jan 2021: correct denominator of receipts for land exchanges (total receipts of commodity, not farm-related income)
 
 # Load data ---------------------------------------------------------------
 
