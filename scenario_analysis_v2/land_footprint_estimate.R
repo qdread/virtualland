@@ -27,17 +27,13 @@ land_consumption_by_scenario <- function(diet, waste) {
   consumption <- consumption %>% mutate(across(where(is.numeric), ~ . * 1e6))
   
   # Pivot consumption matrix to long form
-  # Sum up incoming consumption of each county by state (land exchanges are only resolved at state level)
-  
-  consumption_fromstate <- consumption %>%
+  consumption_fromcty <- consumption %>%
     pivot_longer(-c(BEA_code, scenario, county_fips), names_to = 'county_from', values_to = 'consumption') %>%
-    mutate(state_from = substr(county_from, 1, 2)) %>%
-    group_by(BEA_code, scenario, county_fips, state_from) %>%
-    summarize(consumption = sum(consumption))
+    mutate(state_from = substr(county_from, 1, 2)) 
   
   # Convert this long form consumption matrix to a list of vectors
-  consumption_vectors <- consumption_fromstate %>%
-    group_by(scenario, county_fips, state_from) %>%
+  consumption_vectors <- consumption_fromcty %>%
+    group_by(scenario, county_fips, state_from, county_from) %>%
     nest %>%
     mutate(consumption = map(data, ~ setNames(as.numeric(.$consumption), .$BEA_code))) %>%
     select(-data)
@@ -50,23 +46,20 @@ land_consumption_by_scenario <- function(diet, waste) {
   consumption_vectors <- consumption_vectors %>%
     filter(!map_lgl(land_exchange, is.null))
   
-  # Here, data.x are the total consumption vectors and data.y are the exchange tables
-  
   # Function to get properly formatted land consumption for each row
   get_land_consumption = function(consumption, land_exchange) {
     consumption <- consumption[dimnames(land_exchange)[[2]]] # Ensures both are sorted the same.
     p <- land_exchange %*% consumption
     data.frame(land_type = dimnames(land_exchange)[[1]], land_consumption = p)
   }
-  
-  
+
   # Do the matrix multiplication for each row to get the land consumption!
   consumption_vectors <- consumption_vectors %>%
     mutate(land_consumption = map2(consumption, land_exchange, get_land_consumption))
   
   # Unnest list column
   land_consumption <- consumption_vectors %>%
-    select(scenario, county_fips, state_from, land_consumption) %>%
+    select(scenario, county_fips, state_from, county_from, land_consumption) %>%
     unnest(land_consumption) 
   
   write_csv(land_consumption, file.path('/nfs/qread-data/cfs_io_analysis/county_land_consumption_csvs', paste('D', diet, 'WR', waste, 'landconsumption.csv', sep = '_')))
