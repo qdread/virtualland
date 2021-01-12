@@ -16,7 +16,7 @@ fp_out <- 'data/cfs_io_analysis'
 
 # Load county and TNC polygons
 tncmap <- st_read(dsn = 'data/raw_data/landuse/ecoregions', layer = 'tnc_usa_aea')
-countymap <- st_read(dsn = '/nfs/public-data/GADM/USA_adm', layer = 'USA_adm2')
+countymap <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k')
 
 county_aea <- st_transform(countymap, st_crs(tncmap))
 
@@ -103,11 +103,11 @@ hi_pop <- raster::extract(higrid_aea, countytncmap, fun = function(x, ...) sum(x
 ak_pop <- raster::extract(akgrid_aea, countytncmap, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
 akeast_pop <- raster::extract(akeastgrid_aea, countytncmap, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
 
-# Combine all four sections into one data frame.
+# Combine all three sections into one data frame. (no AK east)
 county_tnc_pop_all <- Reduce(left_join, list(county_tnc_pop, hi_pop, ak_pop))
 
 # Check that there is only one non-NA per row
-table(apply(county_tnc_pop_all[,-1], 1, function(x) sum(!is.na(x)))) # one has both.
+table(apply(county_tnc_pop_all[,-1], 1, function(x) sum(!is.na(x)))) 
 
 county_tnc_pop_all <- county_tnc_pop_all %>%
   group_by(ID) %>%
@@ -117,7 +117,7 @@ county_tnc_pop_df <- countytncmap %>%
   mutate(pop = county_tnc_pop_all$pop)
 
 ggplot(county_tnc_pop_df) +
-  geom_sf(aes(fill = pop)) +
+  geom_sf(aes(fill = pop), color = NA) +
   scale_fill_viridis_c()
 
 write_csv(county_tnc_pop_df %>% st_drop_geometry, file.path(fp_out, 'population_county_x_TNC.csv'))
@@ -132,12 +132,12 @@ write_csv(county_tnc_pop_df %>% st_drop_geometry, file.path(fp_out, 'population_
 
 countytncpop <- county_tnc_pop_df %>% 
   st_drop_geometry %>%
-  select(ID_1, ID_2, NAME_1, NAME_2, ECO_CODE, pop) %>%
-  setNames(c('id_state', 'id_county', 'name_state', 'name_county', 'TNC', 'pop'))
+  dplyr::select(STATEFP, COUNTYFP, NAME, ECO_CODE, pop) %>%
+  setNames(c('state_fips', 'county_fips', 'name_county', 'TNC', 'pop'))
 
 # Make into a big sparse matrix
 countytncmat <- countytncpop %>%
-  pivot_wider(id_cols = c(id_state, id_county, name_state, name_county), names_from = TNC, values_from = pop, values_fill = 0)
+  pivot_wider(id_cols = c(state_fips, county_fips, name_county), names_from = TNC, values_from = pop, values_fill = 0)
 
 # This could now be normalized by row totals or by column totals to get the incoming or outgoing weights.
 # Save just the three column matrix which will not take up as much space.

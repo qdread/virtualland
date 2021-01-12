@@ -77,12 +77,3 @@ sjob <- slurm_apply(land_consumption_by_scenario, scenario_combos,
                     slurm_options = list(partition = 'sesync'))
 
 cleanup_files(sjob)
-
-# Read in results and combine to one DF -----------------------------------
-
-output_files <- dir('data/cfs_io_analysis/county_land_consumption_csvs', full.names = TRUE)
-
-land_consumption_allscenarios <- map_dfr(output_files, read_csv)
-
-write_csv(land_consumption_allscenarios, 'data/cfs_io_analysis/county_land_consumption_allscenarios.csv')
-
