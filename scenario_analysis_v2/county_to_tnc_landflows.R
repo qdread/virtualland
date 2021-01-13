@@ -76,7 +76,7 @@ county_flows_to_tnc_flows <- function(diet, waste) {
     ungroup
   
   # Save totals to CSV
-  write_csv(flows_tnc_to_county, paste('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D', diet, 'WR', waste, 'landflows_tnc_to_county.csv'))
+  write_csv(flows_tnc_to_county, paste('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D', diet, 'WR', waste, 'landflows_tnc_to_county.csv', sep = '_'))
   
   # Use population weights to get TNC x TNC transfers 
   
@@ -108,7 +108,7 @@ county_flows_to_tnc_flows <- function(diet, waste) {
   
   
   # Save outputs to CSVs
-  write_csv(flows_tnc_to_county, paste('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D', diet, 'WR', waste, 'landflows_tnc_to_county.csv'))
+  write_csv(flows_tnc_agg, paste('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D', diet, 'WR', waste, 'landflows_tnc_to_tnc.csv', sep = '_'))
   
 }
 
@@ -120,10 +120,16 @@ scenario_combos <- expand_grid(diet = c('baseline','planetaryhealth','usstyle','
 
 library(rslurm)
 
-sjob <- slurm_apply(land_consumption_by_scenario, scenario_combos, 
-                    jobname = 'convert_flows', nodes = 4, cpus_per_node = 2, 
-                    global_objects = c('county_tnc_weights'),
-                    slurm_options = list(partition = 'sesync'))
+sjob_convertflows <- slurm_apply(county_flows_to_tnc_flows, scenario_combos, 
+                                 jobname = 'convert_flows', nodes = 5, cpus_per_node = 2, 
+                                 global_objects = c('county_tnc_weights'),
+                                 slurm_options = list(partition = 'sesync'))
 
-cleanup_files(sjob)
+cleanup_files(sjob_convertflows)
 
+
+# Combine ecoregion flows into single file --------------------------------
+
+flows_tnc_all <- pmap_dfr(scenario_combos, function(diet, waste) glue::glue('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D_{diet}_WR_{waste}_landflows_tnc_to_tnc.csv') %>% read_csv)
+
+write_csv(flows_tnc_all, file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_all_scenarios.csv'))
