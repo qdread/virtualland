@@ -41,7 +41,6 @@ names(scenario_production_weights)[-1] <- new_names
 # Some code modified from the script lafa_rate_conversion.R from the foodwasteinterventions project
 
 # Load the necessary crosswalks and LAFA category structure lookup table
-bea2qfahpd <- read_csv(file.path(fp_crosswalk, 'bea_qfahpd_crosswalk.csv'))
 qfahpd2lafa <- read_csv(file.path(fp_crosswalk, 'qfahpd_lafa_crosswalk.csv'))
 lafa2bea <- read_csv(file.path(fp_crosswalk, 'lafa_qfahpd_naics_crosswalk.csv'))
 lafa_struct <- read_csv(file.path(fp_crosswalk, 'lafa_category_structure.csv'))
@@ -51,8 +50,6 @@ bea2lafa <- read_csv(file.path(fp_crosswalk, 'bea_lafa_crosswalk.csv'))
 qfahpd2 <- read_csv('~/foodwasteinterventions/data/intermediate_output/qfahpd2.csv')
 
 # Convert the comma-separated string columns to list columns.
-bea2qfahpd <- bea2qfahpd %>%
-  mutate(QFAHPD_code = strsplit(QFAHPD_code, ';'))
 qfahpd2lafa <- qfahpd2lafa %>%
   mutate(LAFA_names = strsplit(LAFA_names, ';'))
 
