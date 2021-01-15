@@ -183,4 +183,23 @@ cbp_county_bea <- cbp_bea %>%
 cbp_nass_county_bea <- bind_rows(nass_county_bea, ungroup(cbp_county_bea)) 
 
 
+# Correct Bedford City VA -------------------------------------------------
+
+# This modification added 15 Jan 2021. Bedford City (51515) was added to Bedford County (51019), VA.
+bedford_city <- cbp_nass_county_bea %>% filter(state_fips %in% "51", county_fips %in% "515")
+bedford_county <- cbp_nass_county_bea %>% filter(state_fips %in% "51", county_fips %in% "019")
+bedford_joined <- full_join(bedford_city, bedford_county, by = c('state_fips', 'BEA_code')) %>%
+  mutate(n_establishments = pmap_dbl(., function(n_establishments.x,n_establishments.y,...) sum(n_establishments.x,n_establishments.y,na.rm=TRUE)),
+         n_employees = pmap_dbl(., function(n_employees.x,n_employees.y,...) sum(n_employees.x,n_employees.y,na.rm=TRUE)),
+         q1_payroll = pmap_dbl(., function(q1_payroll.x,q1_payroll.y,...) sum(q1_payroll.x,q1_payroll.y,na.rm=TRUE)),
+         annual_payroll = pmap_dbl(., function(annual_payroll.x,annual_payroll.y,...) sum(annual_payroll.x,annual_payroll.y,na.rm=TRUE)),
+         county_fips = rep("019", nrow(.)),
+         county_name = rep("BEDFORD", nrow(.))) %>%
+  select(state_fips, county_fips, county_name, BEA_code, n_establishments, n_employees, q1_payroll, annual_payroll)
+
+# Remove old Bedford City and County data from the weighting dataframe and add the new summed County data to it.
+cbp_nass_county_bea <- cbp_nass_county_bea %>%
+  filter(!(state_fips %in% '51' & county_fips %in% c('019', '515'))) %>%
+  bind_rows(bedford_joined)
+
 write_csv(cbp_nass_county_bea, file.path(fp_out, 'county_weightings_for_downscale.csv'))

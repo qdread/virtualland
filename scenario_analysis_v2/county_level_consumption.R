@@ -2,6 +2,7 @@
 # Find by multiplying the total PCE for each BEA category from the input-output table (2012) times the percentage of personal income
 # that each county consists of, out of the USA total.
 
+# Modification 15 Jan 2021: correct Bedford City being merged with Bedford County, VA
 # Modification 06 Jan 2021: add the alternative scenarios as well as the baseline.
 
 # Final consumer expenditures ---------------------------------------------
@@ -22,6 +23,10 @@ names(county_income) <- c('FIPS', 'state_FIPS', 'county_FIPS', 'state_name', 'co
 # Remove state total rows
 # Modified 17 Dec 2020: do not remove DC.
 county_income <- county_income %>% filter(county_FIPS != 0 | state_FIPS == 11) %>% select(-state_name)
+
+# Modified 15 Jan 2021: convert total income of Bedford County VA to the weighted mean of Bedford City and Bedford County
+county_income$total_income_2012[county_income$FIPS == 51019] <- sum(county_income$total_income_2012[county_income$FIPS %in% c(51515, 51019)])
+county_income <- filter(county_income, !FIPS %in% 51515)
 
 # Read the input-output BEA table to get the personal consumption expenditure for each good.
 use2012 <- read_csv(file.path(fp_bea, 'use2012.csv'))
