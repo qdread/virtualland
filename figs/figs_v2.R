@@ -31,13 +31,21 @@ bea_scenario_factors <- read_csv('data/cfs_io_analysis/bea_consumption_factors_d
 ### State land exchange tables
 load('data/cfs_io_analysis/state_land_exchange_tables.RData')
 
-# Flows of goods and land between counties are loaded below (individually by scenario)
+# For flows of goods and land between counties, land between ecoregions, and species between ecoregions,
+# I've loaded only the summed data here. The raw data can be loaded separately later (some are big).
+
+# Flows of goods between counties
+county_goods_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/goodsflows_county_sums_all_scenarios.csv')
+
+# Flows of land between counties
+county_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_county_sums_all_scenarios.csv')
 
 # Flows of land between ecoregions
-tnc_landflows <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_x_tnc_all_scenarios.csv')
+tnc_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_sums_all_scenarios.csv')
+#tnc_landflows <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_x_tnc_all_scenarios.csv')
 
-# Flows of species 
-
+# Flows of species extinctions between ecoregions
+tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
 
 # Food consumption differences among scenarios ----------------------------
 
@@ -45,12 +53,9 @@ tnc_landflows <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_x_tnc_al
 
 # Flows of goods between counties -----------------------------------------
 
-fp_goods <- 'data/cfs_io_analysis/county_consumption_csvs'
 
 
 # Flows of land between counties ------------------------------------------
-
-fp_landcounties <- 'data/cfs_io_analysis/county_landconsumption_csvs'
 
 
 # Flows of land between ecoregions ----------------------------------------
