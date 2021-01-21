@@ -2,6 +2,8 @@
 # QDR / Virtualland / 12 Jan 2021
 # copied and modified from scenario_prelim_biodiv.R
 
+# modified 21 Jan 2021: correct bug in case_when
+
 # We have the biodiversity model results with characterization factors for amphibians, birds, mammals, and reptiles.
 # Annual crops, permanent crops, pasture, managed forests, and urban landuse
 
@@ -37,7 +39,8 @@ chaudsi2018 <- read_csv(file.path(fp_chaud, 'chaud2018si_CFs.csv'), col_types = 
 chaudsi_processed <- chaudsi2018 %>%
   filter(region_type %in% 'ecoregion', land_use %in% c('crop', 'pasture', 'plantation'), unit %in% 'potential species loss y m-2') %>%
   mutate(land_use = case_when(land_use == 'crop' ~ 'annual',
-                              land_use == 'plantation' ~ 'permanent')) %>%
+                              land_use == 'plantation' ~ 'permanent',
+                              land_use == 'pasture' ~ 'pasture')) %>%
   select(-region_type, -unit)
 
 # Join land transfers and characterization factors for each scenario

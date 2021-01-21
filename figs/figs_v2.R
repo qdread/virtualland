@@ -47,6 +47,20 @@ tnc_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_sum
 # Flows of species extinctions between ecoregions
 tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
 
+
+# Plotting functions/themes -----------------------------------------------
+
+# Order levels for the different scenarios
+diet_levels_ordered <- c('baseline', 'planetaryhealth', 'usstyle', 'medstyle', 'vegetarian')
+waste_levels_ordered <- c('baseline', 'preconsumer', 'consumer', 'allavoidable')
+
+theme_set(theme_bw() + theme(strip.background = element_blank()))
+fill_dark <- scale_fill_brewer(palette = 'Dark2')
+
+# Diet differences among scenarios ----------------------------------------
+
+
+
 # Food consumption differences among scenarios ----------------------------
 
 
@@ -63,4 +77,34 @@ tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_los
 
 # Flows of extinctions between ecoregions ---------------------------------
 
+# Sum across land types and show by intensity. Make a different plot for each taxon.
+plot_tax_intensity <- function(dat) {
+  ggplot(dat, aes(x = intensity, y = flow_outbound, fill = intensity)) +
+    geom_violin() +
+    facet_grid(scenario_diet ~ scenario_waste) +
+    fill_dark
+}
 
+taxon_intensity_plots <- tnc_extinction_flow_sums %>%
+  mutate(intensity = factor(intensity, levels = c('low','med','high'))) %>%
+  group_by(scenario_diet, scenario_waste, intensity, taxon, TNC) %>%
+  summarize(flow_outbound = sum(flow_outbound), flow_inbound = sum(flow_inbound)) %>%
+  group_by(taxon) %>% 
+  nest %>%
+  mutate(plot = map(data, plot_tax_intensity))
+
+# The intensity does not appear to have any real difference so let's go with medium intensity.
+# Total across all taxa, show land use based flows for each scenario.
+
+# Ecoregion level
+tnc_extinction_med_alltaxa <- tnc_extinction_flow_sums %>%
+  filter(intensity == 'med') %>%
+  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
+         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>%
+  group_by(scenario_diet, scenario_waste, land_use, TNC) %>%
+  summarize(flow_outbound = sum(flow_outbound), flow_inbound = sum(flow_inbound))
+  
+ggplot(tnc_extinction_med_alltaxa, aes(x = land_use, y = flow_outbound, fill = land_use)) +
+  geom_violin() +
+  facet_grid(scenario_diet ~ scenario_waste) +
+  fill_dark
