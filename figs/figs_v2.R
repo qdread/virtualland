@@ -53,6 +53,7 @@ tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_los
 # Order levels for the different scenarios
 diet_levels_ordered <- c('baseline', 'planetaryhealth', 'usstyle', 'medstyle', 'vegetarian')
 waste_levels_ordered <- c('baseline', 'preconsumer', 'consumer', 'allavoidable')
+land_levels_ordered <- c('annual', 'permanent', 'pasture')
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 fill_dark <- scale_fill_brewer(palette = 'Dark2')
@@ -100,7 +101,8 @@ taxon_intensity_plots <- tnc_extinction_flow_sums %>%
 tnc_extinction_med_alltaxa <- tnc_extinction_flow_sums %>%
   filter(intensity == 'med') %>%
   mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
-         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>%
+         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered),
+         land_use = factor(land_use, levels = land_levels_ordered)) %>%
   group_by(scenario_diet, scenario_waste, land_use, TNC) %>%
   summarize(flow_outbound = sum(flow_outbound), flow_inbound = sum(flow_inbound))
   
@@ -108,3 +110,16 @@ ggplot(tnc_extinction_med_alltaxa, aes(x = land_use, y = flow_outbound, fill = l
   geom_violin() +
   facet_grid(scenario_diet ~ scenario_waste) +
   fill_dark
+
+# High level sums
+extinction_sums_byscenario <- tnc_extinction_med_alltaxa %>%
+  group_by(scenario_diet, scenario_waste, land_use) %>%
+  summarize(extinction = sum(flow_outbound, na.rm = TRUE))
+  
+# Plot
+ggplot(extinction_sums_byscenario, aes(y = extinction, x = scenario_diet, group = scenario_waste, fill = scenario_waste)) +
+  geom_col(position = 'dodge') +
+  facet_wrap(~ land_use, nrow = 3) +
+  fill_dark +
+  labs(x = 'diet scenario', fill = 'waste scenario') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'species committed to extinction')

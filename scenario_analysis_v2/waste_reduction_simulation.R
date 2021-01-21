@@ -2,6 +2,8 @@
 # Add to existing "diet simulation" data frame
 # QDR / Virtual land / 5 Jan 2021
 
+# Modified 21 Jan 2021: Debug, correcting error in how production factors are gotten
+
 library(tidyverse)
 
 fp_diet <- 'data/raw_data/food_consumption/diet_guidelines'
@@ -37,8 +39,8 @@ lafa_df_joindiets <- lafa_df_joindiets %>%
 # Use existing waste rates to calculate the production factor needed if waste is reduced by 50%
 # Production factor is (1-base waste / (1-basewaste/2))
 
-# function if baseline waste rate is expressed as a percentage
-calc_prod_factor <- function(wbase) (1 - wbase/100) / (1 - wbase/200)
+# function if baseline waste rate and counterfactual waste rate are expressed as a percentage
+calc_prod_factor <- function(w_base, w_new) (1 - w_base/100) / (1 - w_new/100)
 
 # Recalculate the total waste rate when modifying (1) preconsumer avoidable waste, (2) consumer avoidable waste, and (3) both
 # Based on this, calculate the production factor.
@@ -46,9 +48,9 @@ lafa_df_joindiets <- lafa_df_joindiets %>%
   mutate(loss_total_percent_preconsumerreduced = 100 * (1 - (1 - loss_preconsumer_percent/200)*(1 - loss_consumer_other_percent/100)*(1 - loss_consumer_nonedible_percent/100)),
          loss_total_percent_consumerreduced = 100 * (1 - (1 - loss_preconsumer_percent/100)*(1 - loss_consumer_other_percent/200)*(1 - loss_consumer_nonedible_percent/100)),
          loss_total_percent_bothreduced = 100 * (1 - (1 - loss_preconsumer_percent/200)*(1 - loss_consumer_other_percent/200)*(1 - loss_consumer_nonedible_percent/100)),
-         preconsumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_preconsumerreduced),
-         consumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_consumerreduced),
-         allavoidable_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent_bothreduced))
+         preconsumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent, loss_total_percent_preconsumerreduced),
+         consumer_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent, loss_total_percent_consumerreduced),
+         allavoidable_waste_reduction_prod_factor = calc_prod_factor(loss_total_percent, loss_total_percent_bothreduced))
 
 # Calculate production factors for diet x waste
 # Just multiply the appropriate factors by one another. This will result in 12 additional scenarios because we have 4 alternative diets x 3 waste reduction scenarios
