@@ -5,12 +5,17 @@ fileInfo <- pmap_dfr(scenario_combos, function(diet, waste) glue::glue('data/cfs
 # Files last modified before Jan 11 16:00 must be rerun
 lubridate::day(fileInfo$ctime)
 
-jobstorun <- which(fileInfo$ctime < as.POSIXct("2021-01-11 16:00:00"))
+jobstorun <- which(fileInfo$ctime < as.POSIXct("2021-01-20 16:00:00"))
 
-sjob <- slurm_apply(land_consumption_by_scenario, scenario_combos[jobstorun, ], 
-                    jobname = 'county_land2', nodes = 2, cpus_per_node = 1, 
+sjob2 <- slurm_apply(land_consumption_by_scenario, scenario_combos[jobstorun, ], 
+                    jobname = 'county_land2', nodes = 5, cpus_per_node = 2, 
                     global_objects = c('land_exch_tables'),
                     slurm_options = list(partition = 'sesync'))
+
+sjob3 <- slurm_apply(land_consumption_by_scenario, scenario_combos[9, ], 
+                     jobname = 'county_land3', nodes = 1, cpus_per_node = 1, 
+                     global_objects = c('land_exch_tables'),
+                     slurm_options = list(partition = 'sesync'))
 
 # Read one and see if it is OK.
 x <- read_csv('data/cfs_io_analysis/county_land_consumption_csvs/D_baseline_WR_baseline_landconsumption.csv', n_max = 10)
