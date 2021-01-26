@@ -141,3 +141,30 @@ for (intensity in intensity_values) {
 
 tnc_extinction_flows <- map_dfr(intensity_values, ~ cbind(intensity = ., read_csv(glue::glue('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios_{.}.csv'))))
 write_csv(tnc_extinction_flows, 'data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
+
+
+# Total demand sums -------------------------------------------------------
+
+### County-level consumption and production
+county_production <- read_csv('data/cfs_io_analysis/county_production2012.csv')
+county_consumption <- read_csv('data/cfs_io_analysis/county_consumption2012_allscenarios.csv') # 320 MB
+county_totaldemand <- read_csv('data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv') # 430 MB
+
+source('figs/figs_v2_lookups.R')
+
+# Need to reshape county_totaldemand, sum across counties, and possibly calculate relative to baseline.
+totaldemand_sums <- cbind(county_totaldemand[,c('BEA_code', 'scenario')], demand = rowSums(county_totaldemand[,-(1:2)])) %>%
+  separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>% 
+  select(-d, -w) %>%
+  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
+         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>% 
+  right_join(ag_names_lookup, by = c('BEA_code' = 'BEA_389_code'))
+
+# Correct such that greenhouse crops are added to peanuts and sugar.
+totaldemand_sums <- totaldemand_sums %>%
+  mutate(BEA_code = if_else(BEA_code == '111400', '111900', BEA_code),
+         short_name = fct_collapse(short_name, `peanuts, sugar, etc.` = c('greenhouse crops', 'peanuts, sugar, etc.'))) %>%
+  group_by(BEA_code, short_name, kingdom, scenario_diet, scenario_waste) %>%
+  summarize(demand = sum(demand))
+
+write_csv(totaldemand_sums, 'data/cfs_io_analysis/scenarios/totaldemand_sums_all_scenarios.csv')

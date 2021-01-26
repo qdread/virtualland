@@ -17,15 +17,19 @@
 library(tidyverse)
 library(cowplot) # For labels of faceted plots
 
+fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs'
+
 ### Diet
 diet_lancet <- read_csv('data/cfs_io_analysis/proportion_diet_lancet.csv')
 diet_usa <- read_csv('data/cfs_io_analysis/proportion_diet_usaguidelines.csv')
 lafa_joined <- read_csv('data/cfs_io_analysis/lafa_joined_with_diet_proportions.csv')
 
 ### County-level consumption and production
-county_production <- read_csv('data/cfs_io_analysis/county_production2012.csv')
-county_consumption <- read_csv('data/cfs_io_analysis/county_consumption2012_allscenarios.csv') # 320 MB
-county_totaldemand <- read_csv('data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv') # 430 MB
+# I've loaded only the summed data here. The raw data can be loaded separately later (some are big).
+# county_production <- read_csv('data/cfs_io_analysis/county_production2012.csv')
+# county_consumption <- read_csv('data/cfs_io_analysis/county_consumption2012_allscenarios.csv') # 320 MB
+# county_totaldemand <- read_csv('data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv') # 430 MB
+totaldemand_sums <- read_csv('data/cfs_io_analysis/scenarios/totaldemand_sums_all_scenarios.csv')
 
 ### Scenario factors by BEA category
 bea_scenario_factors <- read_csv('data/cfs_io_analysis/bea_consumption_factors_diet_waste_scenarios.csv')
@@ -49,49 +53,8 @@ tnc_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_sum
 # Flows of species extinctions between ecoregions
 tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
 
-
-# Plotting functions/themes -----------------------------------------------
-
-# Order levels for the different scenarios
-diet_levels_ordered <- c('baseline', 'planetaryhealth', 'usstyle', 'medstyle', 'vegetarian')
-waste_levels_ordered <- c('baseline', 'preconsumer', 'consumer', 'allavoidable')
-land_levels_ordered <- c('annual', 'permanent', 'pasture')
-
-# Lookup tables for longer legend names
-diet_long_names <- data.frame(scenario_diet = diet_levels_ordered,
-                              long_name = c('baseline', 'planetary health (Lancet)', 'healthy US-style (USDA)', 'healthy Mediterranean-style (USDA)', 'healthy vegetarian (USDA)'))
-waste_long_names <- data.frame(scenario_waste = waste_levels_ordered,
-                               long_name = c('baseline', 'pre-consumer waste cut 50%', 'consumer waste cut 50%', 'all waste cut 50%'))
-
-# Labeller function with character vector lookup tables for 2x2 scenarios
-scenario_labeller <- labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet),
-                              scenario_waste = setNames(waste_long_names$long_name, waste_long_names$scenario_waste))
-
-# Short names of the ten agricultural goods in BEA, plus wild-caught fish
-ag_names_lookup <- data.frame(
-  BEA_389_code = c("1111A0", "1111B0", "111200", "111300", "111400", "111900", "112120", "1121A0", "112300", "112A00", "114000"
-  ), 
-  BEA_389_def = c("Fresh soybeans, canola, flaxseeds, and other oilseeds",
-                  "Fresh wheat, corn, rice, and other grains", 
-                  "Fresh vegetables, melons, and potatoes", 
-                  "Fresh fruits and tree nuts", 
-                  "Greenhouse crops, mushrooms, nurseries, and flowers", 
-                  "Tobacco, cotton, sugarcane, peanuts, sugar beets, herbs and spices, and other crops", 
-                  "Dairies", 
-                  "Cattle ranches and feedlots", 
-                  "Poultry farms", 
-                  "Animal farms and aquaculture ponds (except cattle and poultry)", 
-                  "Wild-caught fish and game"),
-  short_name = c('oilseeds & soybeans', 'grains', 'vegetables & potatoes', 'fruits & nuts', 'greenhouse crops', 'peanuts, sugar, etc.', 'dairy', 'beef cattle', 'poultry & eggs', 'other meat', 'wild-caught fish'),
-  kingdom = rep(c('plant', 'animal'), c(6, 5))) %>%
-  mutate(short_name = factor(short_name, levels = unique(short_name)))
-
-theme_set(theme_bw() + theme(strip.background = element_blank()))
-fill_dark <- scale_fill_brewer(palette = 'Dark2')
-okabe_colors <- palette.colors(n = 9, palette = 'Okabe-Ito')
-
-# Function to make a "dummy axis" so I can label the secondary axis.
-dummy_axis <- function(label) sec_axis(~ . , name = label, labels = NULL, breaks = NULL)
+# Plotting functions/themes, and lookup tables/vectors of names for plot labels.
+source('figs/figs_v2_lookups.R')
 
 # Diet differences among scenarios ----------------------------------------
 
@@ -118,41 +81,30 @@ lafa_cal_summ <- lafa_cal_by_diet %>%
                                 TRUE ~ food_group),
          diet = factor(gsub('_', '', diet), levels = diet_levels_ordered))
 
-ggplot(lafa_cal_summ %>% mutate(), aes(y = calories_day, x = food_group, color = diet, fill = diet, group = diet)) +
+p_diet_foodgroups <- ggplot(lafa_cal_summ %>% mutate(), aes(y = calories_day, x = food_group, color = diet, fill = diet, group = diet)) +
   geom_col(position = 'dodge', color = NA) +
   scale_fill_manual(values = okabe_colors[c(1,7,3,4,5)] %>% setNames(NA), labels = diet_long_names$long_name) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'calories per person per day') +
   scale_x_discrete(name = 'food group') +
-  theme(legend.position = 'bottom') +
-  guides(fill=guide_legend(nrow = 2, byrow=FALSE))
+  theme(legend.position = 'bottom',
+        legend.text = element_text(size = rel(.6))) +
+  guides(fill=guide_legend(nrow = 2, byrow = FALSE))
+
+ggsave(file.path(fp_fig, 'foodgroup_consumption_by_diet.png'), p_diet_foodgroups, height = 5, width = 6, dpi = 400)
 
 # Goods consumption differences among scenarios ---------------------------
 
 # This is by BEA code across diet change and waste change scenarios.
-# It also accounts for the "footprint" of consumption, so for instance meat consumption would reflect the consumption of feed.
-# Filter down to the ten primary agricultural goods in the BEA table.
+# It also accounts for the "footprint" of consumption, so for instance meat consumption would reflect the consumption of feed (need to check this)
 
-
-# Need to reshape county_totaldemand, sum across counties, and possibly calculate relative to baseline.
-totaldemand_sums <- cbind(county_totaldemand[,c('BEA_code', 'scenario')], demand = rowSums(county_totaldemand[,-(1:2)])) %>%
-  separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>% 
-  select(-d, -w) %>%
-  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
-         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>% 
-  right_join(ag_names_lookup, by = c('BEA_code' = 'BEA_389_code'))
-
-# Correct such that greenhouse crops are added to peanuts and sugar.
+# Reorder factors in loaded CSV.
 totaldemand_sums <- totaldemand_sums %>%
-  mutate(BEA_code = if_else(BEA_code == '111400', '111900', BEA_code),
-         short_name = fct_collapse(short_name, `peanuts, sugar, etc.` = c('greenhouse crops', 'peanuts, sugar, etc.'))) %>%
-  group_by(BEA_code, short_name, kingdom, scenario_diet, scenario_waste) %>%
-  summarize(demand = sum(demand))
+  mutate(short_name = factor(short_name, levels = unique(short_name)),
+         scenario_diet = factor(scenario_diet, levels = unique(scenario_diet)),
+         scenario_waste = factor(scenario_waste, levels = unique(scenario_waste)))
 
 # Absolute values
-
-library(cowplot)
-
-p <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
+p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
   geom_col(aes(fill = kingdom)) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
@@ -162,9 +114,11 @@ p <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = 'none')
 
-ggdraw(p + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+p_totaldemand_sums <- ggdraw(p_totaldemand_sums + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
   draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
   draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
+
+ggsave(file.path(fp_fig, 'total_consumption_all_scenarios.png'), p_totaldemand_sums, height = 9, width = 12, dpi = 400)
 
 # Relative to baseline. Must reconstruct the darn scenarios again.
 totaldemand_relative <- totaldemand_sums %>%
@@ -175,7 +129,7 @@ totaldemand_relative <- totaldemand_sums %>%
   mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
          scenario_waste = factor(scenario_waste, levels = waste_levels_ordered))
 
-p <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
+p_totaldemand_relative <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
   geom_col(aes(fill = kingdom)) +
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
@@ -186,10 +140,11 @@ p <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = 'none')
 
-ggdraw(p + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
   draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
   draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
 
+ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_totaldemand_relative, height = 9, width = 12, dpi = 400)
 
 ### Deprecated: plot with bea_factors (does not account for the full footprint, it's just the final demand)
 bea_factors_long <- bea_scenario_factors %>%
@@ -262,9 +217,29 @@ extinction_sums_byscenario <- tnc_extinction_med_alltaxa %>%
   summarize(extinction = sum(flow_outbound, na.rm = TRUE))
   
 # Plot
-ggplot(extinction_sums_byscenario, aes(y = extinction, x = scenario_diet, group = scenario_waste, fill = scenario_waste)) +
+diet_medium_names <- c('baseline', 'planetary\nhealth', 'healthy\nUS-style', 'healthy\nMediterranean', 'vegetarian')
+
+# Fixed y axis
+p_extinction_sums_fixed <- ggplot(extinction_sums_byscenario, aes(y = extinction, x = scenario_diet, group = scenario_waste, fill = scenario_waste)) +
   geom_col(position = 'dodge') +
   facet_wrap(~ land_use, nrow = 3) +
-  fill_dark +
-  labs(x = 'diet scenario', fill = 'waste scenario') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'species committed to extinction')
+  scale_x_discrete(name = 'diet scenario', labels = diet_medium_names) +
+  scale_fill_brewer(name = 'waste scenario', palette = 'Dark2', labels = waste_long_names$long_name) +
+  scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.03))) +
+  theme(legend.position = 'bottom', 
+        legend.text = element_text(size = rel(.7))) +
+  guides(fill=guide_legend(nrow = 2, byrow = FALSE))
+
+# Free y axis
+p_extinction_sums_free <- ggplot(extinction_sums_byscenario, aes(y = extinction, x = scenario_diet, group = scenario_waste, fill = scenario_waste)) +
+  geom_col(position = 'dodge') +
+  facet_wrap(~ land_use, nrow = 3, scales = 'free_y') +
+  scale_x_discrete(name = 'diet scenario', labels = diet_medium_names) +
+  scale_fill_brewer(name = 'waste scenario', palette = 'Dark2', labels = waste_long_names$long_name) +
+  scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.03))) +
+  theme(legend.position = 'bottom', 
+        legend.text = element_text(size = rel(.7))) +
+  guides(fill=guide_legend(nrow = 2, byrow = FALSE))
+
+ggsave(file.path(fp_fig, 'extinction_sums_fixed_y.png'), p_extinction_sums_fixed, height = 7, width = 5, dpi = 400)
+ggsave(file.path(fp_fig, 'extinction_sums_free_y.png'), p_extinction_sums_free, height = 7, width = 5, dpi = 400)
