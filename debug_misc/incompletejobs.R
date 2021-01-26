@@ -12,7 +12,7 @@ sjob2 <- slurm_apply(land_consumption_by_scenario, scenario_combos[jobstorun, ],
                     global_objects = c('land_exch_tables'),
                     slurm_options = list(partition = 'sesync'))
 
-sjob3 <- slurm_apply(land_consumption_by_scenario, scenario_combos[9, ], 
+sjob3 <- slurm_apply(land_consumption_by_scenario, scenario_combos[5, ], 
                      jobname = 'county_land3', nodes = 1, cpus_per_node = 1, 
                      global_objects = c('land_exch_tables'),
                      slurm_options = list(partition = 'sesync'))
@@ -27,5 +27,10 @@ jobstorun <- which(fileInfo$ctime < as.POSIXct("2021-01-12 21:00:00"))
 
 sjob_convertflows <- slurm_apply(county_flows_to_tnc_flows, scenario_combos[jobstorun, ], 
                                  jobname = 'convert_flows', nodes = 1, cpus_per_node = 4, preschedule_cores = FALSE,
+                                 global_objects = c('county_tnc_weights'),
+                                 slurm_options = list(partition = 'sesync'))
+
+sjob_convertflows <- slurm_apply(county_flows_to_tnc_flows, scenario_combos[5, ], 
+                                 jobname = 'convert_flows', nodes = 1, cpus_per_node = 1, preschedule_cores = FALSE,
                                  global_objects = c('county_tnc_weights'),
                                  slurm_options = list(partition = 'sesync'))

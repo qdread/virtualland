@@ -55,6 +55,7 @@ tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_los
 
 # Plotting functions/themes, and lookup tables/vectors of names for plot labels.
 source('figs/figs_v2_lookups.R')
+source('figs/us_map_fxns.R')
 
 # Diet differences among scenarios ----------------------------------------
 
@@ -172,6 +173,21 @@ bea_factors_long %>%
 
 # Flows of land between counties ------------------------------------------
 
+# Map: total inbound flows
+
+# Get index of alaska and hawaii. AK 02 HI 15
+county_land_ak_idx <- substr(county_land_flow_sums$county, 1, 2) == '02'
+county_land_hi_idx <- substr(county_land_flow_sums$county, 1, 2) == '15'
+
+# Annual cropland, permanent cropland, pastureland, and total.
+# Do this for all 20 scenarios.
+# FIXME edit this
+county_land_inbound_maps <- county_land_flow_sums %>%
+  group_by(scenario_diet, scenario_waste, land_type) %>%
+  nest %>%
+  mutate(map = )
+
+draw_usmap_with_insets(map_data = county_land_flow_sums, ak_idx = county_land_ak_idx, hi_idx = county_land_hi_idx, variable, title, scale_name = 'Value\n(billion $)', scale_factor = 1000, add_theme = theme_void())
 
 # Flows of land between ecoregions ----------------------------------------
 
