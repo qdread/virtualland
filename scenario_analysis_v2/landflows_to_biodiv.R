@@ -19,6 +19,7 @@
 # Load data ---------------------------------------------------------------
 
 library(tidyverse)
+library(vroom)
 
 fp_out <- 'data/cfs_io_analysis'
 fp_chaud <- 'data/raw_data/biodiversity/chaudhary2015SI'
@@ -26,10 +27,10 @@ fp_chaud <- 'data/raw_data/biodiversity/chaudhary2015SI'
 # Needed data to load: domestic (later foreign) virtual land transfers, characterization factors from Chaudhary
 
 # VLT for the four scenarios, TNC x TNC
-vlt_scenarios <- read_csv(file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_all_scenarios.csv'), col_types = 'cccddd')
+vlt_scenarios <- vroom(file.path(fp_out, 'scenarios/landflows_tnc_x_tnc_all_scenarios.csv'), col_types = 'cccddd')
 
 # Updated characterization factors from Chaudhary and Brooks 2018
-chaudsi2018 <- read_csv(file.path(fp_chaud, 'chaud2018si_CFs.csv'), col_types = 'cccccccccd')
+chaudsi2018 <- vroom(file.path(fp_chaud, 'chaud2018si_CFs.csv'), col_types = 'cccccccccd')
 
 # Join CF and VLT ---------------------------------------------------------
 

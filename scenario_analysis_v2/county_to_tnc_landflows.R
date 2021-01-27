@@ -47,7 +47,6 @@ county_flows_to_tnc_flows <- function(diet, waste) {
   # Widen county to county land flows data
   flows <- flows %>% 
     mutate(land_type = gsub('_exchange', '', land_type)) %>%
-    rename(county_to = county_fips) %>%
     select(-state_from) %>%
     pivot_wider(id_cols = c(scenario, county_to, county_from), names_from = land_type, values_from = land_consumption)
   

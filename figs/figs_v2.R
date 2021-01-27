@@ -185,24 +185,18 @@ county_land_maps <- county_land_flow_sums %>%
   nest
 
 # Match up the sf object for county boundaries with one of the county land data subsets.
-county_map <- county_map %>% mutate(county = paste0(STATEFP, COUNTYFP))
-setdiff(county_land_maps$data[[1]]$county, county_map$county) # three need to be corrected.
-# DC is recorded as 11000 in data, 11001 in the maps.
-# 
+setdiff(county_land_maps$data[[1]]$county, county_map$county) # All were already fixed in county_aea.R.
 
 # Get index of alaska and hawaii. AK 02 HI 15
-county_land_ak_idx <- substr(county_land_flow_sums$county, 1, 2) == '02'
-county_land_hi_idx <- substr(county_land_flow_sums$county, 1, 2) == '15'
+county_ak_idx <- substr(county_map$county, 1, 2) == '02'
+county_hi_idx <- substr(county_map$county, 1, 2) == '15'
 
 # Annual cropland, permanent cropland, pastureland, and total.
 # Do this for all 20 scenarios.
-county_land_maps <- county_land_flow_sums %>%
-  mutate(flow_net = flow_outbound - flow_inbound) %>%
-  group_by(scenario_diet, scenario_waste, land_type) %>%
-  nest %>%
-  mutate(map_inbound = map(data, ~ draw_usmap_with_insets(map_data = ., 
-                                                          ak_idx = substr(.$county, 1, 1) == '02',
-                                                          hi_idx = substr(.$county, 1, 2) == '15',
+county_land_maps <- county_land_maps %>%
+  mutate(map_inbound = map(data, ~ draw_usmap_with_insets(map_data = left_join(county_map, .), 
+                                                          ak_idx = county_ak_idx,
+                                                          hi_idx = county_hi_idx,
                                                           variable = flow_inbound,
                                                           title = 'land imported by county',
                                                           scale_name = 'land area (ha)',
