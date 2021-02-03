@@ -4,7 +4,7 @@
 
 # QDR / Virtualland / 11 Jan 2021
 # (copied and modified from cfs_tnc_intersect.R)
-
+# Modified 29 Jan 2021: Use "fixed" county_aea that has the fixed county names. (the one created in county_aea.R)
 
 # Perform intersect -------------------------------------------------------
 
@@ -16,9 +16,7 @@ fp_out <- 'data/cfs_io_analysis'
 
 # Load county and TNC polygons
 tncmap <- st_read(dsn = 'data/raw_data/landuse/ecoregions', layer = 'tnc_usa_aea')
-countymap <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k')
-
-county_aea <- st_transform(countymap, st_crs(tncmap))
+county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
 county_tnc <- st_intersection(county_aea, tncmap) 

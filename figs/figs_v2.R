@@ -17,6 +17,7 @@
 library(tidyverse)
 library(cowplot) # For labels of faceted plots
 library(sf)
+library(glue)
 
 fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs'
 
@@ -56,10 +57,17 @@ tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_los
 
 # Map of counties in AEA
 county_map <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
+# Map of TNC ecoregions in AEA
+tnc_map <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 
 # Plotting functions/themes, and lookup tables/vectors of names for plot labels.
 source('figs/figs_v2_lookups.R')
 source('figs/us_map_fxns.R')
+
+# Remove areas other than the 50 states plus DC from county_map. (anything beginning with 6 or 7)
+county_map <- county_map %>% filter(!substr(STATEFP,1,1) %in% c('6','7'))
+# Now the 3141 counties and county equivalents match up between the data and the map.
+
 
 # Diet differences among scenarios ----------------------------------------
 
@@ -177,10 +185,20 @@ bea_factors_long %>%
 
 # Flows of land between counties ------------------------------------------
 
+# Sum up the flows across all land types
+county_land_flow_sumalltypes <- county_land_flow_sums %>%
+  group_by(scenario_diet, scenario_waste, county) %>%
+  summarize(flow_inbound = sum(flow_inbound), flow_outbound = sum(flow_outbound)) %>%
+  mutate(land_type = 'total_agricultural_land') %>%
+  ungroup
+
 # Group and nest the county landflow dataframe.
+# Replace the zero flows with NA in the outbound ones.
 county_land_maps <- county_land_flow_sums %>%
+  bind_rows(county_land_flow_sumalltypes) %>%
   arrange(scenario_diet, scenario_waste, land_type, county) %>%
-  mutate(flow_net = flow_outbound - flow_inbound) %>%
+  mutate(flow_net = flow_outbound - flow_inbound,
+         flow_outbound = if_else(flow_outbound == 0, as.numeric(NA), flow_outbound)) %>%
   group_by(scenario_diet, scenario_waste, land_type) %>%
   nest
 
@@ -191,22 +209,111 @@ setdiff(county_land_maps$data[[1]]$county, county_map$county) # All were already
 county_ak_idx <- substr(county_map$county, 1, 2) == '02'
 county_hi_idx <- substr(county_map$county, 1, 2) == '15'
 
+# Calculate global scale for log breaks
+range(county_land_flow_sumalltypes$flow_inbound)
+range(county_land_flow_sumalltypes$flow_outbound[county_land_flow_sumalltypes$flow_outbound > 0], na.rm = TRUE)
+
+county_land_breaks <- c(2e1, 2e3, 2e5, 2e7)
+
 # Annual cropland, permanent cropland, pastureland, and total.
 # Do this for all 20 scenarios.
+# Log10 transformation is best for viewing pattern. 
 county_land_maps <- county_land_maps %>%
-  mutate(map_inbound = map(data, ~ draw_usmap_with_insets(map_data = left_join(county_map, .), 
-                                                          ak_idx = county_ak_idx,
-                                                          hi_idx = county_hi_idx,
-                                                          variable = flow_inbound,
-                                                          title = 'land imported by county',
-                                                          scale_name = 'land area (ha)',
-                                                          scale_factor = 10000,
-                                                          add_theme = theme_void())))
-
-draw_usmap_with_insets(map_data = county_land_flow_sums, ak_idx = county_land_ak_idx, hi_idx = county_land_hi_idx, variable, title, scale_name = 'Value\n(billion $)', scale_factor = 1000, add_theme = theme_void())
+  ungroup %>%
+  mutate(plot_title = pmap(county_land_maps[, c('land_type','scenario_diet','scenario_waste')], 
+                           function(land_type, scenario_diet, scenario_waste) 
+                             list(land_type = gsub('_', ' ', land_type), 
+                                  diet_name = diet_long_names$long_name[match(scenario_diet, diet_long_names$scenario_diet)], 
+                                  waste_name = waste_long_names$long_name[match(scenario_waste, waste_long_names$scenario_waste)],
+                                  file_prefix = glue('D_{scenario_diet}_W_{scenario_waste}_{land_type}')))) %>%
+  mutate(map_inbound = map2(data, plot_title, 
+                            ~ draw_usmap_with_insets(map_data = left_join(county_map, .x), 
+                                                     ak_idx = county_ak_idx,
+                                                     hi_idx = county_hi_idx,
+                                                     variable = flow_inbound,
+                                                     title = glue('{.y$land_type} imported by county'),
+                                                     subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
+                                                     scale_name = 'area (ha)',
+                                                     scale_factor = 10000,
+                                                     scale_trans = 'log10',
+                                                     scale_range = county_land_breaks[c(1,4)],
+                                                     scale_breaks = county_land_breaks,
+                                                     add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
+                                                                                      legend.key.width = unit(0.23, 'in')),
+                                                     write_to_file = glue('{fp_fig}/county_landflow_maps/{.y$file_prefix}_inbound.png'),
+                                                     img_size = c(7, 7))),
+         map_outbound = map2(data, plot_title,
+                             ~ draw_usmap_with_insets(map_data = left_join(county_map, .x), 
+                                                      ak_idx = county_ak_idx,
+                                                      hi_idx = county_hi_idx,
+                                                      variable = flow_outbound,
+                                                      title = glue('{.y$land_type} exported by county'),
+                                                      subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
+                                                      scale_name = 'area (ha)',
+                                                      scale_factor = 10000,
+                                                      scale_trans = 'log10',
+                                                      scale_range = county_land_breaks[c(1,4)],
+                                                      scale_breaks = county_land_breaks,
+                                                      add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
+                                                                                       legend.key.width = unit(0.23, 'in')),
+                                                      write_to_file = glue('{fp_fig}/county_landflow_maps/{.y$file_prefix}_outbound.png'),
+                                                      img_size = c(7, 7))))
 
 # Flows of land between ecoregions ----------------------------------------
 
+# Sum up the flows across all land types
+tnc_land_flow_sumalltypes <- tnc_land_flow_sums %>%
+  group_by(scenario_diet, scenario_waste, TNC) %>%
+  summarize(flow_inbound = sum(flow_inbound), flow_outbound = sum(flow_outbound)) %>%
+  mutate(land_type = 'total agricultural land') %>%
+  ungroup
+
+# Group and nest the county landflow dataframe.
+tnc_land_maps <- tnc_land_flow_sums %>%
+  bind_rows(tnc_land_flow_sumalltypes) %>%
+  arrange(scenario_diet, scenario_waste, land_type, TNC) %>%
+  mutate(flow_net = flow_outbound - flow_inbound,
+         flow_outbound = if_else(flow_outbound == 0, as.numeric(NA), flow_outbound)) %>%
+  group_by(scenario_diet, scenario_waste, land_type) %>%
+  nest
+
+# Match up the sf object for TNC boundaries with one of the TNC land data subsets.
+setdiff(tnc_land_maps$data[[1]]$TNC, tnc_map$ECO_CODE) 
+
+# Get index of alaska and hawaii. 
+tnc_ak_idx <- substr(tnc_map$ECO_CODE, 1, 4) %in% c('NA06', 'NA11') | tnc_map$ECO_CODE %in% c('NA0509', 'NA0518')
+tnc_hi_idx <- substr(tnc_map$ECO_CODE, 1, 2) == 'OC'
+
+# Annual cropland, permanent cropland, pastureland, and total.
+# Do this for all 20 scenarios.
+# Log10 transformation is best for viewing pattern. 
+tnc_land_maps <- tnc_land_maps %>%
+  ungroup %>%
+  mutate(plot_title = pmap(tnc[, c('land_type','scenario_diet','scenario_waste')], 
+                           function(land_type, scenario_diet, scenario_waste) 
+                             list(land_type = gsub('_', ' ', land_type), 
+                                  diet_name = diet_long_names$long_name[match(scenario_diet, diet_long_names$scenario_diet)], 
+                                  waste_name = waste_long_names$long_name[match(scenario_waste, waste_long_names$scenario_waste)]))) %>%
+  mutate(map_inbound = map2(data, plot_title,  ~ draw_usmap_with_insets(map_data = left_join(tnc_map, .x), 
+                                                                        ak_idx = tnc_ak_idx,
+                                                                        hi_idx = tnc_hi_idx,
+                                                                        variable = flow_inbound,
+                                                                        title = glue('{.y$land_type} imported by ecoregion'),
+                                                                        subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
+                                                                        scale_name = 'land area (ha)',
+                                                                        scale_factor = 10000,
+                                                                        scale_trans = 'log10',
+                                                                        add_theme = theme_void())),
+         map_outbound = map2(data, plot_title,  ~ draw_usmap_with_insets(map_data = left_join(tnc_map, .x), 
+                                                                         ak_idx = tnc_ak_idx,
+                                                                         hi_idx = tnc_hi_idx,
+                                                                         variable = flow_outbound,
+                                                                         title = glue('{.y$land_type} exported by ecoregion'),
+                                                                         subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
+                                                                         scale_name = 'land area (ha)',
+                                                                         scale_factor = 10000,
+                                                                         scale_trans = 'log10',
+                                                                         add_theme = theme_void())))
 
 # Flows of extinctions between ecoregions ---------------------------------
 

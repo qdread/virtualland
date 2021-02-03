@@ -2,6 +2,7 @@
 # QDR / Virtualland / 12 Jan 2021
 
 # Do in parallel across each scenario.
+# Correct for missing values and for the Alaskan county code
 
 library(tidyverse)
 fp_out <- 'data/cfs_io_analysis'
@@ -31,6 +32,8 @@ county_tnc_weights <- nlcd_county_tnc %>%
          pastureland_ecoregion_proportion = pasture / sum(pasture, na.rm = TRUE),
          pop_ecoregion_proportion = pop / sum(pop, na.rm = TRUE)) %>%
   ungroup %>%
+  mutate(across(contains('proportion'), replace_na, replace = 0)) %>%
+  mutate(county_fips = if_else(county_fips == '02013', '02010', county_fips)) %>%
   select(county_fips, TNC, contains('proportion'))
 
 
