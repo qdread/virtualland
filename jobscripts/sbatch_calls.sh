@@ -96,8 +96,8 @@ sbatch -J aktnc --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions
 sbatch -J akfaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_CFSTNC.csv ${EXEC}
 sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
 
-sbatch -J hibcr --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/bcr_usa_combined.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2016_BCR.csv ${EXEC}
-sbatch -J hifaf --export=vector_file=/nfs/qread-data/raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions/faf_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2016_FAF.csv ${EXEC}
-sbatch -J hitnc --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2016_TNC.csv ${EXEC}
-sbatch -J hifaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2016_CFSTNC.csv ${EXEC}
-sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J hibcr --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/bcr_usa_combined.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_BCR.csv ${EXEC}
+sbatch -J hifaf --export=vector_file=/nfs/qread-data/raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions/faf_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_FAF.csv ${EXEC}
+sbatch -J hitnc --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_TNC.csv ${EXEC}
+sbatch -J hifaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_CFSTNC.csv ${EXEC}
+sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
