@@ -49,7 +49,8 @@ sbatch -J countbystate --export=vector_file=/nfs/qread-data/raw_data/landuse/USA
 	output_file=${outdir}/BCRcount_by_state.csv ${EXEC}
 
 # Extract cropland data layer for all years (2018 already done)
-sbatch --array=1-9 countcdlbyyear.sh
+sbatch --array=1-10 countcdlbyyear_array.sh
+sbatch --array=1-10 countcdlcountytnc.sh
 
 #### Added 16 Sept 2020
 # Tabulate global cropland dominance and global cropland mask by intersected TNC ecoregion X country boundaries.
