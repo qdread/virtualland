@@ -23,8 +23,7 @@ pop_county_tnc <- pop_county_tnc %>%
   select(county_fips, TNC, pop)
 
 county_tnc_weights <- nlcd_county_tnc %>% 
-  mutate(county_fips = paste0(STATEFP, COUNTYFP)) %>%
-  rename(TNC = ECO_CODE) %>%
+  rename(TNC = ECO_CODE, county_fips = county) %>%
   select(county_fips, TNC, crop, pasture, water, other) %>%
   left_join(pop_county_tnc) %>%
   group_by(county_fips) %>%

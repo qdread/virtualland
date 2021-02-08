@@ -17,9 +17,9 @@ cfstncvector="/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg"
 cdlraster="/nfs/qread-data/raw_data/landuse/USDAcropland/CDL/cdl${year}.vrt"
 
 # Do zonal stats on each of the 3 shapefiles
-python3 /research-home/qread/fwe/NLCD/tabulateraster.py ${bcrvector} ${cdlraster} ${outdir}/CDL_${year}_BCR.csv
-python3 /research-home/qread/fwe/NLCD/tabulateraster.py ${fafvector} ${cdlraster} ${outdir}/CDL_${year}_FAF.csv
-python3 /research-home/qread/fwe/NLCD/tabulateraster.py ${tncvector} ${cdlraster} ${outdir}/CDL_${year}_TNC.csv
-python3 /research-home/qread/fwe/NLCD/tabulateraster.py ${cfstncvector} ${cdlraster} ${outdir}/CDL_${year}_CFSTNC.csv
+python3 /research-home/qread/virtualland/NLCD/tabulateraster.py ${bcrvector} ${cdlraster} ${outdir}/CDL_${year}_BCR.csv
+python3 /research-home/qread/virtualland/NLCD/tabulateraster.py ${fafvector} ${cdlraster} ${outdir}/CDL_${year}_FAF.csv
+python3 /research-home/qread/virtualland/NLCD/tabulateraster.py ${tncvector} ${cdlraster} ${outdir}/CDL_${year}_TNC.csv
+python3 /research-home/qread/virtualland/NLCD/tabulateraster.py ${cfstncvector} ${cdlraster} ${outdir}/CDL_${year}_CFSTNC.csv
 
 
