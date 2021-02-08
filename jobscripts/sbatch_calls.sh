@@ -82,6 +82,30 @@ unzip NLCD_2016_Land_Cover_AK_20200724.zip
 gdalbuildvrt nlcd2016landcover_ak.vrt NLCD_2016_Land_Cover_AK_20200724.img
 gdalbuildvrt nlcd2001landcover_hi.vrt hi_landcover_wimperv_9-30-08_se5.img
 
+# Reproject Alaska and Hawaii rasters to the same CONUS AEA as the vector file.
+# Actually should not do this. Instead, reproject the polygon file to the rasters' CRS.
+# gdalsrsinfo -o wkt /nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg > ~/aea.wkt
+# cd /nfs/qread-data/raw_data/landuse/NLCD/NLCD2001_Hawaii
+# gdalwarp -t_srs ~/aea.wkt hi_landcover_wimperv_9-30-08_se5.img hi_conusaea.tif
+# gdalbuildvrt nlcd2001landcover_hi_conusaea.vrt hi_conusaea.tif
+
+# cd /nfs/qread-data/raw_data/landuse/NLCD/NLCD2016_Alaska
+# gdalwarp -t_srs ~/aea.wkt NLCD_2016_Land_Cover_AK_20200724.img ak_conusaea.tif
+# gdalbuildvrt nlcd2016landcover_ak_conusaea.vrt ak_conusaea.tif
+
+# Get Alaska and Hawaii CRS
+gdalsrsinfo -o wkt /nfs/qread-data/raw_data/landuse/NLCD/NLCD2001_Hawaii/hi_landcover_wimperv_9-30-08_se5.img > ~/hawaii_crs.wkt
+gdalsrsinfo -o wkt /nfs/qread-data/raw_data/landuse/NLCD/NLCD2016_Alaska/NLCD_2016_Land_Cover_AK_20200724.img > ~/alaska_crs.wkt
+
+# Project vectors to AK
+ogr2ogr -f "GPKG" -t_srs ~/alaska_crs.wkt /nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg /nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg
+ogr2ogr -f "GPKG" -t_srs ~/alaska_crs.wkt /nfs/qread-data/cfs_io_analysis/cfs_tnc_intersect_alaska_crs.gpkg /nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg
+
+# Project vectors to HI
+ogr2ogr -f "GPKG" -t_srs ~/hawaii_crs.wkt /nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg /nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg
+ogr2ogr -f "GPKG" -t_srs ~/hawaii_crs.wkt /nfs/qread-data/cfs_io_analysis/cfs_tnc_intersect_hawaii_crs.gpkg /nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg
+
+
 # Aggregate the Hawaii NLCD2001 and the Alaska NLCD2016 by different shapefiles.
 # BCR, FAF, TNC, FAFxTNC, countyxTNC
 EXEC="countpixels.sh"
@@ -91,14 +115,8 @@ hiraster="/nfs/qread-data/raw_data/landuse/NLCD/NLCD2001_Hawaii/nlcd2001landcove
 cd ~/virtualland/jobscripts
 
 # Extract AK NLCD2016 by all the vector files.
-sbatch -J akbcr --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/bcr_usa_combined.shp,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_BCR.csv ${EXEC}
-sbatch -J akfaf --export=vector_file=/nfs/qread-data/raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions/faf_aea.shp,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_FAF.csv ${EXEC}
-sbatch -J aktnc --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa_aea.shp,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_TNC.csv ${EXEC}
-sbatch -J akfaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_CFSTNC.csv ${EXEC}
-sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J akfaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_intersect_alaska_crs.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_CFSTNC.csv ${EXEC}
+sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
 
-sbatch -J hibcr --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/bcr_usa_combined.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_BCR.csv ${EXEC}
-sbatch -J hifaf --export=vector_file=/nfs/qread-data/raw_data/commodity_flows/FAF/Freight_Analysis_Framework_Regions/faf_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_FAF.csv ${EXEC}
-sbatch -J hitnc --export=vector_file=/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa_aea.shp,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_TNC.csv ${EXEC}
-sbatch -J hifaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_CFSTNC.csv ${EXEC}
-sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
+sbatch -J hifaftnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/cfs_tnc_intersect_hawaii_crs.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_CFSTNC.csv ${EXEC}
+sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
