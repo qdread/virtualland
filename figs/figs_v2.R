@@ -440,7 +440,7 @@ tnc_hi_idx <- substr(tnc_map$ECO_CODE, 1, 2) == 'OC'
 # Calculate global scale for log breaks
 all_tnc_extinction_flows <- c(tnc_extinction_flow_sums_medacrosstaxa$flow_inbound, tnc_extinction_flow_sumalltypes$flow_inbound, tnc_extinction_flow_sums_medacrosstaxa$flow_outbound, tnc_extinction_flow_sumalltypes$flow_outbound)
 range(all_tnc_extinction_flows, na.rm = TRUE)
-tnc_extinction_breaks <- seq(0, 35, by = 5)
+tnc_extinction_breaks <- seq(0, 40, by = 10)
 
 # Because of the high extinctions in pastureland relative to other groups, the global scale breaks won't work well.
 # Instead we need to set separate ones for each.
@@ -449,9 +449,9 @@ tnc_extinction_flow_sums_medacrosstaxa %>%
   summarize(across(where(is.numeric), list(min, max)))
 breaks_ann <- c(0, 2, 4, 6, 8)
 breaks_past <- c(0, 10, 20, 30)
-breaks_perm <- c(0, 2, 4)
-max_vals <- c(annual_cropland = 8.1, permanent_cropland = 4.2, pastureland = 33.7, total_agricultural_land = 35)
-range_vals <- list(annual_cropland = breaks_ann, permanent_cropland = breaks_perm, pastureland = breaks_past, total_agricultural_land = seq(0, 35, by = 5))
+breaks_perm <- c(0, 3, 6, 9, 12)
+max_vals <- c(annual_cropland = 8.1, permanent_cropland = 12, pastureland = 33.7, total_agricultural_land = 43)
+range_vals <- list(annual_cropland = breaks_ann, permanent_cropland = breaks_perm, pastureland = breaks_past, total_agricultural_land = tnc_extinction_breaks)
 
 tnc_extinction_maps <- tnc_extinction_maps %>%
   ungroup %>%
