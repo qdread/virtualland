@@ -500,3 +500,13 @@ tnc_extinction_maps <- tnc_extinction_maps %>%
                                                                                        legend.key.width = unit(0.2, 'in')),
                                                       write_to_file = glue('{fp_fig}/ecoregion_extinctionflow_maps/{.y$file_prefix}_outbound.png'),
                                                       img_size = c(7, 7))))
+
+
+# Paneled map figures -----------------------------------------------------
+
+# Figures with 20 maps showing how the flows change for different scenarios 
+
+
+# Network map figures -----------------------------------------------------
+
+# Figure(s) showing the flows as lines between pairs of regions
