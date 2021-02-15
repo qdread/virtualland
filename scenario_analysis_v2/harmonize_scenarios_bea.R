@@ -42,7 +42,6 @@ names(scenario_production_weights)[-1] <- new_names
 
 # Load the necessary crosswalks and LAFA category structure lookup table
 qfahpd2lafa <- read_csv(file.path(fp_crosswalk, 'qfahpd_lafa_crosswalk.csv'))
-lafa2bea <- read_csv(file.path(fp_crosswalk, 'lafa_qfahpd_naics_crosswalk.csv'))
 lafa_struct <- read_csv(file.path(fp_crosswalk, 'lafa_category_structure.csv'))
 bea2lafa <- read_csv(file.path(fp_crosswalk, 'bea_lafa_crosswalk.csv'))
 
