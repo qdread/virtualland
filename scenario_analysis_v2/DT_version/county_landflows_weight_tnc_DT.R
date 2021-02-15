@@ -54,14 +54,9 @@ county_flows_to_tnc_flows <- function(diet, waste) {
   flows[, annual_cropland := annual_cropland * cropland_ecoregion_proportion]
   flows[, permanent_cropland := permanent_cropland * cropland_ecoregion_proportion]
   flows[, pastureland := pastureland * pastureland_ecoregion_proportion]
-  
-  setnames(flows, old = 'TNC', new = 'TNC_from')
-  
-  # Write this one to CSV (county flows weighted by TNC). It will be pretty big
-  fwrite(flows[, .(scenario, county_from, county_to, TNC_from, annual_cropland, permanent_cropland, pastureland)],
-         glue::glue('/nfs/qread-data/cfs_io_analysis/ecoregion_landflow_csvs/D_{diet}_WR_{waste}_county_x_county_landtncweights.csv'))
 
   # Then, sum grouped by target county and originating ecoregion
+  setnames(flows, old = 'TNC', new = 'TNC_from')
   
   land_cols <- c('annual_cropland', 'permanent_cropland', 'pastureland')
   flow_cols <- paste(land_cols, 'flow', sep = '_')
