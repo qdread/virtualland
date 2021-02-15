@@ -95,6 +95,6 @@ cleanup_files(sjob_extinctions)
 extinctions_state_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_state_x_state_extinctions.csv')))
 county_flows_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_county_extinction_sums.csv')))
 
-fwrite(extinctions_state_all, file.path(fp_out, 'scenarios/species_lost_state_x_state_all_scenarios_med.csv'))
-fwrite(county_flows_all, file.path(fp_out, 'scenarios/species_lost_county_sums_all_scenarios_med.csv'))
+fwrite(extinctions_state_all, '/nfs/qread-data/cfs_io_analysis/scenarios/species_lost_state_x_state_all_scenarios_med.csv')
+fwrite(county_flows_all, '/nfs/qread-data/cfs_io_analysis/scenarios/species_lost_county_sums_all_scenarios_med.csv')
 
