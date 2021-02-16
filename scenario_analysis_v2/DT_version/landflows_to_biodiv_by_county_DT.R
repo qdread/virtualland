@@ -92,8 +92,8 @@ cleanup_files(sjob_extinctions)
 
 # Load and concatenate and write ------------------------------------------
 
-extinctions_state_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_state_x_state_extinctions.csv')))
-county_flows_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_county_extinction_sums.csv')))
+extinctions_state_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_state_x_state_extinctions.csv'), colClasses = rep(c('character', 'double'), c(5, 1))))
+county_flows_all <- purrr::pmap_dfr(scenario_combos, function(diet, waste) fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_state_extinction_csvs/D_{diet}_WR_{waste}_county_extinction_sums.csv'), colClasses = rep(c('character', 'double'), c(4, 2))))
 
 fwrite(extinctions_state_all, '/nfs/qread-data/cfs_io_analysis/scenarios/species_lost_state_x_state_all_scenarios_med.csv')
 fwrite(county_flows_all, '/nfs/qread-data/cfs_io_analysis/scenarios/species_lost_county_sums_all_scenarios_med.csv')

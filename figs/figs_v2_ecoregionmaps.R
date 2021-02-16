@@ -1,208 +1,7 @@
-# Figures and summary statistics for "Scenario Analysis V2"
-# QDR / Virtualland / 14 Jan 2021
-
-# Proposed outline of figures
-
-# 0. Consumption differences among scenarios, or basic figure showing how the scenarios differ among one another
-# 1. Maps showing the trade in different agricultural products, in baseline and alternative scenarios.
-# 2. Boxplot or similar summarizing the maps in fig1.
-# 3. Maps showing the land flows associated with the trade in fig1.
-# 4. Boxplot or similar summarizing the maps in fig3.
-# 5. Maps showing the extinction threat exports/imports associated with the land flows in fig3.
-# 6. Boxplot or similar summarizing the maps in fig5.
-
+# Ecoregion land and extinction flow maps
+# QDR / Virtualland / 15 Feb 2021
 
 source('figs/figs_v2_loaddata.R')
-
-# Diet differences among scenarios ----------------------------------------
-
-# Show by the "Group" column in lafa_joined
-# Need to assign the missing ones to groups.
-missing_groups <- data.frame(Category = c("White and whole wheat flour", "Durum flour", "Fresh brussels sprouts", "Other processed vegetables"),
-                    Group = c('grain', 'grain', 'veg', 'veg'))
-idx <- match(missing_groups$Category, lafa_joined$Category)
-lafa_joined$Group[idx] <- missing_groups$Group
-
-lafa_cal_by_diet <- lafa_joined %>%
-  select(Category, Group, calories_available_cal_day, planetary_health, us_style, med_style, vegetarian) %>%
-  mutate(baseline = rep(1, nrow(.))) %>%
-  pivot_longer(planetary_health:baseline, names_to = 'diet', values_to = 'factor') %>%
-  mutate(calories_available_cal_day = calories_available_cal_day * factor) %>%
-  rename(food = Category, food_group = Group)
-
-lafa_cal_summ <- lafa_cal_by_diet %>%
-  group_by(diet, food_group) %>%
-  summarize(calories_day = sum(calories_available_cal_day)) %>%
-  ungroup %>%
-  mutate(food_group = case_when(food_group == 'veg' ~ 'vegetables',
-                                food_group == 'meat' ~ 'meat/eggs/nuts',
-                                TRUE ~ food_group),
-         diet = factor(gsub('_', '', diet), levels = diet_levels_ordered))
-
-p_diet_foodgroups <- ggplot(lafa_cal_summ %>% mutate(), aes(y = calories_day, x = food_group, color = diet, fill = diet, group = diet)) +
-  geom_col(position = 'dodge', color = NA) +
-  scale_fill_manual(values = okabe_colors[c(1,7,3,4,5)] %>% setNames(NA), labels = diet_long_names$long_name) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'calories per person per day') +
-  scale_x_discrete(name = 'food group') +
-  theme(legend.position = 'bottom',
-        legend.text = element_text(size = rel(.6))) +
-  guides(fill=guide_legend(nrow = 2, byrow = FALSE))
-
-ggsave(file.path(fp_fig, 'foodgroup_consumption_by_diet.png'), p_diet_foodgroups, height = 5, width = 6, dpi = 400)
-
-# Goods consumption differences among scenarios ---------------------------
-
-# This is by BEA code across diet change and waste change scenarios.
-# It also accounts for the "footprint" of consumption, so for instance meat consumption would reflect the consumption of feed (need to check this)
-
-# Reorder factors in loaded CSV.
-totaldemand_sums <- totaldemand_sums %>%
-  mutate(short_name = factor(short_name, levels = unique(short_name)),
-         scenario_diet = factor(scenario_diet, levels = unique(scenario_diet)),
-         scenario_waste = factor(scenario_waste, levels = unique(scenario_waste)))
-
-# Absolute values
-p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
-  geom_col(aes(fill = kingdom)) +
-  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
-  scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (million USD)') +
-  scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = 'none')
-
-p_totaldemand_sums <- ggdraw(p_totaldemand_sums + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
-  draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
-  draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
-
-ggsave(file.path(fp_fig, 'total_consumption_all_scenarios.png'), p_totaldemand_sums, height = 9, width = 12, dpi = 400)
-
-# Relative to baseline. Must reconstruct the darn scenarios again.
-totaldemand_relative <- totaldemand_sums %>%
-  pivot_wider(names_from = c(scenario_diet, scenario_waste), values_from = demand) %>%
-  mutate(across(where(is.numeric), ~ . / baseline_baseline)) %>%
-  pivot_longer(-c(BEA_code, short_name, kingdom), names_to = 'scenario', values_to = 'demand') %>%
-  separate(scenario, into = c('scenario_diet', 'scenario_waste'), sep = '_') %>%
-  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
-         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered))
-
-p_totaldemand_relative <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
-  geom_col(aes(fill = kingdom)) +
-  geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
-  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
-  scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
-  scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = 'none')
-
-p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
-  draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
-  draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
-
-ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_totaldemand_relative, height = 9, width = 12, dpi = 400)
-
-### Deprecated: plot with bea_factors (does not account for the full footprint, it's just the final demand)
-bea_factors_long <- bea_scenario_factors %>%
-  pivot_longer(-c(BEA_389_code, BEA_389_def), names_to = 'scenario', values_to = 'factor') %>%
-  separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>% 
-  select(-d, -w) %>%
-  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
-         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>% 
-  left_join(ag_names_lookup)
-
-# Plot 4x5 diet x waste scenarios
-bea_factors_long %>%
-  filter(substr(BEA_389_code, 1, 1) == '1') %>%
-  ggplot(aes(x = short_name, y = factor)) +
-  geom_col() +
-  geom_hline(yintercept = 1, linetype = 'dotted', color = 'indianred', size = 0.5) +
-  facet_grid(scenario_waste ~ scenario_diet) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Flows of goods between counties -----------------------------------------
-
-# Maps (insert here)
-
-# Flows of land between counties ------------------------------------------
-
-# Sum up the flows across all land types
-county_land_flow_sumalltypes <- county_land_flow_sums %>%
-  group_by(scenario_diet, scenario_waste, county) %>%
-  summarize(flow_inbound = sum(flow_inbound), flow_outbound = sum(flow_outbound)) %>%
-  mutate(land_type = 'total_agricultural_land') %>%
-  ungroup
-
-# Group and nest the county landflow dataframe.
-# Replace the zero flows with NA in the outbound ones.
-county_land_maps <- county_land_flow_sums %>%
-  bind_rows(county_land_flow_sumalltypes) %>%
-  arrange(scenario_diet, scenario_waste, land_type, county) %>%
-  mutate(flow_net = flow_outbound - flow_inbound,
-         flow_outbound = if_else(flow_outbound == 0, as.numeric(NA), flow_outbound)) %>%
-  group_by(scenario_diet, scenario_waste, land_type) %>%
-  nest
-
-# Match up the sf object for county boundaries with one of the county land data subsets.
-setdiff(county_land_maps$data[[1]]$county, county_map$county) # All were already fixed in county_aea.R.
-
-# Get index of alaska and hawaii. AK 02 HI 15
-county_ak_idx <- substr(county_map$county, 1, 2) == '02'
-county_hi_idx <- substr(county_map$county, 1, 2) == '15'
-
-# Calculate global scale for log breaks
-all_county_land_flows <- c(county_land_flow_sums$flow_inbound, county_land_flow_sumalltypes$flow_inbound, county_land_flow_sums$flow_outbound, county_land_flow_sumalltypes$flow_outbound)
-(range(all_county_land_flows[all_county_land_flows > 0], na.rm = TRUE)/1e4) %>% formatC(format = 'e')
-
-county_land_breaks <- c(1e0, 1e2, 1e4, 1e6, 1e8)
-
-# Annual cropland, permanent cropland, pastureland, and total.
-# Do this for all 20 scenarios.
-# Log10 transformation is best for viewing pattern. 
-county_land_maps <- county_land_maps %>%
-  ungroup %>%
-  mutate(plot_title = pmap(county_land_maps[, c('land_type','scenario_diet','scenario_waste')], 
-                           function(land_type, scenario_diet, scenario_waste) 
-                             list(land_type = gsub('_', ' ', land_type), 
-                                  diet_name = diet_long_names$long_name[match(scenario_diet, diet_long_names$scenario_diet)], 
-                                  waste_name = waste_long_names$long_name[match(scenario_waste, waste_long_names$scenario_waste)],
-                                  file_prefix = glue('D_{scenario_diet}_W_{scenario_waste}_{land_type}')))) %>%
-  mutate(map_inbound = map2(data, plot_title, 
-                            ~ draw_usmap_with_insets(map_data = left_join(county_map, .x), 
-                                                     ak_idx = county_ak_idx,
-                                                     hi_idx = county_hi_idx,
-                                                     variable = flow_inbound,
-                                                     title = glue('{.y$land_type} imported by county'),
-                                                     subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
-                                                     scale_name = 'area (ha)',
-                                                     scale_factor = 10000,
-                                                     scale_trans = 'log10',
-                                                     scale_range = county_land_breaks[c(1,4)],
-                                                     scale_breaks = county_land_breaks,
-                                                     add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
-                                                                                      legend.key.width = unit(0.23, 'in')),
-                                                     write_to_file = glue('{fp_fig}/county_landflow_maps/{.y$file_prefix}_inbound.png'),
-                                                     img_size = c(7, 7))),
-         map_outbound = map2(data, plot_title,
-                             ~ draw_usmap_with_insets(map_data = left_join(county_map, .x), 
-                                                      ak_idx = county_ak_idx,
-                                                      hi_idx = county_hi_idx,
-                                                      variable = flow_outbound,
-                                                      title = glue('{.y$land_type} exported by county'),
-                                                      subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
-                                                      scale_name = 'area (ha)',
-                                                      scale_factor = 10000,
-                                                      scale_trans = 'log10',
-                                                      scale_range = county_land_breaks[c(1,4)],
-                                                      scale_breaks = county_land_breaks,
-                                                      add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
-                                                                                       legend.key.width = unit(0.23, 'in')),
-                                                      write_to_file = glue('{fp_fig}/county_landflow_maps/{.y$file_prefix}_outbound.png'),
-                                                      img_size = c(7, 7))))
 
 # Flows of land between ecoregions ----------------------------------------
 
@@ -312,7 +111,7 @@ tnc_extinction_med_alltaxa <- tnc_extinction_flow_sums %>%
          land_use = factor(land_use, levels = land_levels_ordered)) %>%
   group_by(scenario_diet, scenario_waste, land_use, TNC) %>%
   summarize(flow_outbound = sum(flow_outbound), flow_inbound = sum(flow_inbound))
-  
+
 ggplot(tnc_extinction_med_alltaxa, aes(x = land_use, y = flow_outbound, fill = land_use)) +
   geom_violin() +
   facet_grid(scenario_diet ~ scenario_waste) +
@@ -322,7 +121,7 @@ ggplot(tnc_extinction_med_alltaxa, aes(x = land_use, y = flow_outbound, fill = l
 extinction_sums_byscenario <- tnc_extinction_med_alltaxa %>%
   group_by(scenario_diet, scenario_waste, land_use) %>%
   summarize(extinction = sum(flow_outbound, na.rm = TRUE))
-  
+
 # Plot
 diet_medium_names <- c('baseline', 'planetary\nhealth', 'healthy\nUS-style', 'healthy\nMediterranean', 'vegetarian')
 
@@ -412,7 +211,7 @@ tnc_extinction_maps <- tnc_extinction_maps %>%
                                   file_prefix = glue('D_{scenario_diet}_W_{scenario_waste}_{land_type}'),
                                   scale_range = c(0, max_vals[land_type]),
                                   scale_breaks = range_vals[[land_type]])
-                             })) %>%
+                           })) %>%
   mutate(map_inbound = map2(data, plot_title, 
                             ~ draw_usmap_with_insets(map_data = left_join(tnc_map, .x, by = c('ECO_CODE' = 'TNC')), 
                                                      ak_idx = tnc_ak_idx,
@@ -445,13 +244,3 @@ tnc_extinction_maps <- tnc_extinction_maps %>%
                                                                                        legend.key.width = unit(0.2, 'in')),
                                                       write_to_file = glue('{fp_fig}/ecoregion_extinctionflow_maps/{.y$file_prefix}_outbound.png'),
                                                       img_size = c(7, 7))))
-
-
-# Paneled map figures -----------------------------------------------------
-
-# Figures with 20 maps showing how the flows change for different scenarios 
-
-
-# Network map figures -----------------------------------------------------
-
-# Figure(s) showing the flows as lines between pairs of regions

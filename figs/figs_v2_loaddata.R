@@ -44,6 +44,12 @@ tnc_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_sum
 # Flows of species extinctions between ecoregions
 tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
 
+# Flows of species extinctions between counties
+county_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_county_sums_all_scenarios_med.csv', col_types = 'ccccdd')
+
+# Flows of species extinctions between states (raw pairwise)
+state_extinction_flows <- read_csv('data/cfs_io_analysis/scenarios/species_lost_state_x_state_all_scenarios_med.csv', col_types = 'cccccd')
+
 # Map of counties in AEA
 county_map <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 # Map of TNC ecoregions in AEA
@@ -56,3 +62,8 @@ source('figs/us_map_fxns.R')
 # Remove areas other than the 50 states plus DC from county_map. (anything beginning with 6 or 7)
 county_map <- county_map %>% filter(!substr(STATEFP,1,1) %in% c('6','7'))
 # Now the 3141 counties and county equivalents match up between the data and the map.
+
+# Merge county map to state map.
+state_map <- county_map %>%
+  group_by(STATEFP) %>%
+  summarize
