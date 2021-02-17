@@ -5,14 +5,11 @@
 
 library(data.table)
 library(units)
-library(sf)
+library(Rutilitybelt)
 
 fp_out <- 'data/cfs_io_analysis'
 fp_eco <- 'data/raw_data/landuse/ecoregions'
 fp_csvs <- 'data/raw_data/landuse/output_csvs'
-
-# Read the intersected country x TNC polygon file
-country_tnc <- st_read(file.path(fp_out, 'countries_tnc_intersect.gpkg'))
 
 # Read the country polygon only for joining
 countrymap <- st_read(file.path(fp_eco, 'countries_global_equalarea.gpkg')) # 241 regions
@@ -58,47 +55,33 @@ names_corrected <- c("Bolivia", "Republic of Cabo Verde", "China",
 identical(fao_vlt$country_name[fao_vlt$country_name %in% names_to_match], names_to_match) # Yes.
 fao_vlt$country_name[fao_vlt$country_name %in% names_to_match] <- names_corrected
 
-# Reduce columns of country_tnc
-country_tnc_data <- country_tnc %>%
-  mutate(crop_area = count_cropd$crop_sum, pasture_area = count_pasture$sum) %>%
-  select(ECO_CODE, ECO_NAME, WWF_REALM, NAME_LONG, ISO_A3, REGION_UN, SUBREGION, area, crop_area, pasture_area) %>%
-  st_set_geometry(NULL)
+# Extract needed columns from the crop dominance and pasture count data frames, and join the two.
+count_cropd <- count_cropd[, .(ECO_CODE, ECO_NAME, WWF_REALM, NAME_LONG, ISO_A3, REGION_UN, SUBREGION, area, crop_sum)]
+count_pasture <- count_pasture[, .(ECO_CODE, ECO_NAME, WWF_REALM, NAME_LONG, ISO_A3, REGION_UN, SUBREGION, area, sum)]
+setnames(count_cropd, old = 'crop_sum', new = 'crop_area')
+setnames(count_pasture, old = 'sum', new = 'pasture_area')
+
+country_tnc_data <- count_pasture[count_cropd, on = .(ECO_CODE, ECO_NAME, WWF_REALM, NAME_LONG, ISO_A3, REGION_UN, SUBREGION, area)]
 
 # Determine, for each country, the relative proportion of cropland and pastureland in each ecoregion.
 # This will be used to get the relative proportion of virtual cropland and pastureland transfers 
 # from each ecoregion x country combination.
-country_tnc_data <- country_tnc_data %>%
-  mutate(crop_area = if_else(is.na(crop_area), 0, crop_area),
-         pasture_area = if_else(is.na(pasture_area), 0, pasture_area)) %>%
-  group_by(NAME_LONG) %>%
-  mutate(crop_proportion = crop_area / sum(crop_area),
-         pasture_proportion = pasture_area / sum(pasture_area))
-  
 
-# Join country_tnc with the virtual land transfers, proportionally split by area, then sum by "ROW" region x ecoregion.
+replace_na_dt(country_tnc_data, cols = c('crop_area', 'pasture_area'))
+country_tnc_data[, c('crop_proportion', 'pasture_proportion') := .(crop_area / sum(crop_area), pasture_area / sum(pasture_area)), by = NAME_LONG]
 
-foreign_vlt_eco <- fao_vlt %>%
-  left_join(country_tnc_data, by = c('country_name' = 'NAME_LONG')) %>%
-  mutate(VLT_crop_region = VLT_crop * crop_proportion,
-         VLT_pasture_region = VLT_pasture * pasture_proportion) 
+# Join country_tnc_data with the virtual land transfers, proportionally split by area
+foreign_vlt_eco <- country_tnc_data[fao_vlt, on = c('NAME_LONG' = 'country_name')]
+foreign_vlt_eco[, VLT_annual_region := VLT_annual * crop_proportion]
+foreign_vlt_eco[, VLT_mixed_region := VLT_mixed * crop_proportion]
+foreign_vlt_eco[, VLT_permanent_region := VLT_permanent * crop_proportion]
+foreign_vlt_eco[, VLT_pasture_region := VLT_pasture * pasture_proportion]
 
-# Also, for each FAF region, get the proportion of the cropland and pastureland IN THE ENTIRE REGION
-# that each ecoregion makes up (accounting only for countries that sent goods to the USA)
+# Sum the land transfers across ecoregions
+foreign_vlt_eco_sum <- foreign_vlt_eco[, lapply(.SD, sum),
+                                       by = .(ECO_CODE, ECO_NAME),
+                                       .SDcols = patterns('region|pasture_area|crop_area')]
 
-ecoregion_land_prop_x_faf_foreign <- foreign_vlt_eco %>%
-  ungroup %>%
-  group_by(FAF_foreign_region, FAF_foreign_region_code, ECO_CODE, ECO_NAME) %>%
-  summarize(crop_area = sum(crop_area), pasture_area = sum(pasture_area)) %>%
-  group_by(FAF_foreign_region, FAF_foreign_region_code) %>%
-  mutate(crop_proportion_by_FAF_region = crop_area / sum(crop_area),
-         pasture_proportion_by_FAF_region = pasture_area / sum(pasture_area))
 
-foreign_vlt_eco_sum <- foreign_vlt_eco %>%
-  group_by(FAF_foreign_region_code, FAF_foreign_region, ECO_CODE, ECO_NAME) %>%
-  summarize(VLT_crop = sum(VLT_crop_region), VLT_pasture = sum(VLT_pasture_region),
-            crop_area = sum(crop_area), pasture_area = sum(pasture_area))
-# Now for each incoming shipment from a rest of the world region, we can assign a proportion of its land transfer to a given ecoregion.
-
-write_csv(foreign_vlt_eco, file.path(fp_out, 'foreign_VLT_by_country_x_TNC.csv'))
-write_csv(foreign_vlt_eco_sum, file.path(fp_out, 'foreign_VLT_by_region_x_TNC.csv'))
-write_csv(ecoregion_land_prop_x_faf_foreign, file.path(fp_out, 'foreign_ecoregion_land_by_FAF.csv'))
+fwrite(foreign_vlt_eco, file.path(fp_out, 'foreign_VLT_by_country_x_TNC.csv'))
+fwrite(foreign_vlt_eco_sum, file.path(fp_out, 'foreign_VLT_by_region_x_TNC.csv'))
