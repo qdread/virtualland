@@ -86,4 +86,4 @@ foreign_vlt_eco_sum <- foreign_vlt_eco[, lapply(.SD, sum),
 
 
 fwrite(foreign_vlt_eco, file.path(fp_out, 'foreign_VLT_by_country_x_TNC.csv'))
-fwrite(foreign_vlt_eco_sum, file.path(fp_out, 'foreign_VLT_by_region_x_TNC.csv'))
+fwrite(foreign_vlt_eco_sum, file.path(fp_out, 'foreign_VLT_by_TNC.csv'))
