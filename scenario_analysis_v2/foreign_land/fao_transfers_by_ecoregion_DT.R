@@ -1,4 +1,7 @@
 # Convert incoming land transfers from each country to incoming land transfers from ecoregions
+# QDR / Virtualland / 17 Feb 2021
+
+# Modified 18 Feb 2021: do separately for the 20 scenarios
 
 # Needed: incoming virtual cropland and pastureland countries by country
 # Needed: total area of cropland and pastureland in each ecoregion in each country
@@ -10,12 +13,8 @@ fp_out <- 'data/cfs_io_analysis'
 fp_eco <- 'data/raw_data/landuse/ecoregions'
 fp_csvs <- 'data/raw_data/landuse/output_csvs'
 
-# Read the country polygon only for joining
-countrymap <- st_read(file.path(fp_eco, 'countries_global_equalarea.gpkg')) # 241 regions
-
 # Read the tabulated counts of crop and pasture by country x TNC
 count_cropd <- fread(file.path(fp_csvs, 'global_count_cropdominance.csv'))
-count_cropm <- fread(file.path(fp_csvs, 'global_count_cropmask.csv'))
 count_pasture <- fread(file.path(fp_csvs, 'global_count_pasture.csv'))
 
 # Extract the useful information from the cropland summaries
@@ -34,9 +33,7 @@ fao_vlt <- fao_vlt[VLT_sum > 0]
 # Join the VLT country list with the intersected country x TNC polygon
 # There is no code to join on so we have to do it by name
 
-#FIXME all below here does not work.
-dput(setdiff(fao_vlt$country_name, countrymap$NAME_LONG)) # About 20 don't match.
-# Bolivia, mainland China, Hong Kong, Iran, Tanzania
+dput(setdiff(fao_vlt$country_name, count_cropd$NAME_LONG)) # About 20 don't match.
 
 # Change the names of the FAO VLT dataframe to match the country names in countrymap.
 names_to_match <- c("Bolivia (Plurinational State of)", "Cabo Verde", "China, mainland", 
@@ -51,8 +48,9 @@ names_corrected <- c("Bolivia", "Republic of Cabo Verde", "China",
                      "Czech Republic", "São Tomé and Principe", "eSwatini", "Syria",
                      "Taiwan", "Tanzania", "United Kingdom", "Venezuela")
 
-identical(fao_vlt$country_name[fao_vlt$country_name %in% names_to_match], names_to_match) # Yes.
-fao_vlt$country_name[fao_vlt$country_name %in% names_to_match] <- names_corrected
+for (i in 1:length(names_to_match)) {
+  fao_vlt$country_name[fao_vlt$country_name %in% names_to_match[i]] <- names_corrected[i]
+}
 
 # Extract needed columns from the crop dominance and pasture count data frames, and join the two.
 count_cropd <- count_cropd[, .(ECO_CODE, ECO_NAME, WWF_REALM, NAME_LONG, ISO_A3, REGION_UN, SUBREGION, area, crop_sum)]
@@ -70,15 +68,20 @@ replace_na_dt(country_tnc_data, cols = c('crop_area', 'pasture_area'))
 country_tnc_data[, c('crop_proportion', 'pasture_proportion') := .(crop_area / sum(crop_area), pasture_area / sum(pasture_area)), by = NAME_LONG]
 
 # Join country_tnc_data with the virtual land transfers, proportionally split by area
-foreign_vlt_eco <- country_tnc_data[fao_vlt, on = c('NAME_LONG' = 'country_name')]
+# Cartesian join because of the 20 scenarios
+foreign_vlt_eco <- country_tnc_data[fao_vlt, on = c('NAME_LONG' = 'country_name'), allow.cartesian = TRUE]
 foreign_vlt_eco[, VLT_annual_region := VLT_annual * crop_proportion]
 foreign_vlt_eco[, VLT_mixed_region := VLT_mixed * crop_proportion]
 foreign_vlt_eco[, VLT_permanent_region := VLT_permanent * crop_proportion]
 foreign_vlt_eco[, VLT_pasture_region := VLT_pasture * pasture_proportion]
 
+# Separate scenario column into two
+foreign_vlt_eco <- tidyr::separate(foreign_vlt_eco, scenario, into = c('D', 'scenario_diet', 'W', 'scenario_waste'), sep = '_')
+foreign_vlt_eco[, c('D','W') := NULL]
+
 # Sum the land transfers across ecoregions
 foreign_vlt_eco_sum <- foreign_vlt_eco[, lapply(.SD, sum),
-                                       by = .(ECO_CODE, ECO_NAME),
+                                       by = .(scenario_diet, scenario_waste, ECO_CODE, ECO_NAME),
                                        .SDcols = patterns('region|pasture_area|crop_area')]
 
 
