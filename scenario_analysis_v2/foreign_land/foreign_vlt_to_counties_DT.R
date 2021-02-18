@@ -1,6 +1,6 @@
 # Allocate virtual land imports to the USA from each country and ecoregion to counties for each scenario
 # Do this using the strong assumption that counties receive imports from all foreign countries in equal proportions
-
+# QDR / Virtualland / 18 Feb 2021
 
 # Load and clean data -----------------------------------------------------
 

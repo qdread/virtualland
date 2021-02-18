@@ -12,8 +12,8 @@
 # For each scenario we have square meters of virtual land transfers BY ECOREGION,
 # and the CFs are in species lost per meter squared.
 # So we just need to join them, then multiply the virtual land transfers (area) by the CFs (species lost per area)
+# Domestic landflows done here, foreign in another script
 
-# FIXME for now this is domestic only (not foreign)
 # FIXME they have a land transformation part with some time to regeneration values per land type which I am ignoring right now
 
 # Load data ---------------------------------------------------------------
