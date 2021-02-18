@@ -4,7 +4,6 @@
 # Needed: total area of cropland and pastureland in each ecoregion in each country
 
 library(data.table)
-library(units)
 library(Rutilitybelt)
 
 fp_out <- 'data/cfs_io_analysis'

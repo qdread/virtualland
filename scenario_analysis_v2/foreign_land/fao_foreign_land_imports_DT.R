@@ -1,6 +1,8 @@
 # Foreign virtual land transfers into United States, V2
 # QDR / Virtualland / 16 Feb 2021
 
+# Modified 18 Feb 2021: Get the goods transfers for each alternative scenario, before converting VLTs in each scenario.
+
 # Code copied and modified from scripts in the FAO directory
 # Processing done in FAO/extract_faostat.R
 
@@ -14,6 +16,9 @@ walk(dir(fp_fao), ~ assign(gsub('.csv', '', .), fread(file.path(fp_fao, .)), env
 
 # Read harmonization table with BEA codes.
 fao_codes_table <- fread('data/crossreference_tables/faostat_all_codes_harmonized.csv')
+
+# Read relative consumption factors vs. baseline by BEA code for each scenario
+scenario_factors_bea <- fread('data/cfs_io_analysis/bea_consumption_factors_diet_waste_scenarios.csv')
 
 # Get proportion of trade sent to USA -------------------------------------
 
@@ -118,7 +123,17 @@ production_crops_trade[is.na(export_qty), export_qty := 0]
 production_crops_trade[, proportion_sent_USA := export_qty/production]
 production_crops_trade[, virtual_land_transfer := area_harvested * pmin(proportion_sent_USA, 1)]
 
-VLT_sums_crop <- production_crops_trade[, .(VLT_crop = sum(virtual_land_transfer, na.rm = TRUE)), by = .(country_code, country_name, crop_type)]
+#### Multiply the virtual land transfers by country x BEA code by the consumption factor for that BEA code in each scenario.
+# Convert scenario_factors_bea to long, then do a Cartesian left join
+# Multiply the baseline VLT times the consumption factor.
+scenario_factors_long <- melt(scenario_factors_bea, id.vars = c('BEA_389_code', 'BEA_389_def'), variable.name = 'scenario', value.name = 'consumption_factor')
+scenario_factors_long[, BEA_389_def := NULL]
+
+production_crops_trade_by_scenario <- scenario_factors_long[production_crops_trade, on = c('BEA_389_code' = 'BEA_code'), allow.cartesian = TRUE]
+production_crops_trade_by_scenario[, virtual_land_transfer := virtual_land_transfer * consumption_factor]
+
+VLT_sums_crop <- production_crops_trade_by_scenario[, .(VLT_crop = sum(virtual_land_transfer, na.rm = TRUE)), by = .(scenario, country_code, country_name, crop_type)]
+VLT_sums_crop <- VLT_sums_crop[!is.na(scenario)]
 
 # Virtual pastureland transfers -------------------------------------------
 
@@ -165,7 +180,10 @@ prod_animal_joined_trade[is.na(export_qty), export_qty := 0]
 
 # Now calculate the proportion of the tonnage exported, if you sum up every single grazer product produced.
 grazer_prod_trade_totals <- prod_animal_joined_trade[, .(production_qty = sum(production_qty), export_qty = sum(export_qty)), 
-                                                     by = .(area_code, area)]
+                                                     by = .(area_code, area, BEA_code)]
+# Check whether production is listed as being less than export for any locations. If so set export to zero, they are all very small amounts.
+grazer_prod_trade_totals[production_qty < export_qty, export_qty := 0]
+
 grazer_prod_trade_totals[, proportion_sent_to_usa := export_qty/production_qty]
 
 # Total land use for each country -----------------------------------------
@@ -182,8 +200,15 @@ pastureland_totals <- landuse_inputs[item_code %in% 6655, .(area_code, area, val
 setnames(pastureland_totals, c('country_code', 'country_name', 'pastureland'))
 
 setnames(grazer_prod_trade_totals, old = c('area_code', 'area'), new = c('country_code', 'country_name'))
+
 VLT_sums_pasture <- pastureland_totals[grazer_prod_trade_totals, on = .(country_code, country_name)]
-VLT_sums_pasture[, VLT_pasture := 1000 * pastureland * proportion_sent_to_usa] # Convert to hectares for comparison with cropland.
+
+# Do Cartesian join and multiply by the consumption factors for each scenario
+VLT_sums_pasture <- scenario_factors_long[VLT_sums_pasture, on = c('BEA_389_code' = 'BEA_code'), allow.cartesian = TRUE]
+
+# Calculate VLT and sum across scenarios and countries
+VLT_sums_pasture[, VLT_pasture := 1000 * pastureland * proportion_sent_to_usa * consumption_factor] # Convert to hectares for comparison with cropland.
+VLT_sums_pasture <- VLT_sums_pasture[!is.na(scenario), .(VLT_pasture = sum(VLT_pasture, na.rm = TRUE)), by = .(scenario, country_code, country_name)]
 
 # Write outputs -----------------------------------------------------------
 
@@ -194,11 +219,9 @@ fwrite(prod_animal_joined_trade, '/nfs/qread-data/cfs_io_analysis/fao_production
 
 # Just write the very basic outputs
 VLT_sums_crop[, crop_type := paste0('VLT_', crop_type)]
-VLT_sums_crop <- dcast(VLT_sums_crop, country_code + country_name ~ crop_type, fill = 0)
+VLT_sums_crop <- dcast(VLT_sums_crop, scenario + country_code + country_name ~ crop_type, fill = 0)
 
 VLT_all <- merge(VLT_sums_crop, VLT_sums_pasture, all = TRUE)
-cols <- c('country_code', 'country_name', grep('^VLT', names(VLT_all), value = TRUE))
-VLT_all <- VLT_all[, ..cols]
 
 fwrite(VLT_all, '/nfs/qread-data/cfs_io_analysis/fao_VLT_provisional.csv')
 
