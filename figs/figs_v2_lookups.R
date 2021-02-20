@@ -41,3 +41,10 @@ okabe_colors <- palette.colors(n = 9, palette = 'Okabe-Ito')
 
 # Function to make a "dummy axis" so I can label the secondary axis.
 dummy_axis <- function(label) sec_axis(~ . , name = label, labels = NULL, breaks = NULL)
+
+# function to make category labels for the two facets
+label_scenario_categories <- function(p) {
+  ggdraw(p + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+    draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
+    draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
+}
