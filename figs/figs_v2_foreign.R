@@ -3,6 +3,10 @@
 
 source('figs/figs_v2_loaddata.R')
 
+# Additionally, load foreign ecoregion map and country map
+global_eco_map <- st_read('data/raw_data/landuse/ecoregions/tnc_global_equalarea.gpkg')
+global_country_map <- st_read('data/raw_data/landuse/ecoregions/countries_global_equalarea.gpkg') %>%
+  select(NAME_LONG, ISO_A3)
 
 # Summary figs comparing land totals --------------------------------------
 
@@ -69,6 +73,7 @@ p_vlt_fvsd <- label_scenario_categories(p_vlt_fvsd)
 # Summary figs comparing species lost -------------------------------------
 
 setDT(foreign_extinction_import)
+setDT(foreign_extinction_export)
 setDT(county_extinction_flow_sums)
 
 foreign_extinction_sum <- foreign_extinction_import[, .(foreign = sum(species_lost)), by = .(scenario_diet, scenario_waste, land_use, taxon)]
@@ -128,6 +133,39 @@ ggsave(file.path(fp_fig, 'foreign_vs_domestic_vlt_by_scenario.png'), p_vlt_fvsd,
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_plantextinctions_by_scenario.png'), p_plantextinction_fvsd, height = 9, width = 12, dpi = 400)
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_animalextinctions_by_scenario.png'), p_animal_fvsd, height = 9, width = 12, dpi = 400)
 
-# Maps: foreign imports to counties ---------------------------------------
+# Maps: foreign exports to counties ---------------------------------------
 
-# Include here later.
+# Threats shown as exports from the originating ecoregion and originating country, depending on how they are totaled.
+foreign_extinction_export_tnc <- foreign_extinction_export[, .(species_lost = sum(species_lost, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use, taxon)]
+foreign_extinction_export_country <- foreign_extinction_export[, .(species_lost = sum(species_lost, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, land_use, taxon)]
+
+# Test map, countries, baseline, animals only
+extinction_country_baseline_animals <- foreign_extinction_export_country[
+  scenario_diet %in% "baseline" & scenario_waste %in% "baseline" & !taxon %in% 'plants', 
+  .(species_lost = sum(species_lost, na.rm = TRUE)),
+  by = .(country_name, ISO_A3)]
+
+country_map_toplot <- global_country_map %>%
+  st_transform("+proj=robin") %>%
+  rename(country_name = NAME_LONG) %>%
+  left_join(extinction_country_baseline_animals)
+
+ggplot(country_map_toplot) +
+  geom_sf(aes(fill = species_lost)) +
+  scale_fill_viridis_c()
+
+# Test map, ecoregions, baseline, animals only
+extinction_tnc_baseline_animals <- foreign_extinction_export_tnc[
+  scenario_diet %in% "baseline" & scenario_waste %in% "baseline" & !taxon %in% 'plants', 
+  .(species_lost = sum(species_lost, na.rm = TRUE)),
+  by = .(TNC, TNC_name)]
+
+tnc_map_toplot <- global_eco_map %>%
+  st_transform("+proj=robin") %>%
+  rename(TNC = ECO_CODE, TNC_name = ECO_NAME) %>%
+  select(TNC, TNC_name) %>%
+  left_join(extinction_tnc_baseline_animals)
+
+ggplot(tnc_map_toplot) +
+  geom_sf(aes(fill = species_lost)) +
+  scale_fill_viridis_c()
