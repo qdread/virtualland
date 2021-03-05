@@ -48,3 +48,11 @@ label_scenario_categories <- function(p) {
     draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
     draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
 }
+
+# Index of Alaska and Hawaii in ecoregion map
+tnc_ak_idx <- substr(tnc_map$ECO_CODE, 1, 4) %in% c('NA06', 'NA11') | tnc_map$ECO_CODE %in% c('NA0509', 'NA0518')
+tnc_hi_idx <- substr(tnc_map$ECO_CODE, 1, 2) == 'OC'
+
+# Get index of Alaska and Hawaii in county map. AK 02 HI 15
+county_ak_idx <- substr(county_map$county, 1, 2) == '02'
+county_hi_idx <- substr(county_map$county, 1, 2) == '15'

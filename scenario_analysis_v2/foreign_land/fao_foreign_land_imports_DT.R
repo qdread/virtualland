@@ -2,6 +2,7 @@
 # QDR / Virtualland / 16 Feb 2021
 
 # Modified 18 Feb 2021: Get the goods transfers for each alternative scenario, before converting VLTs in each scenario.
+# Modified 04 Mar 2021: Remove pre-consumer waste reduction factors for foreign (cannot be affected by USA policy decisions)
 
 # Code copied and modified from scripts in the FAO directory
 # Processing done in FAO/extract_faostat.R
@@ -19,6 +20,20 @@ fao_codes_table <- fread('data/crossreference_tables/faostat_all_codes_harmonize
 
 # Read relative consumption factors vs. baseline by BEA code for each scenario
 scenario_factors_bea <- fread('data/cfs_io_analysis/bea_consumption_factors_diet_waste_scenarios.csv')
+
+# Modify preconsumer waste scenarios --------------------------------------
+
+# Pre-consumer waste reduction converted to baseline.
+# Pre-consumer & consumer waste reduction converted to consumer waste reduction only.
+# Keep them all there so that the foreign results can be integrated with USA results.
+
+precon_cols <- grep("WR_preconsumer", names(scenario_factors_bea), value = TRUE)
+baseline_cols <- grep("WR_baseline", names(scenario_factors_bea), value = TRUE)
+con_cols <- grep("WR_consumer", names(scenario_factors_bea), value = TRUE)
+allav_cols <- grep("WR_allavoidable", names(scenario_factors_bea), value = TRUE)
+
+scenario_factors_bea[, (precon_cols) := scenario_factors_bea[, ..baseline_cols], with = FALSE]
+scenario_factors_bea[, (allav_cols) := scenario_factors_bea[, ..con_cols], with = FALSE]
 
 # Get proportion of trade sent to USA -------------------------------------
 

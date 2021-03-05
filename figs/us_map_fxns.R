@@ -1,14 +1,24 @@
-draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable, title = NULL, subtitle = NULL, scale_name = 'Value\n(billion $)', scale_factor = 1000, scale_trans = 'identity', scale_breaks = NULL, scale_range = NULL, add_theme = theme_void(), write_to_file = NULL, img_size = NULL) {
-  linewidth <- 0.25 # hardcode to 1/2 the default
+draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable, title = NULL, subtitle = NULL, scale_name = 'Value\n(billion $)', scale_factor = 1000, scale_trans = 'identity', scale_breaks = NULL, scale_range = NULL, scale_type = 'sequential', linewidth = 0.25, add_theme = theme_void(), write_to_file = NULL, img_size = NULL) {
+  
   # Calculate scale range
   variable <- enquo(variable)
   map_data <- map_data %>% mutate(!!variable := !!variable/scale_factor)
   if (is.null(scale_range)) scale_range <- map_data %>% pull(!!variable) %>% range(na.rm = TRUE)
   
+  if (scale_type == 'sequential') {
+    scale_main <- scale_fill_viridis_c(na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
+    scale_inset <- scale_fill_viridis_c(na.value = 'gray75', limits = scale_range, trans = scale_trans)
+  }
+  
+  if (scale_type == 'divergent') {
+    scale_main <- scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
+    scale_inset <- scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), na.value = 'gray75', limits = scale_range, trans = scale_trans)
+  }
+  
   # Draw the three maps
   us_map <- ggplot(map_data %>% filter(!ak_idx, !hi_idx)) +
     geom_sf(aes(fill = !!variable), size = linewidth) +
-    scale_fill_viridis_c(na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks) +
+    scale_main +
     add_theme +
     theme(legend.position = 'bottom') +
     ggtitle(title, subtitle)
@@ -18,14 +28,14 @@ draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable, title = N
   hi_map <- ggplot(map_data %>% filter(hi_idx)) +
     geom_sf(aes(fill = !!variable), size = linewidth) +
     coord_sf(crs = st_crs(4135), xlim = c(-161, -154), ylim = c(18, 23), expand = FALSE, datum = NA) +
-    scale_fill_viridis_c(na.value = 'gray75', limits = scale_range, trans = scale_trans) +
+    scale_inset +
     add_theme + 
     theme(legend.position = 'none')
   
   ak_map <- ggplot(map_data %>% filter(ak_idx)) +
     geom_sf(aes(fill = !!variable), size = linewidth) +
     coord_sf(crs = st_crs(3467), xlim = c(-2400000, 1600000), ylim = c(200000, 2500000), expand = FALSE, datum = NA) +
-    scale_fill_viridis_c(na.value = 'gray75', limits = scale_range, trans = scale_trans) +
+    scale_inset +
     add_theme +
     theme(legend.position = 'none')
   
