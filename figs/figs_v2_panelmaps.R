@@ -60,8 +60,9 @@ state_extinction_outbound <- state_extinction_flows[,
                                                      species_lost_baseline = sum(species_lost_baseline, na.rm = TRUE)),
                                                    by = .(scenario_diet, scenario_waste, state_from, land_use, taxon)]
 
-state_extinction_inbound[, inbound_change_vs_baseline := species_lost/species_lost_baseline]
-state_extinction_outbound[, outbound_change_vs_baseline := species_lost/species_lost_baseline]
+# Express change as percent change relative to baseline.
+state_extinction_inbound[, inbound_change_vs_baseline := species_lost/species_lost_baseline - 1]
+state_extinction_outbound[, outbound_change_vs_baseline := species_lost/species_lost_baseline - 1]
 
 state_extinction_inbound[, c('species_lost', 'species_lost_baseline') := NULL]
 state_extinction_outbound[, c('species_lost', 'species_lost_baseline') := NULL]
@@ -107,15 +108,14 @@ county_extinction_baseline <- county_extinction_flow_sums[scenario_diet %in% 'ba
 county_extinction_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
 setnames(county_extinction_baseline, old = c('extinction_outbound', 'extinction_inbound'), new = c('extinction_outbound_baseline', 'extinction_inbound_baseline'))
 
-# Join baseline data to full data
+# Join baseline data to full data. Express as percent change
 county_extinction_flow_sums <- county_extinction_baseline[county_extinction_flow_sums, on = .NATURAL]
-county_extinction_flow_sums[, extinction_outbound_vs_baseline := extinction_outbound/extinction_outbound_baseline]
-county_extinction_flow_sums[, extinction_inbound_vs_baseline := extinction_inbound/extinction_inbound_baseline]
+county_extinction_flow_sums[, extinction_outbound_vs_baseline := extinction_outbound/extinction_outbound_baseline - 1]
+county_extinction_flow_sums[, extinction_inbound_vs_baseline := extinction_inbound/extinction_inbound_baseline - 1]
 
 county_extinction_flow_sums[, c('extinction_outbound_baseline', 'extinction_inbound_baseline', 'extinction_outbound', 'extinction_inbound') := NULL]
 
 county_extinction_map_panels <- group_nest_dt(county_extinction_flow_sums, scenario_diet, scenario_waste, land_use, taxon)
-
 
 # County land data processing ---------------------------------------------
 
@@ -130,10 +130,10 @@ county_land_flow_sums_baseline <- county_land_flow_sums[scenario_diet %in% 'base
 county_land_flow_sums_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
 setnames(county_land_flow_sums_baseline, old = c('flow_inbound', 'flow_outbound'), new = c('flow_inbound_baseline', 'flow_outbound_baseline'))
 
-# Join baseline data to full data
+# Join baseline data to full data. Express as percent chagne.
 county_land_flow_sums <- county_land_flow_sums_baseline[county_land_flow_sums, on = .NATURAL]
-county_land_flow_sums[, inbound_vs_baseline := flow_inbound/flow_inbound_baseline]
-county_land_flow_sums[, outbound_vs_baseline := flow_outbound/flow_outbound_baseline]
+county_land_flow_sums[, inbound_vs_baseline := flow_inbound/flow_inbound_baseline - 1]
+county_land_flow_sums[, outbound_vs_baseline := flow_outbound/flow_outbound_baseline - 1]
 
 # Nest county map to list column
 county_land_map_panels <- group_nest_dt(county_land_flow_sums, scenario_diet, scenario_waste, land_type)
@@ -141,35 +141,45 @@ county_land_map_panels <- group_nest_dt(county_land_flow_sums, scenario_diet, sc
 
 # Create maps -------------------------------------------------------------
 
-# Test with single map
+# Test: total land maps, outbound vs. baseline
+# Find scale values
+county_land_flow_sums[, .(scale_width = max(abs(range(outbound_vs_baseline, na.rm =TRUE))) - 1), by = land_type]
 
-mutate(map_inbound = map2(data, plot_title, 
-                          ~ draw_usmap_with_insets(map_data = left_join(tnc_map, .x, by = c('ECO_CODE' = 'TNC')), 
-                                                   ak_idx = tnc_ak_idx,
-                                                   hi_idx = tnc_hi_idx,
-                                                   variable = flow_inbound,
-                                                   title = glue('{.y$land_type} imported by ecoregion'),
-                                                   subtitle = glue('diet scenario: {.y$diet_name}, waste scenario: {.y$waste_name}'),
-                                                   scale_name = 'area (ha)',
-                                                   scale_factor = 10000,
-                                                   scale_trans = 'log10',
-                                                   scale_range = tnc_land_breaks[c(1,length(tnc_land_breaks))],
-                                                   scale_breaks = tnc_land_breaks,
-                                                   add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
-                                                                                    legend.key.width = unit(0.23, 'in')),
-                                                   write_to_file = glue('{fp_fig}/ecoregion_landflow_maps/{.y$file_prefix}_inbound.png'),
-                                                   img_size = c(7, 7)))
-       
-testmapdata <- left_join(county_map, county_land_map_panels$data[[15]][, .(county, outbound_vs_baseline)])       
-draw_usmap_with_insets(map_data = testmapdata,
-                       ak_idx = county_ak_idx,
-                       hi_idx = county_hi_idx,
-                       variable = outbound_vs_baseline,
-                       linewidth = 0,
-                       scale_name = 'Change vs.\nbaseline',
-                       scale_type = 'divergent',
-                       scale_factor = 1,
-                       scale_range = c(0.65, 1.35),
-                       scale_breaks = c(0.65, 1.35),
-                       add_theme = theme_void() + theme(legend.position = c(0.62, 0.1),
-                                                        legend.key.width = unit(0.23, 'in')))
+total_maps <- county_land_map_panels[
+  land_type %in% 'total'][
+    , panel := map(data, function(dat) draw_usmap_with_insets(map_data = left_join(county_map, dat[, .(county, outbound_vs_baseline)]),
+                                                               ak_idx = county_ak_idx,
+                                                               hi_idx = county_hi_idx,
+                                                               variable = outbound_vs_baseline,
+                                                               linewidth = 0,
+                                                               scale_name = 'Change vs.\nbaseline',
+                                                               scale_type = 'divergent',
+                                                               scale_factor = 1,
+                                                               scale_trans = 'identity',
+                                                               scale_range = c(0, 2),
+                                                               scale_breaks = c(0, 1, 2),
+                                                               ak_pos = c(-0.01, 0.15), hi_pos = c(0.23, 0.15),
+                                                               add_theme = theme_void() + theme(legend.position = 'none')))]
+
+# Use panel plot to make a large panel
+# Create dummy plot with a legend so it can be extracted
+plot_leg <- get_legend(ggplot(mtcars, aes(x=cyl, y=hp, fill=mpg)) + geom_point() +
+  scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), name = 'Change vs.\nbaseline', na.value = 'gray75',  limits = c(-1, 1), trans = 'identity', guide = guide_colorbar(direction = 'horizontal'), breaks = c(-1, 0, 1), labels = scales::percent))
+
+total_maps_laidout <- panel_plot(plots = total_maps$panel, 
+                                 x_labels = diet_long_names$long_name, 
+                                 y_labels = waste_long_names$long_name,
+                                 x_title = 'diet scenario',
+                                 y_title = 'waste scenario',
+                                 global_legend = plot_leg,
+                                 label_fontsize = 10,
+                                 title_fontsize = 14,
+                                 panel_width = 60,
+                                 panel_height = 45,
+                                 label_width = 5,
+                                 title_width = 10,
+                                 legend_height = 15)
+
+png('data/cfs_io_analysis/scenario_v2_figs/test.png', height=4.5*4+1+1.5,width=6.0*5+1,res=100,units='cm')
+grid.draw(total_maps_laidout)
+dev.off()

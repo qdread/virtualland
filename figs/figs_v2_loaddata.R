@@ -58,6 +58,10 @@ foreign_vlt_import <- read_csv('data/cfs_io_analysis/foreign_VLT_to_counties.csv
 foreign_extinction_export <- read_csv('data/cfs_io_analysis/scenarios/foreign_species_lost_by_export_country_x_tnc.csv')
 foreign_extinction_import <- read_csv('data/cfs_io_analysis/scenarios/foreign_species_lost_by_import_county.csv')
 
+# Foreign goods transfers into USA, one for animals and one for crops
+foreign_animal_export <- read_csv('data/cfs_io_analysis/fao_production_trade_animals.csv')
+foreign_crop_export <- read_csv('data/cfs_io_analysis/fao_production_trade_crops.csv')
+
 # Map of counties in AEA
 county_map <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 # Map of TNC ecoregions in AEA
@@ -75,3 +79,13 @@ county_map <- county_map %>% filter(!substr(STATEFP,1,1) %in% c('6','7'))
 state_map <- county_map %>%
   group_by(STATEFP) %>%
   summarize
+
+
+# Index of Alaska and Hawaii in ecoregion map
+tnc_ak_idx <- substr(tnc_map$ECO_CODE, 1, 4) %in% c('NA06', 'NA11') | tnc_map$ECO_CODE %in% c('NA0509', 'NA0518')
+tnc_hi_idx <- substr(tnc_map$ECO_CODE, 1, 2) == 'OC'
+
+# Get index of Alaska and Hawaii in county map. AK 02 HI 15
+county_ak_idx <- substr(county_map$county, 1, 2) == '02'
+county_hi_idx <- substr(county_map$county, 1, 2) == '15'
+
