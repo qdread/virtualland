@@ -16,66 +16,6 @@ library(data.table)
 
 fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs/paneled_maps'
 
-# State extinction data processing ----------------------------------------
-
-# Split out scenario column
-setDT(state_extinction_flows)
-state_extinction_flows <- tidyr::separate(state_extinction_flows, scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_')
-state_extinction_flows[, c('d', 'w') := NULL]
-
-# Create summary data for all taxa, and animals only
-state_extinction_flows_animals <- state_extinction_flows[!taxon %in% 'plants',
-                                                         .(species_lost = sum(species_lost, na.rm = TRUE)),
-                                                         by = .(scenario_diet, scenario_waste, state_from, state_to, land_use)]
-state_extinction_flows_animals[, taxon := 'animals']
-state_extinction_flows_all <- state_extinction_flows[, .(species_lost = sum(species_lost, na.rm = TRUE)),
-                                                     by = .(scenario_diet, scenario_waste, state_from, state_to, land_use)]
-state_extinction_flows_all[, taxon := 'total']
-
-state_extinction_flows <- rbindlist(list(state_extinction_flows, state_extinction_flows_animals, state_extinction_flows_all), use.names = TRUE)
-
-# Create summary data for all land use combined
-state_extinction_flows_allland <- state_extinction_flows[, .(species_lost = sum(species_lost, na.rm = TRUE)),
-                                                         by = .(scenario_diet, scenario_waste, state_from, state_to, taxon)]
-state_extinction_flows_allland[, land_use := 'total']
-
-state_extinction_flows <- rbindlist(list(state_extinction_flows, state_extinction_flows_allland), use.names = TRUE)
-
-
-# Separate out baseline
-state_extinction_baseline <- state_extinction_flows[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
-state_extinction_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
-setnames(state_extinction_baseline, old = 'species_lost', new = 'species_lost_baseline')
-
-# Join baseline data to full data
-state_extinction_flows <- state_extinction_baseline[state_extinction_flows, on = .NATURAL]
-state_extinction_flows[, change_vs_baseline := species_lost/species_lost_baseline]
-
-# Create summary data for inbound and outbound
-state_extinction_inbound <- state_extinction_flows[, 
-                                                   .(species_lost = sum(species_lost, na.rm = TRUE),
-                                                     species_lost_baseline = sum(species_lost_baseline, na.rm = TRUE)),
-                                                   by = .(scenario_diet, scenario_waste, state_to, land_use, taxon)]
-state_extinction_outbound <- state_extinction_flows[, 
-                                                   .(species_lost = sum(species_lost, na.rm = TRUE),
-                                                     species_lost_baseline = sum(species_lost_baseline, na.rm = TRUE)),
-                                                   by = .(scenario_diet, scenario_waste, state_from, land_use, taxon)]
-
-# Express change as percent change relative to baseline.
-state_extinction_inbound[, inbound_change_vs_baseline := species_lost/species_lost_baseline - 1]
-state_extinction_outbound[, outbound_change_vs_baseline := species_lost/species_lost_baseline - 1]
-
-state_extinction_inbound[, c('species_lost', 'species_lost_baseline') := NULL]
-state_extinction_outbound[, c('species_lost', 'species_lost_baseline') := NULL]
-
-setnames(state_extinction_inbound, old = 'state_to', new = 'state')
-setnames(state_extinction_outbound, old = 'state_from', new = 'state')
-
-state_extinction_change <- state_extinction_inbound[state_extinction_outbound, on = .NATURAL]
-
-state_extinction_map_panels <- group_nest_dt(state_extinction_change, scenario_diet, scenario_waste, land_use, taxon)
-
-
 # County extinction data processing ---------------------------------------
 
 # Separate scenario column
@@ -113,6 +53,9 @@ setnames(county_extinction_baseline, old = c('extinction_outbound', 'extinction_
 county_extinction_flow_sums <- county_extinction_baseline[county_extinction_flow_sums, on = .NATURAL]
 county_extinction_flow_sums[, extinction_outbound_vs_baseline := extinction_outbound/extinction_outbound_baseline - 1]
 county_extinction_flow_sums[, extinction_inbound_vs_baseline := extinction_inbound/extinction_inbound_baseline - 1]
+
+# Correct NaN to zero (0/0 values)
+county_extinction_flow_sums[is.nan(extinction_outbound_vs_baseline), extinction_outbound_vs_baseline := 0]
 
 county_extinction_flow_sums[, c('extinction_outbound_baseline', 'extinction_inbound_baseline', 'extinction_outbound', 'extinction_inbound') := NULL]
 
@@ -221,5 +164,134 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pasture
 
 # County extinction maps --------------------------------------------------
 
+# Find scale widths, outbound vs. baseline
+scale_width <- function(x) max(abs(range(x, na.rm = TRUE)))
+county_ext_ob_widths <- county_extinction_flow_sums[, lapply(.SD, scale_width), keyby = .(land_use, taxon), .SDcols = patterns('extinction')]
 
+# Do each taxon, with total land use.
 
+# Amphibians, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'amphibians'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_amphibianextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# Animals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'animals'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_animalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# Birds, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'birds'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_birdextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# Mammals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'mammals'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_mammalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.01, 1.01),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# Plants, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'plants'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_plantextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# Reptiles, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'reptiles'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_reptileextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# All taxa, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'total'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = 'county_totalland_totalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1, 1),
+                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
