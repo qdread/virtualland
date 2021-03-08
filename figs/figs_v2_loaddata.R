@@ -7,6 +7,8 @@ library(tidyverse)
 library(cowplot) # For labels of faceted plots
 library(sf)
 library(glue)
+library(grid)
+library(gridExtra)
 
 fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs'
 

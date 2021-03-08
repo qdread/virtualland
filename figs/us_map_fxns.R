@@ -85,3 +85,48 @@ panel_plot <- function(plots, x_labels, y_labels, x_title, y_title, global_legen
               heights = unit(c(title_width, label_width, rep(panel_height, length(y_labels)), legend_height), 'mm'))
   
 }
+
+# Define function to programmatically make paneled map.
+make_20panel_map <- function(map_panel_data, base_map, region_type, variable, file_name, ...) {
+  
+  args <- list(...)
+  
+  maps_list <- map(map_panel_data$data, function(dat) draw_usmap_with_insets(map_data = left_join(base_map, dat[, c(region_type, variable), with = FALSE]),
+                                                                             ak_idx = args$ak_idx,
+                                                                             hi_idx = args$hi_idx,
+                                                                             variable = !!as.symbol(variable),
+                                                                             linewidth = 0,
+                                                                             scale_name = args$scale_name,
+                                                                             scale_type = args$scale_type,
+                                                                             scale_factor = args$scale_factor,
+                                                                             scale_trans = args$scale_trans,
+                                                                             scale_range = args$scale_range,
+                                                                             scale_breaks = args$scale_breaks,
+                                                                             ak_pos = c(-0.01, 0.15), hi_pos = c(0.23, 0.15),
+                                                                             add_theme = args$add_theme))
+  
+  # Use panel plot to make a large panel
+  # Create dummy plot with a legend so it can be extracted
+  plot_leg <- get_legend(ggplot(mtcars, aes(x=cyl, y=hp, fill=mpg)) + geom_point() +
+                           scale_fill_gradientn(colours = args$scale_palette, name = args$scale_name, na.value = 'gray75',  limits = args$scale_range, trans = args$scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = args$scale_breaks, labels = scales::percent) +
+                           theme(legend.key.width = unit(1.5, 'cm')))
+  
+  maps_laidout <- panel_plot(plots = maps_list, 
+                             x_labels = diet_long_names$long_name, 
+                             y_labels = waste_long_names$long_name,
+                             x_title = 'diet scenario',
+                             y_title = 'waste scenario',
+                             global_legend = plot_leg,
+                             label_fontsize = 10,
+                             title_fontsize = 14,
+                             panel_width = 60,
+                             panel_height = 45,
+                             label_width = 5,
+                             title_width = 10,
+                             legend_height = 15)
+  
+  png(glue('{fp_fig}/{file_name}.png'), height=4.5*4+1+1.5,width=6.0*5+1,res=100,units='cm')
+  grid.draw(maps_laidout)
+  dev.off()
+  
+}

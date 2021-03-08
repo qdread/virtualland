@@ -14,6 +14,7 @@ source('figs/figs_v2_loaddata.R')
 library(Rutilitybelt)
 library(data.table)
 
+fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs/paneled_maps'
 
 # State extinction data processing ----------------------------------------
 
@@ -139,47 +140,86 @@ county_land_flow_sums[, outbound_vs_baseline := flow_outbound/flow_outbound_base
 county_land_map_panels <- group_nest_dt(county_land_flow_sums, scenario_diet, scenario_waste, land_type)
 
 
-# Create maps -------------------------------------------------------------
 
-# Test: total land maps, outbound vs. baseline
+# County land maps --------------------------------------------------------
+
+# County outbound land maps; change vs. baseline
 # Find scale values
-county_land_flow_sums[, .(scale_width = max(abs(range(outbound_vs_baseline, na.rm =TRUE))) - 1), by = land_type]
+county_land_flow_sums[, .(scale_width = max(abs(range(outbound_vs_baseline, na.rm =TRUE)))), by = land_type]
 
-total_maps <- county_land_map_panels[
-  land_type %in% 'total'][
-    , panel := map(data, function(dat) draw_usmap_with_insets(map_data = left_join(county_map, dat[, .(county, outbound_vs_baseline)]),
-                                                               ak_idx = county_ak_idx,
-                                                               hi_idx = county_hi_idx,
-                                                               variable = outbound_vs_baseline,
-                                                               linewidth = 0,
-                                                               scale_name = 'Change vs.\nbaseline',
-                                                               scale_type = 'divergent',
-                                                               scale_factor = 1,
-                                                               scale_trans = 'identity',
-                                                               scale_range = c(0, 2),
-                                                               scale_breaks = c(0, 1, 2),
-                                                               ak_pos = c(-0.01, 0.15), hi_pos = c(0.23, 0.15),
-                                                               add_theme = theme_void() + theme(legend.position = 'none')))]
+# Total land, outbounds vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'total'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = 'county_totalland_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range_legend = c(-1, 1),
+                 scale_breaks_legend = c(-1, -0.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
 
-# Use panel plot to make a large panel
-# Create dummy plot with a legend so it can be extracted
-plot_leg <- get_legend(ggplot(mtcars, aes(x=cyl, y=hp, fill=mpg)) + geom_point() +
-  scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), name = 'Change vs.\nbaseline', na.value = 'gray75',  limits = c(-1, 1), trans = 'identity', guide = guide_colorbar(direction = 'horizontal'), breaks = c(-1, 0, 1), labels = scales::percent))
+# Annual crops, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'annual_cropland'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = 'county_annualcrop_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range_legend = c(-.9, .9),
+                 scale_breaks_legend = c(-.9, -0.45, 0, 0.45, .9),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
 
-total_maps_laidout <- panel_plot(plots = total_maps$panel, 
-                                 x_labels = diet_long_names$long_name, 
-                                 y_labels = waste_long_names$long_name,
-                                 x_title = 'diet scenario',
-                                 y_title = 'waste scenario',
-                                 global_legend = plot_leg,
-                                 label_fontsize = 10,
-                                 title_fontsize = 14,
-                                 panel_width = 60,
-                                 panel_height = 45,
-                                 label_width = 5,
-                                 title_width = 10,
-                                 legend_height = 15)
+# Permanent crops, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'permanent_cropland'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = 'county_permanentcrop_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range_legend = c(-1.15, 1.15),
+                 scale_breaks_legend = c(-1, -0.5, 0, 0.5, 1),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
 
-png('data/cfs_io_analysis/scenario_v2_figs/test.png', height=4.5*4+1+1.5,width=6.0*5+1,res=100,units='cm')
-grid.draw(total_maps_laidout)
-dev.off()
+# Pastureland, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pastureland'],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = 'county_pasture_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_type = 'divergent',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-0.9, 0.9),
+                 scale_breaks = c(-0.9, -0.45, 0, 0.45, 0.9),
+                 scale_palette = scico::scico(15, palette = 'berlin'),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+# County extinction maps --------------------------------------------------
+
+
+
