@@ -133,6 +133,25 @@ ggsave(file.path(fp_fig, 'foreign_vs_domestic_vlt_by_scenario.png'), p_vlt_fvsd,
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_plantextinctions_by_scenario.png'), p_plantextinction_fvsd, height = 9, width = 12, dpi = 400)
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_animalextinctions_by_scenario.png'), p_animal_fvsd, height = 9, width = 12, dpi = 400)
 
+
+# Sum foreign and domestic extinctions ------------------------------------
+
+# Create barplots similar to those made for domestic only for all scenarios
+# Use all_extinction_sum
+# Use ggpattern package to fill in bars with patterns.
+
+# animals + plants x foreign + domestic, ignore land use.
+all_extinction_sum[, kingdom := ifelse(taxon == 'plants', 'plants', 'animals')]
+extinction_grandtotals <- all_extinction_sum[, .(extinctions = sum(extinctions)), by = .(scenario_diet, scenario_waste, origin, kingdom)]
+
+library(ggpattern)
+
+ggplot(extinction_grandtotals, aes(y = extinctions, x = scenario_waste, fill = kingdom, pattern = origin)) +
+  facet_grid(. ~ scenario_diet) +
+  geom_bar_pattern(position = 'stack', stat = 'identity') 
+#FIXME this needs to be completed.
+
+
 # Maps: foreign exports to counties ---------------------------------------
 
 # Threats shown as exports from the originating ecoregion and originating country, depending on how they are totaled.

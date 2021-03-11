@@ -1,7 +1,8 @@
 draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable, 
                                    title = NULL, subtitle = NULL, 
                                    scale_name = 'Value\n(billion $)', scale_factor = 1000, scale_trans = 'identity', 
-                                   scale_breaks = NULL, scale_range = NULL, scale_type = 'sequential', 
+                                   scale_breaks = NULL, scale_range = NULL, 
+                                   scale_palette = viridis::viridis.pal()(15),
                                    ak_pos = c(0.01, 0.15), hi_pos = c(0.26, 0.15),
                                    ak_ratio = 0.58, ak_size = 0.32, hi_ratio = 0.71, hi_size = 0.2,
                                    linewidth = 0.25, add_theme = theme_void(), write_to_file = NULL, img_size = NULL) {
@@ -11,16 +12,9 @@ draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable,
   map_data <- map_data %>% mutate(!!variable := !!variable/scale_factor)
   if (is.null(scale_range)) scale_range <- map_data %>% pull(!!variable) %>% range(na.rm = TRUE)
   
-  if (scale_type == 'sequential') {
-    scale_main <- scale_fill_viridis_c(na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
-    scale_inset <- scale_fill_viridis_c(na.value = 'gray75', limits = scale_range, trans = scale_trans)
-  }
-  
-  if (scale_type == 'divergent') {
-    scale_main <- scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
-    scale_inset <- scale_fill_gradientn(colours = scico::scico(15, palette = 'berlin'), na.value = 'gray75', limits = scale_range, trans = scale_trans)
-  }
-  
+    scale_main <- scale_fill_gradientn(colours = scale_palette, na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
+    scale_inset <- scale_fill_gradientn(colours = scale_palette, na.value = 'gray75', limits = scale_range, trans = scale_trans)
+
   # Draw the three maps
   us_map <- ggplot(map_data %>% filter(!ak_idx, !hi_idx)) +
     geom_sf(aes(fill = !!variable), size = linewidth) +
@@ -87,7 +81,7 @@ panel_plot <- function(plots, x_labels, y_labels, x_title, y_title, global_legen
 }
 
 # Define function to programmatically make paneled map.
-make_20panel_map <- function(map_panel_data, base_map, region_type, variable, file_name, ...) {
+make_20panel_map <- function(map_panel_data, base_map, region_type, variable, file_name, percent_scale = TRUE, ...) {
   
   args <- list(...)
   
@@ -97,18 +91,19 @@ make_20panel_map <- function(map_panel_data, base_map, region_type, variable, fi
                                                                              variable = !!as.symbol(variable),
                                                                              linewidth = 0,
                                                                              scale_name = args$scale_name,
-                                                                             scale_type = args$scale_type,
                                                                              scale_factor = args$scale_factor,
                                                                              scale_trans = args$scale_trans,
                                                                              scale_range = args$scale_range,
                                                                              scale_breaks = args$scale_breaks,
+                                                                             scale_palette = args$scale_palette,
                                                                              ak_pos = c(-0.01, 0.15), hi_pos = c(0.23, 0.15),
                                                                              add_theme = args$add_theme))
   
   # Use panel plot to make a large panel
   # Create dummy plot with a legend so it can be extracted
+  scale_labs <- if (percent_scale) scales::percent else waiver()
   plot_leg <- get_legend(ggplot(mtcars, aes(x=cyl, y=hp, fill=mpg)) + geom_point() +
-                           scale_fill_gradientn(colours = args$scale_palette, name = args$scale_name, na.value = 'gray75',  limits = args$scale_range, trans = args$scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = args$scale_breaks, labels = scales::percent) +
+                           scale_fill_gradientn(colours = args$scale_palette, name = args$scale_name, na.value = 'gray75',  limits = args$scale_range, trans = args$scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = args$scale_breaks, labels = scale_labs) +
                            theme(legend.key.width = unit(1.5, 'cm')))
   
   maps_laidout <- panel_plot(plots = maps_list, 
