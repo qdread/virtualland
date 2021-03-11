@@ -26,9 +26,10 @@ emission_lu_rawdata <- read_csv(file.path(fp_fao, 'Emissions_Land_Use_Land_Use_T
 emission_bysector_rawdata <- read_csv(file.path(fp_fao, 'Environment_Emissions_by_Sector_E_All_Data_(Normalized).csv'))
 emission_intensity_rawdata <- read_csv(file.path(fp_fao, 'Environment_Emissions_intensities_E_All_Data_(Normalized).csv'))
 
-# Read the land use CSVs
+# Read the land use CSVs (incl. livestock patterns)
 landuse_env_rawdata <- read_csv(file.path(fp_fao, 'Environment_LandUse_E_All_Data_(Normalized).csv'))
 landuse_inputs_rawdata <- read_csv(file.path(fp_fao, 'Inputs_LandUse_E_All_Data_(Normalized).csv'))
+livestockpatterns_rawdata <- read_csv(file.path(fp_fao, 'Environment_LivestockPatterns_E_All_Data_(Normalized).csv'))
 
 # Read the trade CSVs
 trade_crops_rawdata <- read_csv(file.path(fp_fao, 'Trade_Crops_Livestock_E_All_Data_(Normalized).csv'))
@@ -202,6 +203,7 @@ timeavg(landuse_inputs_rawdata, 'landuse_inputs')
 timeavg(trade_crops_rawdata, 'trade_crops')
 timeavg(trade_animals_rawdata, 'trade_animals')
 timeavg(valueprod_rawdata, 'value_production')
+timeavg(livestockpatterns_rawdata, 'livestock_patterns')
 
 # Different function needed for trade matrix only.
 

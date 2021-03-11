@@ -9,11 +9,12 @@
 
 library(data.table)
 library(purrr)
+library(Rutilitybelt)
 
 fp_fao <- 'data/cfs_io_analysis/faostat2017'
 
 # Read all processed FAOSTAT data for 2017
-walk(dir(fp_fao), ~ assign(gsub('.csv', '', .), fread(file.path(fp_fao, .)), envir = .GlobalEnv))
+read_all_csvs(fp_fao)
 
 # Read harmonization table with BEA codes.
 fao_codes_table <- fread('data/crossreference_tables/faostat_all_codes_harmonized.csv')
@@ -34,6 +35,10 @@ allav_cols <- grep("WR_allavoidable", names(scenario_factors_bea), value = TRUE)
 
 scenario_factors_bea[, (precon_cols) := scenario_factors_bea[, ..baseline_cols], with = FALSE]
 scenario_factors_bea[, (allav_cols) := scenario_factors_bea[, ..con_cols], with = FALSE]
+
+# Melt scenario_factors_bea to long form.
+scenario_factors_long <- melt(scenario_factors_bea, id.vars = c('BEA_389_code', 'BEA_389_def'), variable.name = 'scenario', value.name = 'consumption_factor')
+scenario_factors_long[, BEA_389_def := NULL]
 
 # Get proportion of trade sent to USA -------------------------------------
 
@@ -139,10 +144,8 @@ production_crops_trade[, proportion_sent_USA := export_qty/production]
 production_crops_trade[, virtual_land_transfer := area_harvested * pmin(proportion_sent_USA, 1)]
 
 #### Multiply the virtual land transfers by country x BEA code by the consumption factor for that BEA code in each scenario.
-# Convert scenario_factors_bea to long, then do a Cartesian left join
+# Do a Cartesian left join with longform scenario factors.
 # Multiply the baseline VLT times the consumption factor.
-scenario_factors_long <- melt(scenario_factors_bea, id.vars = c('BEA_389_code', 'BEA_389_def'), variable.name = 'scenario', value.name = 'consumption_factor')
-scenario_factors_long[, BEA_389_def := NULL]
 
 production_crops_trade_by_scenario <- scenario_factors_long[production_crops_trade, on = c('BEA_389_code' = 'BEA_code'), allow.cartesian = TRUE]
 production_crops_trade_by_scenario[, virtual_land_transfer := virtual_land_transfer * consumption_factor]
