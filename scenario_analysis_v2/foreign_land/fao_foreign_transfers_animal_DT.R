@@ -12,7 +12,8 @@
 # 6. Multiply the total pastureland for each country by the livestock patterns share of each species, divided only among grazer species = land area of pastureland used to feed each grazer species in each country
 # 7.Cartesian join the result with livestock primary data that divide animal stocks into those used to produce meat vs. milk or eggs
 # 8. Multiply land area per species by the proportion of stocks used to produce meat vs. milk or eggs = land area of each crop used to produce each type of product for each species in each country! (will have to find a rough estimate for how to break down dairy products further)
-# 9. Apply scenario factors!
+# 9. Join back with the original production+trade data frame for animals.
+# 10. Apply scenario factors!
 
 
 # Step 0. Initial processing ----------------------------------------------
@@ -141,7 +142,14 @@ land_feed_livestock <- land_feed_livestock[country_code %in% exporters$country_c
 land_feed_livestock_byspecies <- land_feed_livestock[, .(cropland_footprint_feed_species = sum(land_footprint_feed_species, na.rm = TRUE),
                                                          LSU_percent = LSU_percent[1],
                                                          LSU_percent_grazers = LSU_percent_grazers[1]), 
-                                                     by = .(country_code, country_name, livestock_item_code, livestock_name, grazer)]
+                                                     by = .(country_code, country_name, livestock_item_code, livestock_name, annual, grazer)]
+
+# Get rid of bad rows
+land_feed_livestock_byspecies <- land_feed_livestock_byspecies[cropland_footprint_feed_species > 0]
+
+# Widen so that annual and permanent crops have a separate column each.
+land_feed_livestock_byspecies[, annual := ifelse(annual, 'annual_footprint_feed', 'permanent_footprint_feed')]
+land_feed_livestock_byspecies <- dcast(land_feed_livestock_byspecies, ... ~ annual, value.var = 'cropland_footprint_feed_species', fill = 0)
 
 # Step 5-6. Join with pastureland to get pasture footprint ----------------
 
@@ -154,9 +162,64 @@ pastureland_totals[, pastureland := pastureland * 1000]
 land_feed_livestock_byspecies <- pastureland_totals[land_feed_livestock_byspecies, on = .NATURAL]
 
 # Step 6. Multiply by the LSU percentage for grazers only to get the pastureland footprint per species
-land_feed_livestock_byspecies[, pastureland_footprint_feed_species := pastureland * LSU_percent_grazers /100]
+land_feed_livestock_byspecies[, pastureland_footprint := pastureland * LSU_percent_grazers /100]
 
 
 # Step 7-8. Join with livestock primary to disaggregate by product --------
 
-# Subset production_livestockprimary
+# Subset production_livestockprimary to only the relevant rows
+# The same value is given for number of slaughtered animals for each meat product but a different number is given for milk products
+unique(production_livestockprimary[unit %in% c('Head', '1000 Head'), .(item, element, element_code, unit)])
+unique(production_livestockprimary[element %in% 'Milk Animals', .(item, element, unit)])
+
+# get meat and milk number of head for cow, sheep, goat, camel, and buffalo, and meat and milk 1000 bird numbers for chickens
+# remove a couple aggregated codes that got in.
+livestockprimary_bytype <- production_livestockprimary[((grepl('Milk|Meat', item, ignore.case = TRUE) & grepl('cow|cattle|sheep|goat|buffalo|camel', item, ignore.case = TRUE)) |
+                                                      (grepl('Eggs|Meat', item, ignore.case = TRUE) & grepl('chicken|hen', item, ignore.case = TRUE))) &
+                                                      element_code %in% c(5318, 5320, 5321, 5313) & !item_code %in% c(1806, 1807, 1158)]
+
+# Do some data manipulation on the livestockprimary_bytype dataframe.
+livestockprimary_bytype[, livestock_name := fcase(
+  grepl('cattle|cow', item), 'Cattle',
+  grepl('sheep', item), 'Sheep',
+  grepl('goat', item), 'Goats',
+  grepl('chicken|hen', item), 'Chickens',
+  grepl('camel', item), 'Camels',
+  grepl('buffalo', item), 'Buffaloes'
+)]
+livestockprimary_bytype[, element := fcase(
+  element == 'Milk Animals', 'milk',
+  element == 'Laying', 'eggs',
+  element == 'Producing Animals/Slaughtered', 'meat'
+)]
+
+# Multiply the 1000 head rows by 1000 to make it consistent, though in the end only the relative numbers will be used.
+livestockprimary_bytype[unit == '1000 Head', value := value * 1000]
+
+livestockprimary_bytype[, c('element_code', 'item_code', 'item', 'n', 'unit') := NULL]
+
+setnames(livestockprimary_bytype, 'value', 'n_animals')
+livestockprimary_bytype[, proportion_animals := n_animals / sum(n_animals), by = .(area_code, area, livestock_name)]
+
+livestockprimary_bytype[, n_animals := NULL]
+setnames(livestockprimary_bytype, old = c('area_code', 'area'), new = c('country_code', 'country_name'))
+
+# Join this with land_feed_livestock_byspecies
+land_feed_livestock_byspecies <- livestockprimary_bytype[land_feed_livestock_byspecies, on = .NATURAL]
+
+# Fill in missing values
+land_feed_livestock_byspecies[is.na(element), element := 'meat']
+land_feed_livestock_byspecies[is.na(proportion_animals), proportion_animals := 1]
+
+# Multiply the appropriate land footprints times the proportion used for milk or eggs.
+footprint_cols <- grep('footprint', names(land_feed_livestock_byspecies), value = TRUE)
+land_feed_livestock_byspecies[, (footprint_cols) := lapply(.SD, function(x) x * land_feed_livestock_byspecies$proportion_animals), .SDcols = footprint_cols]
+
+# FIXME next join with the original prod_animal_joined_trade, (if we need factors for cheese and butter vs. milk, we can try to get those)
+# http://www.fao.org/3/T0045E/T0045E05.htm states that 100 L (~100 kg) milk at 40 g fat/L produces 11 kg cheese or 1.8 kg butter.
+# yogurt is roughly 1:1 ratio, cream is similar to the ratio for cheese.
+
+# Remove nonfood products (wool and hide)
+# Convert butter and cheese (and other dairy) to milk equivalents, and convert fat to meat equivalent.
+
+# Remove nonfood products from prod_animal_joined_trade, then join so that butter, cheese, dairy are joined to dairy, and meat and fat are joined to meat. Basically we just need to convert the export quantity of bu
