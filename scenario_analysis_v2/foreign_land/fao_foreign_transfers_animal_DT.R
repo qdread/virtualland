@@ -98,6 +98,8 @@ production_crops_trade[, i.item := NULL] # Remove the bad item column
 production_crops_fbs_joined <- production_crops_trade[fbs_tojoin, on = .NATURAL]
 
 # Step 2. Calculate land footprint of each crop in each country going to feed.
+# Where domestic supply quantity is less than feed, set them equal.
+production_crops_fbs_joined[domestic_supply_quantity < feed, domestic_supply_quantity := feed]
 production_crops_fbs_joined[, proportion_feed := feed / domestic_supply_quantity]
 production_crops_fbs_joined[, land_footprint_feed := area_harvested * proportion_feed]
 
@@ -107,6 +109,8 @@ production_crops_fbs_joined <- production_crops_fbs_joined[!is.na(land_footprint
 # Step 3-4. Join with livestock patterns for each species -----------------
 
 # Step 3. Join the feed footprint for each crop with the livestock patterns data
+
+# N.B.: Livestock patterns excludes some of the less important livestock types, such as bees, turkey, ducks, rabbits.
 
 # Clean up livestock patterns data (reshape the 3 variables wider so each country x species gets one row)
 livestock_patterns[, c('unit', 'n', 'element_code') := NULL]
@@ -211,15 +215,83 @@ land_feed_livestock_byspecies <- livestockprimary_bytype[land_feed_livestock_bys
 land_feed_livestock_byspecies[is.na(element), element := 'meat']
 land_feed_livestock_byspecies[is.na(proportion_animals), proportion_animals := 1]
 
-# Multiply the appropriate land footprints times the proportion used for milk or eggs.
+# step 8. Multiply the appropriate land footprints times the proportion used for milk or eggs.
 footprint_cols <- grep('footprint', names(land_feed_livestock_byspecies), value = TRUE)
 land_feed_livestock_byspecies[, (footprint_cols) := lapply(.SD, function(x) x * land_feed_livestock_byspecies$proportion_animals), .SDcols = footprint_cols]
 
-# FIXME next join with the original prod_animal_joined_trade, (if we need factors for cheese and butter vs. milk, we can try to get those)
+
+# Step 9. Join back with original production+trade data -------------------
+
+# Next join with the original prod_animal_joined_trade, 
 # http://www.fao.org/3/T0045E/T0045E05.htm states that 100 L (~100 kg) milk at 40 g fat/L produces 11 kg cheese or 1.8 kg butter.
 # yogurt is roughly 1:1 ratio, cream is similar to the ratio for cheese.
 
-# Remove nonfood products (wool and hide)
-# Convert butter and cheese (and other dairy) to milk equivalents, and convert fat to meat equivalent.
+# Crude conversion factors:
+dairy_conversion_factors <- c(cheese = 0.1, butter = 0.02, `other dairy` = 0.1)
+# Add meat and fat together (representing biomass of animal)
 
-# Remove nonfood products from prod_animal_joined_trade, then join so that butter, cheese, dairy are joined to dairy, and meat and fat are joined to meat. Basically we just need to convert the export quantity of bu
+# Clean up prod_animal_joined_trade by
+# remove nonfood products (wool and hide)
+# Remove honey (not accounting for land footprint of honey production)
+# Convert butter and cheese (and other dairy) to milk equivalents, and convert fat to meat equivalent.
+# Sum up by country x species x broader product type (meat, dairy, eggs)
+
+prod_animal_joined_trade <- prod_animal_joined_trade[!livestock_product_type %in% c('wool', 'hide', 'honey', 'other')]
+prod_animal_joined_trade[, production_qty := fcase(
+    livestock_product_type %in% 'butter', production_qty * dairy_conversion_factors['butter'],
+    livestock_product_type %in% 'cheese', production_qty * dairy_conversion_factors['cheese'],
+    livestock_product_type %in% 'other dairy', production_qty * dairy_conversion_factors['other dairy'],
+    !livestock_product_type %in% c('butter', 'cheese', 'other dairy'), production_qty
+  )
+]
+
+prod_animal_joined_trade[, livestock_product_type_broad := fcase(
+  livestock_product_type %in% c('meat', 'fat'), 'meat',
+  livestock_product_type %in% c('butter', 'cheese', 'milk', 'other dairy'), 'milk',
+  livestock_product_type %in% 'eggs', 'eggs'
+)]
+
+prod_trade_animal_agg <- prod_animal_joined_trade[, lapply(.SD, sum, na.rm = TRUE), by = .(area_code, area, livestock_animal, livestock_product_type_broad), .SDcols = c('export_qty', 'production_qty')]
+
+# To join land_feed_livestock_byspecies with prod_trade_animal_agg, we need to match the livestock names up.
+
+livestock_names_lookup <- data.frame(old = c("Cattle", "Buffaloes", "Sheep", "Goats", "Pigs", "Chickens", 
+                                       "Horses", "Asses", "Mules", "Camels"),
+                                     new = c('cattle', 'buffalo', 'sheep', 'goat', 'pig', 'chicken', 'horse', 'ass', 'mule', 'camel'))
+land_feed_livestock_byspecies[, livestock_name := livestock_names_lookup$new[match(livestock_name, livestock_names_lookup$old)]]
+
+land_feed_livestock_tojoin <- land_feed_livestock_byspecies[, .(country_code, country_name, element, livestock_name, proportion_animals, annual_footprint_feed, permanent_footprint_feed, pastureland_footprint)]
+setnames(land_feed_livestock_tojoin, old = 'element', new = 'livestock_product_type_broad')
+
+setnames(prod_trade_animal_agg, old = c('area_code', 'area', 'livestock_animal'), new = c('country_code', 'country', 'livestock_name'))
+prod_trade_animal_agg[, country := NULL]
+
+VLT_animal_baseline <- land_feed_livestock_tojoin[prod_trade_animal_agg, on = .NATURAL][
+  !is.na(livestock_product_type_broad) & export_qty > 0 & (!is.na(annual_footprint_feed) | !is.na(permanent_footprint_feed) | !is.na(pastureland_footprint))]
+
+# In joined data frame, multiply the VLT by the proportion sent to the USA. 
+VLT_animal_baseline[, proportion_sent_to_usa := export_qty / production_qty]
+VLT_animal_baseline[, VLT_annual := annual_footprint_feed * proportion_sent_to_usa]
+VLT_animal_baseline[, VLT_permanent := permanent_footprint_feed * proportion_sent_to_usa]
+VLT_animal_baseline[, VLT_pasture := pastureland_footprint * proportion_sent_to_usa]
+
+# Step 10. Apply scenario factors -----------------------------------------
+
+# calculate a coarsened scenario factor with meat, milk, and eggs aggregated.
+# Use only meat, milk, and egg codes, and aggregate them
+dairy_codes <- c('31151A', '311513', '311514')
+meat_codes <- c('31161A', '311615', '112A00')
+egg_codes <- c('112300')
+scenario_factors_animal <- scenario_factors_long[BEA_389_code %in% c(dairy_codes, meat_codes, egg_codes)]
+scenario_factors_animal[, livestock_product_type_broad := fcase(BEA_389_code %in% meat_codes, 'meat',
+                                                                BEA_389_code %in% dairy_codes, 'milk',
+                                                                BEA_389_code %in% egg_codes, 'eggs')]
+scenario_factors_animal[, .(consumption_factor = mean(consumption_factor)), by = .(scenario, livestock_product_type_broad)]
+
+# Cartesian join VLT_animal_baseline with coarsened scenario factors.
+VLT_sums_animal <- scenario_factors_animal[VLT_animal_baseline, on = livestock_product_type_broad, allow.cartesian = TRUE]
+
+# Multiply VLTs by consumption factors.
+VLT_sums_animal[, VLT_annual := VLT_annual * consumption_factor]
+VLT_sums_animal[, VLT_permanent := VLT_permanent * consumption_factor]
+VLT_sums_animal[, VLT_pasture := VLT_pasture * consumption_factor]
