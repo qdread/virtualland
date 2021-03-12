@@ -286,10 +286,10 @@ scenario_factors_animal <- scenario_factors_long[BEA_389_code %in% c(dairy_codes
 scenario_factors_animal[, livestock_product_type_broad := fcase(BEA_389_code %in% meat_codes, 'meat',
                                                                 BEA_389_code %in% dairy_codes, 'milk',
                                                                 BEA_389_code %in% egg_codes, 'eggs')]
-scenario_factors_animal[, .(consumption_factor = mean(consumption_factor)), by = .(scenario, livestock_product_type_broad)]
+scenario_factors_animal <- scenario_factors_animal[, .(consumption_factor = mean(consumption_factor)), by = .(scenario, livestock_product_type_broad)]
 
 # Cartesian join VLT_animal_baseline with coarsened scenario factors.
-VLT_sums_animal <- scenario_factors_animal[VLT_animal_baseline, on = livestock_product_type_broad, allow.cartesian = TRUE]
+VLT_sums_animal <- scenario_factors_animal[VLT_animal_baseline, on = 'livestock_product_type_broad', allow.cartesian = TRUE]
 
 # Multiply VLTs by consumption factors.
 VLT_sums_animal[, VLT_annual := VLT_annual * consumption_factor]
