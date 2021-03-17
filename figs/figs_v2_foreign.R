@@ -146,10 +146,15 @@ extinction_grandtotals <- all_extinction_sum[, .(extinctions = sum(extinctions))
 
 library(ggpattern)
 
-ggplot(extinction_grandtotals, aes(y = extinctions, x = scenario_waste, fill = kingdom, pattern = origin)) +
-  facet_grid(. ~ scenario_diet) +
-  geom_bar_pattern(position = 'stack', stat = 'identity') 
-#FIXME this needs to be completed.
+p_ext_grandtotals <- ggplot(extinction_grandtotals, aes(y = extinctions, x = scenario_waste, fill = kingdom, pattern = origin)) +
+  facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet))) +
+  geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
+  scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
+  scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
+  scale_fill_manual(values = as.character(okabe_colors[c('reddishpurple', 'bluishgreen')])) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6)))
+
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_extinction_grandtotals.png'), p_ext_grandtotals, height = 6, width = 10, dpi = 400)
 
 
 # Maps: foreign exports to counties ---------------------------------------

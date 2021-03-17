@@ -377,12 +377,18 @@ land_feed_livestock_byspecies[, (footprint_cols) := lapply(.SD, function(x) x * 
 
 # Step 9. Join back with original production+trade data -------------------
 
-# Next join with the original prod_animal_joined_trade, 
-# http://www.fao.org/3/T0045E/T0045E05.htm states that 100 L (~100 kg) milk at 40 g fat/L produces 11 kg cheese or 1.8 kg butter.
-# yogurt is roughly 1:1 ratio, cream is similar to the ratio for cheese.
+# Next join with the original prod_animal_joined_trade 
+
+# Sources for conversion from other dairy products to milk equivalents by weight
+# http://www.fao.org/fileadmin/templates/ess/documents/methodology/tcf.pdf
+# https://www.ers.usda.gov/data-products/dairy-data/documentation/ 
 
 # Crude conversion factors:
-dairy_conversion_factors <- c(cheese = 0.1, butter = 0.02, `other dairy` = 0.1)
+dairy_conversion_factors_fao <- c(cheese = 0.15, butter = 0.047, cream = 0.15, yogurt = 0.8, evaporated_milk = 0.4, condensed_milk = 0.33, dry_milk = 0.15, whey = 0.73)
+dairy_conversion_factors_ers <- c(cheese = 3.46/mean(c(24.44, 27.5, 32.73)), butter = 3.46/80.5)
+dairy_conversion_factors <- c(cheese = mean(c(dairy_conversion_factors_fao['cheese'], dairy_conversion_factors_ers['cheese'])),
+                              butter = mean(c(dairy_conversion_factors_fao['butter'], dairy_conversion_factors_ers['butter'])),
+                              `other dairy` = mean(dairy_conversion_factors_fao))
 # Add meat and fat together (representing biomass of animal)
 
 # Clean up prod_animal_joined_trade by
@@ -474,7 +480,6 @@ VLT_all[, VLT_annual := VLT_annual.x + VLT_annual.y]
 VLT_all[, VLT_permanent := VLT_permanent.x + VLT_permanent.y]
 VLT_all <- VLT_all[, .(scenario, country_code, country_name, VLT_annual, VLT_mixed, VLT_permanent, VLT_pasture)]
 
-VLT_all <- merge(VLT_sums_crop, VLT_sums_pasture, all = TRUE)
 replace_na_dt(VLT_all, cols = grep('VLT', names(VLT_all), value = TRUE), replace_with = 0)
 
 fwrite(VLT_all, '/nfs/qread-data/cfs_io_analysis/fao_VLT_provisional.csv')
