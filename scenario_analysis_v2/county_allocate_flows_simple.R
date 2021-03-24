@@ -15,24 +15,23 @@ county_consumption <- read_csv(file.path(fp_out, 'county_totaldemand2012_allscen
 # Production downscaled (2012)
 county_production <- read_csv(file.path(fp_out, 'county_production2012.csv'))
 
-# Crosswalk table which has info for which codes are in the food system (primary agricultural goods only)
-bea_table <- read_csv('data/crossreference_tables/naics_crosswalk_final.csv')
-
-ag_goods <- bea_table %>% filter(substr(BEA_389_code,1,3) %in% c('111','112'))
+# Get vector of primary agricultural goods.
+bea_codes <- unique(county_consumption$BEA_code)
+ag_goods <- bea_codes[substr(bea_codes, 1, 3) %in% c('111', '112')]
 
 # Prepare data ------------------------------------------------------------
 
 # Normalize production for each BEA code, retaining only primary agricultural goods
 county_production_ag <- county_production %>%
   select(county_fips, BEA_code, production_county_downscaled) %>%
-  filter(BEA_code %in% ag_goods$BEA_389_code) %>%
+  filter(BEA_code %in% ag_goods) %>%
   group_by(BEA_code) %>%
   mutate(production_norm = production_county_downscaled/sum(production_county_downscaled))
 
 # Reshape consumption data to long, retaining only ag goods
 # Also add missing digits to the county fips code
 county_consumption_ag <- county_consumption %>%
-  filter(BEA_code %in% ag_goods$BEA_389_code) %>%
+  filter(BEA_code %in% ag_goods) %>%
   pivot_longer(-c(BEA_code, scenario), names_to = 'county_fips', values_to = 'consumption') %>%
   mutate(county_fips = if_else(nchar(county_fips) == 4, paste0('0', county_fips), county_fips))
 
@@ -93,24 +92,22 @@ county_consumption_allocated_wide_df <- county_consumption_allocated_wide %>%
   unnest(cols = consumption_allocated) %>%
   setNames(c('BEA_code', 'scenario', 'county_fips', county_consumption_allocated_wide$consumption_allocated[[1]]$county_fips))
 
-# # Pivot to longform (currently not being done)
-# # Do the pivoting operation in chunks to save memory.
-# county_consumption_allocated_long <- county_consumption_allocated_wide %>% 
-#   mutate(consumption_allocated = map(consumption_allocated, function(dat) {
-#     names(dat) <- c('county_fips', dat$county_fips)
-#     pivot_longer(dat, -county_fips)
-#   }))
-  
-# county_consumption_allocated_long_df <- county_consumption_allocated_long %>%
-#   unnest(cols = consumption_allocated) %>%
-#   setNames(c('BEA_code', 'scenario', 'to', 'from', 'consumption'))
-  
-# write_csv(county_consumption_allocated_wide_df, file.path(fp_out, 'county_consumption_allocated_wide.csv'))
-# write_csv(county_consumption_allocated_long_df, file.path(fp_out, 'county_consumption_allocated_long.csv'))
-
-# To make this slightly more feasible, split by scenario and write to csvs individually per scenario (longform)
+# To make this slightly more feasible, split by scenario and write to csvs individually per scenario (wideform)
 county_consumption_allocated_wide_df %>%
   ungroup %>%
   group_split(scenario, .keep = TRUE) %>%
   walk(~ write_csv(., file.path(fp_out, 'county_consumption_csvs', paste0(.$scenario[1], '_wide.csv'))))
-  
+
+# Do not run the following code as longform takes up at least 3x disk space of wideform.  
+# Pivot to longform and write to CSVs as well (to facilitate later reading)
+# pivot_long_write <- function(dat) {
+#   dat_long <- dat %>% 
+#     pivot_longer(-c(BEA_code, scenario, county_fips), values_to = 'consumption', names_to = 'county_to') %>%
+#     rename(county_from = county_fips)
+#   write_csv(dat_long, file.path(fp_out, 'county_consumption_csvs', paste0(dat_long$scenario[1], '_long.csv')))
+# }
+# 
+# county_consumption_allocated_wide_df %>%
+#   ungroup %>%
+#   group_split(scenario, .keep = TRUE) %>%
+#   walk(pivot_long_write)
