@@ -165,7 +165,7 @@ p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT, 
   facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet))) +
   geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
   scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
-  scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
+  scale_y_continuous(name = 'land footprint (ha)', expand = expansion(mult = c(0, 0.01))) +
   scale_fill_manual(values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6)))
 
