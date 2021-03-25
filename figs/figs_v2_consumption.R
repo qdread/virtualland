@@ -30,14 +30,20 @@ lafa_cal_by_diet <- lafa_joined %>%
   mutate(calories_available_cal_day = calories_available_cal_day * factor) %>%
   rename(food = Category, food_group = Group)
 
+# Split up meat, fish, eggs, and nuts
+fish_names <- c("Fresh and frozen fish", "Fresh and frozen shellfish", "Canned Salmon", "Canned Sardines", "Canned Tuna", "Canned shellfish", "Other canned fish", "Cured fish")
+nut_names <- c("Peanuts", "Almonds", "Hazelnuts", "Pecans", "Walnuts", "Macadamia", "Pistachios", "Other tree nuts", "Coconut")
+
 lafa_cal_summ <- lafa_cal_by_diet %>%
+  mutate(food_group = case_when(food_group == 'veg' ~ 'vegetables',
+                                food %in% nut_names ~ 'nuts',
+                                food %in% fish_names ~ 'fish',
+                                food_group == 'meat' ~ 'meat/eggs',
+                                TRUE ~ food_group)) %>%
   group_by(diet, food_group) %>%
   summarize(calories_day = sum(calories_available_cal_day)) %>%
   ungroup %>%
-  mutate(food_group = case_when(food_group == 'veg' ~ 'vegetables',
-                                food_group == 'meat' ~ 'meat/eggs/nuts',
-                                TRUE ~ food_group),
-         diet = factor(gsub('_', '', diet), levels = diet_levels_ordered))
+  mutate(diet = factor(gsub('_', '', diet), levels = diet_levels_ordered))
 
 p_diet_foodgroups <- ggplot(lafa_cal_summ %>% mutate(), aes(y = calories_day, x = food_group, color = diet, fill = diet, group = diet)) +
   geom_col(position = 'dodge', color = NA) +
