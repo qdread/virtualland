@@ -43,9 +43,6 @@ county_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_coun
 tnc_land_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_sums_all_scenarios.csv')
 #tnc_landflows <- read_csv('data/cfs_io_analysis/scenarios/landflows_tnc_x_tnc_all_scenarios.csv')
 
-# Flows of species extinctions between ecoregions
-tnc_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
-
 # Flows of species extinctions between counties
 county_extinction_flow_sums <- read_csv('data/cfs_io_analysis/scenarios/species_lost_county_sums_all_scenarios_med.csv', col_types = 'ccccdd')
 

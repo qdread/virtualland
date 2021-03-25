@@ -3,6 +3,7 @@
 # QDR / Virtualland 
 
 # Forked from tidyverse version on 11 Feb 2021
+# Modified 25 Mar 2021: remove correction because units of consumption from new IO model are already in USD
 
 # Data needed:
 # We have the county-level direct and indirect consumption, for all scenarios, with the county it originates from. (see county_level_consumption.R)
@@ -29,10 +30,6 @@ land_consumption_by_scenario <- function(diet, waste) {
   consumption <- fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_consumption_csvs/D_{diet}_WR_{waste}_wide.csv'),
                        colClasses = rep(c('character','double'), c(3, 3141)))
   
-  # Consumption: convert to USD (currently in million USD)
-  cols <- names(consumption)[which(sapply(consumption, is.numeric))]
-  consumption[ , (cols) := lapply(.SD, `*`, 1e6), .SDcols = cols]
-
   # Pivot consumption matrix to long form
   setnames(consumption, "county_fips", "county_from")
   consumption_fromcty <- melt(consumption, id.vars = c('BEA_code', 'scenario', 'county_from'), variable.name = 'county_to', value.name = 'consumption')
