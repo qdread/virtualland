@@ -2,6 +2,8 @@
 # Sum goods flows by county, land flows by county, land flows by ecoregion, and species extinction flows by ecoregion
 # QDR / Virtualland / 20 Jan 2021 (aka FDT Day)
 
+# Modified 24 Mar 2021: remove deprecated biodiversity flow summaries.
+
 library(tidyverse)
 library(vroom) # To speed up
 
@@ -34,45 +36,6 @@ flows_inbound <- tnc_landflows %>%
 tnc_land_flows <- full_join(flows_outbound, flows_inbound)
 
 write_csv(tnc_land_flows, 'data/cfs_io_analysis/scenarios/landflows_tnc_sums_all_scenarios.csv')
-
-
-# Biodiversity flows by ecoregion -----------------------------------------
-
-intensity_values <- c('low', 'med', 'high')
-
-for (intensity in intensity_values) {
-  
-  tnc_specieslost <- vroom(glue::glue('data/cfs_io_analysis/scenarios/species_lost_all_scenarios_occ_{intensity}.csv'))
-  
-  flows_outbound <- tnc_specieslost %>%
-    filter(statistic == 'mean') %>%
-    group_by(scenario, TNC_from, land_use, taxon) %>%
-    summarize(flow_outbound = sum(species_lost, na.rm = TRUE)) %>%
-    ungroup %>%
-    rename(TNC = TNC_from) %>%
-    separate(scenario, into = c('D', 'scenario_diet', 'W', 'scenario_waste'), sep = '_') %>%
-    select(scenario_diet, scenario_waste, land_use, taxon, TNC, flow_outbound)
-  
-  flows_inbound <- tnc_specieslost %>%
-    filter(statistic == 'mean') %>%
-    group_by(scenario, TNC_to, land_use, taxon) %>%
-    summarize(flow_inbound = sum(species_lost, na.rm = TRUE)) %>%
-    ungroup %>%
-    rename(TNC = TNC_to) %>%
-    separate(scenario, into = c('D', 'scenario_diet', 'W', 'scenario_waste'), sep = '_') %>%
-    select(scenario_diet, scenario_waste, land_use, taxon, TNC, flow_inbound)
-  
-  tnc_extinction_flows <- full_join(flows_outbound, flows_inbound)
-  
-  write_csv(tnc_extinction_flows, glue::glue('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios_{intensity}.csv'))
-  message(paste(intensity, ' written.'))
-}
-
-# Combine by intensity and write
-
-tnc_extinction_flows <- map_dfr(intensity_values, ~ cbind(intensity = ., vroom(glue::glue('data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios_{.}.csv'))))
-write_csv(tnc_extinction_flows, 'data/cfs_io_analysis/scenarios/species_lost_tnc_sums_all_scenarios.csv')
-
 
 # Total demand sums -------------------------------------------------------
 
