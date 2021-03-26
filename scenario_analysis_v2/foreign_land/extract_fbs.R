@@ -4,8 +4,6 @@
 library(tidyverse)
 fp_fao <- '/nfs/qread-data/raw_data/FAOSTAT/31aug2020'
 
-# Lookup table for which
-
 fbs <- read_csv(file.path(fp_fao, "FoodBalanceSheets_E_All_Data_(Normalized).csv"))
 
 # Name repair of fbs
