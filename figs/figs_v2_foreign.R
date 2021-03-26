@@ -103,7 +103,7 @@ p_plantextinction_fvsd <- ggplot(all_extinction_sum[taxon %in% 'plants'], aes(x 
   fill_fvsd +
   scale_y_continuous(name = 'Plant extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
   scale_x_discrete(name = 'Land use type') +
-  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+  theme(legend.position = c(0.05, 0.92), legend.background = element_blank())
 
 p_plantextinction_fvsd <- label_scenario_categories(p_plantextinction_fvsd)
 
@@ -117,7 +117,6 @@ p_taxa_fvsd <- ggplot(all_extinction_sum, aes(x = kingdom, y = extinctions, fill
   geom_col(position = 'dodge') 
 
 # By scenario: animals
-p_animal_fvsd <- ggplot()
 all_extinction_sum_kingxland <- all_extinction_sum[, .(extinctions = sum(extinctions)), by = .(scenario_diet, scenario_waste, land_use, kingdom, origin)]
 p_animal_fvsd <- ggplot(all_extinction_sum[kingdom %in% 'animals'], aes(x = land_use, y = extinctions, fill = origin)) +
   fill_fvsd +
@@ -125,7 +124,7 @@ p_animal_fvsd <- ggplot(all_extinction_sum[kingdom %in% 'animals'], aes(x = land
   scale_y_continuous(name = 'Animal extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
   geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
   scale_x_discrete(name = 'Land use type') +
-  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+  theme(legend.position = c(0.05, 0.92), legend.background = element_blank())
 
 p_animal_fvsd <- label_scenario_categories(p_animal_fvsd)
 
@@ -151,8 +150,10 @@ p_ext_grandtotals <- ggplot(extinction_grandtotals, aes(y = extinctions, x = sce
   geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
   scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
   scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
+  scale_pattern_manual(values = c('circle', 'none')) +
   scale_fill_manual(values = as.character(okabe_colors[c('reddishpurple', 'bluishgreen')])) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6)))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6))) +
+  guides(fill = guide_legend(override.aes = list(pattern = 'none')))
 
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_extinction_grandtotals.png'), p_ext_grandtotals, height = 6, width = 10, dpi = 400)
 
@@ -164,10 +165,12 @@ ggsave(file.path(fp_fig, 'foreign_vs_domestic_extinction_grandtotals.png'), p_ex
 p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT, x = scenario_waste, pattern = origin, fill = land_type)) +
   facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet))) +
   geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
+  scale_pattern_manual(values = c('circle', 'none')) +
   scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
   scale_y_continuous(name = 'land footprint (ha)', expand = expansion(mult = c(0, 0.01))) +
   scale_fill_manual(values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6)))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6))) +
+  guides(fill = guide_legend(override.aes = list(pattern = 'none')))
 
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_grandtotals, height = 6, width = 10, dpi = 400)
 
