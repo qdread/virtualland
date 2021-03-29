@@ -6,9 +6,31 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-# This is set not to evaluate on rendering.
+# Render notebook without evaluating any of the code.
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
+
+# Description
+
+This document contains the spatial processing pipeline which has inputs of publicly available vector and raster files in the form they were downloaded, and outputs of processed and transformed vector and raster files, and CSV files with summary values calculated from the spatial data. The majority of the code is in R but there are some code chunks containing shell commands as well as Python scripts for spatial processing.
+
+# Input files
+
+Following is a list of the input files needed for this pipeline. The accompanying spreadsheet includes their location on the web and the date they were downloaded.
+
+## Polygon files
+
+- The Nature Conservancy global terrestrial ecoregions shapefile
+- United States administrative boundaries shapefile
+- United States county boundaries shapefile
+- Global country boundaries shapefile
+
+## Raster files
+
+- National Land Cover Dataset 2016 for CONUS, Alaska, and Hawaii 
+- Global pastureland raster
+- Global crop dominance raster
+- United States gridded population raster 2010
 
 # Clip TNC ecoregion raster to USA extent
 
@@ -16,30 +38,13 @@ This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA 
 
 ```{r}
 # Read TNC and USA shapefiles
-library(rgdal)
-library(rgeos)
-tnc <- readOGR(dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_terr_ecoregions')
-usa <- readOGR(dsn = '/nfs/public-data/GADM/USA_adm', layer = 'USA_adm0')
+library(sf)
+tnc <- st_read(dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_terr_ecoregions')
+usa <- st_read(dsn = '/nfs/public-data/GADM/USA_adm', layer = 'USA_adm0')
 
-# Ensure row names can be matched between polygons and data after the clipping
-tnc@data <- tnc@data %>%
-  mutate(id = as.character(1:nrow(tnc@data)), region = as.character(ECODE_NAME))
+tnc_usa <- st_intersection(tnc, usa)
 
-# Do intersection (clip TNC to USA)
-tnc_usa <- gIntersection(tnc, usa, byid = TRUE, id = tnc$id)
-
-# Recreate dataframe and add back in to the intersected spatialpolygons
-tncdat <- tnc@data
-tncdat <- tncdat[as.numeric(names(tnc_usa)),]
-row.names(tncdat) <- tncdat$id
-tnc_usa <- SpatialPolygonsDataFrame(tnc_usa, tncdat)
-
-# Test to make sure it worked OK
-plot(tnc_usa[c("182","183","184"),]) # Looks OK
-
-# Write as shape file
-writeOGR(tnc_usa, dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_usa', driver = 'ESRI Shapefile')
-
+st_write(tnc_usa, dsn = '/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa.gpkg', driver = 'GPKG')
 ```
 
 # Project everything to equal-area projections
@@ -52,11 +57,10 @@ gdalbuildvrt data/raw_data/landuse/NLCD/nlcd2016landcover.vrt /nfs/public-data/N
 cd /nfs/qread-data/raw_data/landuse/ecoregions
 
 # Transform TNC ecoregions clipped to USA extent to Albers equal area.
-tncusaproj=`gdalsrsinfo tnc_usa.prj -o proj4 | xargs`
+tncusaproj=`gdalsrsinfo tnc_usa.gpkg -o proj4 | xargs`
 nlcdproj=`gdalsrsinfo data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
 
-ogr2ogr -f "ESRI Shapefile" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.shp tnc_usa.shp
-ogr2ogr -f "GPKG" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.gpkg tnc_usa.shp
+ogr2ogr -f "GPKG" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.gpkg tnc_usa.gpkg
 
 # Mollweide projection for global analysis that preserves area.
 proj_moll="+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
@@ -65,8 +69,6 @@ proj_moll="+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
 tncproj=`gdalsrsinfo tnc_terr_ecoregions.prj -o proj4 | xargs`
 
 ogr2ogr -f "GPKG" -t_srs "${proj_moll}" -s_srs "${tncproj}" tnc_global_equalarea.gpkg tnc_terr_ecoregions.shp
-
-# Country boundaries obtained from https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip (2018 version)
 
 # Transform global country boundaries to Mollweide
 countryproj=`gdalsrsinfo ne_50m_admin_0_countries.prj -o proj4 | xargs`
@@ -79,15 +81,9 @@ cd /nfs/qread-data/raw_data/landuse/global_aglands
 
 pastureproj=`gdalsrsinfo pasture.tif -o proj4 | xargs`
 cropdproj=`gdalsrsinfo GFSAD1KCD.2010.001.2016348142525.tif -o proj4 | xargs`
-cropmproj=`gdalsrsinfo GFSAD1KCM.2010.001.2016348142550.tif -o proj4 | xargs`
 
 gdalwarp -t_srs "${proj_moll}" -s_srs "${pastureproj}" -of "VRT" pasture.tif pasture_equalarea.vrt
 gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" -of "VRT" GFSAD1KCD.2010.001.2016348142525.tif cropdominance_equalarea.vrt
-gdalwarp -t_srs "${proj_moll}" -s_srs "${cropmproj}" -of "VRT" GFSAD1KCM.2010.001.2016348142550.tif cropmask_equalarea.vrt
-
-# Also transform cropland as TIF so that it can be read in R.
-gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" GFSAD1KCD.2010.001.2016348142525.tif cropdominance_equalarea.tif
-gdalwarp -t_srs "${proj_moll}" -s_srs "${cropmproj}" GFSAD1KCM.2010.001.2016348142550.tif cropmask_equalarea.tif
 ```
 
 # Do QC on USA county shapefile and project to equal area
@@ -127,7 +123,7 @@ county_aea <- county_aea %>%
   mutate(NAME = if_else(NAME == 'Aleutians East', 'Aleutians (East & West merged)', NAME),
          county = if_else(county == '02013', '02010', county))
 
-st_write(county_aea, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG', append = FALSE)
+st_write(county_aea, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG')
 ```
 
 # Intersect county and TNC ecoregion polygons
@@ -138,7 +134,7 @@ This R code chunk takes as input the county and TNC ecoregion polygons for the U
 fp_out <- 'data/cfs_io_analysis'
 
 # Load county and TNC polygons
-tncmap <- st_read(dsn = 'data/raw_data/landuse/ecoregions', layer = 'tnc_usa_aea')
+tncmap <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
@@ -190,22 +186,16 @@ county_tnc_pop <- raster::extract(usgrid_aea, county_tnc, fun = function(x, ...)
 # Do the same for Hawaii and the two sections of Alaska, for completeness
 higrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'hipop10.tif'))
 akgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'akpop10.tif'))
-akeastgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'ehpop10.tif'))
 
-# Transform the three other grids to AEA
+# Transform the two other grids to AEA
 higrid_aea <- projectRaster(higrid, crs = crs(county_tnc))
 akgrid_aea <- projectRaster(akgrid, crs = crs(county_tnc))
-akeastgrid_aea <- projectRaster(akeastgrid, crs = crs(county_tnc))
 
 hi_pop <- raster::extract(higrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
 ak_pop <- raster::extract(akgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
-akeast_pop <- raster::extract(akeastgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
 
-# Combine all three sections into one data frame. (no AK east)
+# Combine all three sections into one data frame. 
 county_tnc_pop_all <- Reduce(left_join, list(county_tnc_pop, hi_pop, ak_pop))
-
-# Check that there is only one non-NA per row
-table(apply(county_tnc_pop_all[,-1], 1, function(x) sum(!is.na(x)))) 
 
 county_tnc_pop_all <- county_tnc_pop_all %>%
   group_by(ID) %>%
@@ -339,7 +329,7 @@ write_csv(nlcd_county_tnc_ag_wide, file.path(fp_out, 'NLCDcrop_county_x_TNC.csv'
 
 # Get global crop and pasture pixel counts in the country-TNC intersected polygons
 
-The pixel counts for the global crop dominance and global crop mask rasters are done with the same Python script as above, executed by the following shell commands:
+The pixel counts for the global crop dominance raster is done with the same Python script as above, executed by the following shell commands:
 
 ```{bash}
 tnccountryvector="/nfs/qread-data/cfs_io_analysis/countries_tnc_intersect.gpkg"
@@ -348,13 +338,9 @@ rasterdir="/nfs/qread-data/raw_data/landuse/global_aglands"
 sbatch -J countcropd --export=vector_file=${tnccountryvector},\
 	raster_file=${rasterdir}/cropdominance_equalarea.vrt,\
 	output_file=${outdir}/global_count_cropdominance.csv ${EXEC}
-	
-sbatch -J countcropm --export=vector_file=${tnccountryvector},\
-	raster_file=${rasterdir}/cropmask_equalarea.vrt,\
-	output_file=${outdir}/global_count_cropmask.csv ${EXEC}
 ```
 
-Because the format of the pasture raster is different than the other rasters, a slightly modified Python script, `tabulateraster_pasture.py` was used to get the pixel counts for the global pasture raster. It is included with this archive but also reproduced here for completeness:
+Because the format of the pasture raster is different than the other rasters (continuous rather than categorical), a slightly modified Python script, `tabulateraster_pasture.py`, was used to get the pixel counts for the global pasture raster. It is included with this archive but also reproduced here for completeness:
 
 ```{python}
 from rasterstats import zonal_stats
