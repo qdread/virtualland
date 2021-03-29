@@ -1,5 +1,12 @@
 cd /nfs/qread-data/raw_data/landuse/ecoregions
 
+# Transform TNC ecoregions clipped to USA extent to Albers equal area.
+tncusaproj=`gdalsrsinfo /nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa.prj -o proj4 | xargs`
+nlcdproj=`gdalsrsinfo /nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
+
+ogr2ogr -f "ESRI Shapefile" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.shp tnc_usa.shp
+ogr2ogr -f "GPKG" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.gpkg tnc_usa.shp
+
 # Mollweide projection for global analysis that preserves area.
 proj_moll="+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
 
