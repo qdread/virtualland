@@ -26,8 +26,8 @@ diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
 # Also note that we are not going to distinguish between saturated and unsaturated oil/fat because LAFA is by food category not fat type.
 lafa_cat_lookup <- read_csv(file.path(fp_crosswalk, 'lafa_dietary_guidelines_crosswalk.csv'))
 
-# Read and clean LAFA
-source('download_data/clean_lafa2019.R')
+# Read cleaned LAFA data
+lafa_df <- read_csv(file.path(fp_out, 'lafa_cleaned.csv'))
 
 # Join lafa data with lookups ---------------------------------------------
 
@@ -48,16 +48,6 @@ cats_add <- data.frame(Category = c("White and whole wheat flour", "Durum flour"
 lafa_df[is.na(lafa_df$category_lancet),c('category_lancet','category_dietary_guidelines')] <- cats_add[,c('category_lancet','category_dietary_guidelines')]                    
 
 # Harmonize with USA guidelines -------------------------------------------
-
-# # We will use the 2010 servings. (last year with full data)
-# servings2010 <- servings %>% filter(year == 2010) %>% rename(servings = numeric)
-# calories2010 <- calories %>% filter(year == 2010) %>% rename(calories = numeric)
-# 
-# # Do manual harmonization on the dataset (not that many rows to do)
-# # It's basically the same names as the LAFA dataset but with annoyingly different names so hard to automatically join
-# # This might not be necessary because of the fact that the calories and servings are found in the individual LAFA datasets.
-# write_csv(servings2010, '/nfs/qread-data/cfs_io_analysis/lafa_output/servings2010.csv')
-# write_csv(calories2010, '/nfs/qread-data/cfs_io_analysis/lafa_output/calories2010.csv')
 
 # Put the three diets into wide form so they can all be joined.
 # Use 2600 cal which is the closest to the LAFA sum of calories available.
