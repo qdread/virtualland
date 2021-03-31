@@ -1,7 +1,7 @@
 draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable, 
                                    title = NULL, subtitle = NULL, 
                                    scale_name = 'Value\n(billion $)', scale_factor = 1000, scale_trans = 'identity', 
-                                   scale_breaks = NULL, scale_range = NULL, 
+                                   scale_breaks = NULL, scale_range = NULL, scale_labels = NULL,
                                    scale_palette = viridis::viridis.pal()(15),
                                    ak_pos = c(0.01, 0.15), hi_pos = c(0.26, 0.15),
                                    ak_ratio = 0.58, ak_size = 0.32, hi_ratio = 0.71, hi_size = 0.2,
@@ -12,7 +12,7 @@ draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable,
   map_data <- map_data %>% mutate(!!variable := !!variable/scale_factor)
   if (is.null(scale_range)) scale_range <- map_data %>% pull(!!variable) %>% range(na.rm = TRUE)
   
-    scale_main <- scale_fill_gradientn(colours = scale_palette, na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks)
+    scale_main <- scale_fill_gradientn(colours = scale_palette, na.value = 'gray75', name = scale_name, limits = scale_range, trans = scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = scale_breaks, labels = if(!is.null(scale_labels)) scale_labels else scale_breaks)
     scale_inset <- scale_fill_gradientn(colours = scale_palette, na.value = 'gray75', limits = scale_range, trans = scale_trans)
 
   # Draw the three maps

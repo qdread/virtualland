@@ -96,19 +96,39 @@ totaldemand_relative <- totaldemand_sums %>%
 p_totaldemand_relative <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
   geom_col(aes(fill = kingdom)) +
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
-  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_medium) +
   scale_x_discrete(name = 'food category') +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = rel(0.9)),
         legend.position = 'none')
 
 p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
   draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
   draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
 
-ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_totaldemand_relative, height = 9, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_totaldemand_relative, height = 9*.75, width = 12*.75, dpi = 400)
+
+
+# Table of results for relative total demand ------------------------------
+
+# Waste overall
+totaldemand_relative %>%
+  filter(scenario_diet %in% 'baseline') %>%
+  group_by(scenario_waste) %>%
+  summarize(demand = mean(demand))
+
+# Animal products by diet
+totaldemand_relative %>%
+  filter(scenario_waste %in% 'baseline', !short_name %in% 'wild-caught fish') %>%
+  group_by(scenario_diet, kingdom) %>%
+  summarize(demand = mean(demand))
+
+totaldemand_relative %>%
+  filter(scenario_waste %in% 'baseline', kingdom %in% 'animal') %>% print(n=25)
+
+totaldemand_relative %>%
+  filter(short_name %in% 'fruits & nuts') 
 
 ### Deprecated: plot with bea_factors (does not account for the full footprint, it's just the final demand)
 bea_factors_long <- bea_scenario_factors %>%

@@ -8,13 +8,19 @@ land_levels_ordered <- c('annual', 'permanent', 'pasture')
 
 # Lookup tables for longer legend names
 diet_long_names <- data.frame(scenario_diet = diet_levels_ordered,
-                              long_name = c('baseline', 'planetary health (Lancet)', 'healthy US-style (USDA)', 'healthy Mediterranean-style (USDA)', 'healthy vegetarian (USDA)'))
+                              long_name = c('baseline', 'planetary health (Lancet)', 'healthy US-style (USDA)', 'healthy Mediterranean-style (USDA)', 'healthy vegetarian (USDA)'),
+                              medium_name = c('baseline', 'planetary health', 'USDA US-style', 'USDA Mediterranean-style', 'USDA vegetarian'))
 waste_long_names <- data.frame(scenario_waste = waste_levels_ordered,
-                               long_name = c('baseline', 'pre-consumer waste cut 50%', 'consumer waste cut 50%', 'all waste cut 50%'))
+                               long_name = c('baseline', 'pre-consumer waste cut 50%', 'consumer waste cut 50%', 'all waste cut 50%'),
+                               medium_name = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%'))
 
 # Labeller function with character vector lookup tables for 2x2 scenarios
 scenario_labeller <- labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet),
                               scenario_waste = setNames(waste_long_names$long_name, waste_long_names$scenario_waste))
+
+# Shorter labeller
+scenario_labeller_medium <- labeller(scenario_diet = setNames(diet_long_names$medium_name, diet_long_names$scenario_diet),
+                              scenario_waste = setNames(waste_long_names$medium_name, waste_long_names$scenario_waste))
 
 # Short names of the ten agricultural goods in BEA, plus wild-caught fish
 ag_names_lookup <- data.frame(
