@@ -77,6 +77,25 @@ pmap(county_land_map_base[land_range, on = .NATURAL],
        ))
 # These essentially all look the same.
 
+# Inbound extinctions: do total only
+pmap(county_extinction_map_base[extinction_range, on = .NATURAL][taxon %in% 'total'],
+     function(data, min, max, land_use, ...)
+       draw_usmap_with_insets(map_data = left_join(county_map, data),
+                              ak_idx = county_ak_idx,
+                              hi_idx = county_hi_idx,
+                              variable = extinction_inbound,
+                              scale_name = 'Extinctions',
+                              scale_factor = 1,
+                              scale_trans = 'log10',
+                              scale_palette = seq_pal,
+                              scale_range = c(min, max),
+                              scale_breaks = scales::trans_breaks("log10", function(x) 10^x),
+                              scale_labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                              add_theme = leg_bottom_theme,
+                              write_to_file = glue('{fp_fig}/extinction_inbound_{land_use}_total_baseline.png'),
+                              img_size = c(7, 7)
+       ))
+
 # Outbound land and extinctions
 outbound_land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & flow_outbound > 0, 
                                              .(min = min(flow_outbound/1e4, na.rm = TRUE), max = max(flow_outbound/1e4, na.rm = TRUE)), 
