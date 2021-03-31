@@ -146,33 +146,43 @@ extinction_grandtotals <- all_extinction_sum[, .(extinctions = sum(extinctions))
 library(ggpattern)
 
 p_ext_grandtotals <- ggplot(extinction_grandtotals, aes(y = extinctions, x = scenario_waste, pattern = origin, fill = kingdom)) +
-  facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet))) +
+  facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$medium_name, diet_long_names$scenario_diet))) +
   geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
   scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
   scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
   scale_pattern_manual(values = c('circle', 'none')) +
   scale_fill_manual(values = as.character(okabe_colors[c('reddishpurple', 'bluishgreen')])) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        strip.text = element_text(size = rel(0.7)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.position = c(0.93, 0.78),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.1, 'cm')) +
   guides(fill = guide_legend(override.aes = list(pattern = 'none')))
 
-ggsave(file.path(fp_fig, 'foreign_vs_domestic_extinction_grandtotals.png'), p_ext_grandtotals, height = 6, width = 10, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_extinction_grandtotals.png'), p_ext_grandtotals, height = 6*0.8, width = 10*0.8, dpi = 400)
 
 
 # Sum foreign and domestic land -------------------------------------------
 
 # Make the same pattern fill barplot as above but with virtual land.
 
-p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT, x = scenario_waste, pattern = origin, fill = land_type)) +
-  facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$long_name, diet_long_names$scenario_diet))) +
+p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT/1e6, x = scenario_waste, pattern = origin, fill = land_type)) +
+  facet_grid(. ~ scenario_diet, labeller = labeller(scenario_diet = setNames(diet_long_names$medium_name, diet_long_names$scenario_diet))) +
   geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
   scale_pattern_manual(values = c('circle', 'none')) +
   scale_x_discrete(name = 'waste scenario', labels = c('baseline', 'pre-consumer -50%', 'consumer -50%', 'all -50%')) +
-  scale_y_continuous(name = 'land footprint (ha)', expand = expansion(mult = c(0, 0.01))) +
-  scale_fill_manual(values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), strip.text = element_text(size = rel(0.6))) +
+  scale_y_continuous(name = 'land footprint (million ha)', expand = expansion(mult = c(0, 0.01))) +
+  scale_fill_manual(name = 'land use', values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        strip.text = element_text(size = rel(0.7)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.position = c(0.93, 0.71),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.1, 'cm')) +
   guides(fill = guide_legend(override.aes = list(pattern = 'none')))
 
-ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_grandtotals, height = 6, width = 10, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_grandtotals, height = 6*0.8, width = 10*0.8, dpi = 400)
 
 # Maps: foreign exports to counties ---------------------------------------
 

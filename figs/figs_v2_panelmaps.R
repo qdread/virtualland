@@ -18,10 +18,17 @@ fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs/paneled_maps'
 
 # County extinction data processing ---------------------------------------
 
-# Separate scenario column
+# Add foreign imported extinctions.
+foreign_extinction_import <- foreign_extinction_import %>%
+  mutate(county = sprintf('%05d', county))
+
+county_extinction_flow_sums <- county_extinction_flow_sums %>%
+  separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>%
+  select(-d, -w) %>%
+  full_join(foreign_extinction_import) %>%
+  mutate(extinction_inbound_total = extinction_inbound + extinction_inbound_foreign)
+
 setDT(county_extinction_flow_sums)
-county_extinction_flow_sums <- tidyr::separate(county_extinction_flow_sums, scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_')
-county_extinction_flow_sums[, c('d', 'w') := NULL]
 
 # Create summary data for all taxa, and animals only
 county_extinction_flow_sums_animals <- county_extinction_flow_sums[!taxon %in% 'plants',
@@ -67,6 +74,18 @@ county_extinction_map_panels[, scenario_waste := factor(scenario_waste, levels =
 county_extinction_map_panels <- county_extinction_map_panels[order(scenario_diet, scenario_waste, land_use, taxon)]
 
 # County land data processing ---------------------------------------------
+
+# Add foreign imported land.
+foreign_vlt_import_long <- foreign_vlt_import %>%
+  mutate(VLT_annual_region = VLT_annual_region + VLT_mixed_region / 2,
+         VLT_permanent_region = VLT_permanent_region + VLT_mixed_region / 2) %>%
+  select(-VLT_mixed_region) %>%
+  rename(annual_cropland = VLT_annual_region, permanent_cropland = VLT_permanent_region, pastureland = VLT_pasture_region) %>%
+  pivot_longer(contains('land'), names_to = 'land_type', values_to = 'flow_inbound_foreign')
+
+county_land_flow_sums <- county_land_flow_sums %>%
+  full_join(foreign_vlt_import_long) %>%
+  mutate(flow_inbound_total = flow_inbound + flow_inbound_foreign * 10000)
 
 # Sum up total and bind it to the rest
 setDT(county_land_flow_sums)
