@@ -1,0 +1,30 @@
+---
+title: "cSAR equations"
+author: "Quentin D. Read"
+date: "3/31/2021"
+output: html_document
+---
+
+Chaudhary and Brooks 2018, Equation 1: cSAR model.
+
+$$ S_{loss,g,j} = S_{org,g,j}\Big( 1 - \big( \frac {A_{new,j} + \sum^{16}_{i=1} h_{g,i,j}A_{i,j}} {A_{org,j}} \big) ^ {z_j} \Big) $$
+
+The following text paraphrases CB2018.
+
+The subscript g refers to taxon (mammals, birds, amphibians, reptiles, and plants), the subscript i refers to land use type (there are 16 of which we only consider annual cropland, permanent cropland, and pastureland in this study), and the subscript j refers to ecoregion (804 globally, of which 69 are found within the United States).
+
+Sorg,g,j is the original number of species of taxon g in ecoregion j before human land use modification. A represents land areas within ecoregion j, where Aorg is the original unmodified natural habitat area, Anew is the remaining unmodified area after human intervention, and Ai is the land area devoted to a particular human-modified land use type after intervention. hg,i,j is the affinity of taxon g to land use type i in ecoregion j. A value of h close to zero would indicate that land use type i is hostile to the taxon in that ecoregion and can support only very low species richness of that taxon, a value of one would indicate no change in richness with land modification, and a value above one would indicate that the modified landscape could support a higher richness than the unmodified. Finally, zj is the species-area relationship exponent for the ecoregion; typically, values of z range around 0.25. Therefore, if the original species richness, the extent of modified land, the taxon affinities, and the SAR exponent are known, this equation results in the expected number of species ultimately committed to extinction within the ecoregion given that land use. Details of how the parameters S, A, h, and z were derived are found in CB2018.
+
+We are interested in deriving characterization factors (CFs) that express potential biodiversity damage as a rate of global species extinctions per suqare meter of land use converted to a particular land use in a particular ecoregion for a particular taxon. This requires first converting the species loss to a marginal rate and then deriving a global extinction rate from the ecoregion-specific extinction rate. This is done as follows. First, an allocation factor ag,i,j is calculated for each taxon g across each land use type i in each ecoregion j:
+
+$$ a_{g,i,j} = \frac {A_{i,j}(1 - h_{g,i,j})} {\sum^{16}_{i=1} A_{i,j}(1 - h_{g,i,j})} $$
+
+Next, a regional land-occupation characterization factor CFregional,occ,g,i,j is calculated for each taxon g across each land use type i in each ecoregion j. This represents the projected number of species of taxon g committed to local extirpation in ecoregion j for each unit area of land use type i:
+
+$$ CF_{regional,occ,g,i,j} = \frac {S_{loss,g,j}a_{i,j}} {A_{i,j}} $$
+
+The regional characterization factor is converted to a global characterization factor by multiplying by the weighted proportion of the range of each species in taxon g that occurs in ecoregion j, derived from IUCN range maps, with an additional weighting factor applied representing the IUCN category of extinction risk. Therefore if 100% of species in taxon g are completely endemic to ecoregion j and are listed as critically endangered by the IUCN Red List, they will all go globally extinct if they are locally extirpated from ecoregion j (VS = 1).
+
+$$ CF_{global,g,i,j} = CF_{regional,occ,g,i,j} * VS_{g,j} $$
+
+These global characterization factors are used in our further analysis. They are expressed in units of species potentially committed to global extinction per m2. There are distinct characterization factors for each taxon, each land use type, and each ecoregion.
