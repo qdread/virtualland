@@ -46,12 +46,12 @@ lafa_cal_summ <- lafa_cal_by_diet %>%
   mutate(diet = factor(gsub('_', '', diet), levels = diet_levels_ordered))
 
 p_diet_foodgroups <- ggplot(lafa_cal_summ %>% mutate(), aes(y = calories_day, x = food_group, color = diet, fill = diet, group = diet)) +
-  geom_col(position = 'dodge', color = NA) +
-  scale_fill_manual(values = okabe_colors[c(1,7,3,4,5)] %>% setNames(NA), labels = diet_long_names$long_name) +
+  geom_col(position = 'dodge', color = 'black', size = 0.25) +
+  scale_fill_manual(values = okabe_colors[c(1,7,3,4,5)] %>% setNames(NA), labels = diet_long_names$medium_name) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'calories per person per day') +
   scale_x_discrete(name = 'food group') +
   theme(legend.position = 'bottom',
-        legend.text = element_text(size = rel(.6))) +
+        legend.text = element_text(size = rel(.75))) +
   guides(fill=guide_legend(nrow = 2, byrow = FALSE))
 
 ggsave(file.path(fp_fig, 'foodgroup_consumption_by_diet.png'), p_diet_foodgroups, height = 5, width = 6, dpi = 400)
@@ -69,7 +69,7 @@ totaldemand_sums <- totaldemand_sums %>%
 
 # Absolute values
 p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
-  geom_col(aes(fill = kingdom)) +
+  geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (million USD)') +
@@ -94,7 +94,7 @@ totaldemand_relative <- totaldemand_sums %>%
          scenario_waste = factor(scenario_waste, levels = waste_levels_ordered))
 
 p_totaldemand_relative <- ggplot(totaldemand_relative, aes(x = short_name, y = demand)) +
-  geom_col(aes(fill = kingdom)) +
+  geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_medium) +
   scale_x_discrete(name = 'food category') +

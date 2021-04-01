@@ -20,13 +20,15 @@ fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs/paneled_maps'
 
 # Add foreign imported extinctions.
 foreign_extinction_import <- foreign_extinction_import %>%
-  mutate(county = sprintf('%05d', county))
+  mutate(county = sprintf('%05d', county)) %>% 
+  rename(extinction_inbound_foreign = species_lost)
 
 county_extinction_flow_sums <- county_extinction_flow_sums %>%
   separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>%
   select(-d, -w) %>%
   full_join(foreign_extinction_import) %>%
-  mutate(extinction_inbound_total = extinction_inbound + extinction_inbound_foreign)
+  mutate(extinction_inbound_total = extinction_inbound + extinction_inbound_foreign) %>%
+  mutate(across(where(is.numeric), replace_na, replace = 0))
 
 setDT(county_extinction_flow_sums)
 
@@ -54,17 +56,20 @@ county_extinction_flow_sums <- rbindlist(list(county_extinction_flow_sums, count
 # Separate out baseline
 county_extinction_baseline <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
 county_extinction_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
-setnames(county_extinction_baseline, old = c('extinction_outbound', 'extinction_inbound'), new = c('extinction_outbound_baseline', 'extinction_inbound_baseline'))
+ext_names <- grep('extinction', names(county_extinction_baseline), value = TRUE)
+setnames(county_extinction_baseline, old = ext_names, new = paste(ext_names, 'baseline', sep = '_'))
 
 # Join baseline data to full data. Express as percent change
 county_extinction_flow_sums <- county_extinction_baseline[county_extinction_flow_sums, on = .NATURAL]
 county_extinction_flow_sums[, extinction_outbound_vs_baseline := extinction_outbound/extinction_outbound_baseline - 1]
 county_extinction_flow_sums[, extinction_inbound_vs_baseline := extinction_inbound/extinction_inbound_baseline - 1]
+county_extinction_flow_sums[, extinction_inbound_foreign_vs_baseline := extinction_inbound_foreign/extinction_inbound_foreign_baseline - 1]
+county_extinction_flow_sums[, extinction_inbound_total_vs_baseline := extinction_inbound_total/extinction_inbound_total_baseline - 1]
 
 # Correct NaN to zero (0/0 values)
 county_extinction_flow_sums[is.nan(extinction_outbound_vs_baseline), extinction_outbound_vs_baseline := 0]
 
-county_extinction_flow_sums[, c('extinction_outbound_baseline', 'extinction_inbound_baseline') := NULL]
+county_extinction_flow_sums[, paste(ext_names, 'baseline', sep = '_') := NULL]
 
 county_extinction_map_panels <- group_nest_dt(county_extinction_flow_sums, scenario_diet, scenario_waste, land_use, taxon)
 
@@ -85,23 +90,29 @@ foreign_vlt_import_long <- foreign_vlt_import %>%
 
 county_land_flow_sums <- county_land_flow_sums %>%
   full_join(foreign_vlt_import_long) %>%
-  mutate(flow_inbound_total = flow_inbound + flow_inbound_foreign * 10000)
+  mutate(flow_inbound_total = flow_inbound + flow_inbound_foreign * 10000) %>%
+  mutate(across(where(is.numeric), replace_na, replace = 0))
 
 # Sum up total and bind it to the rest
 setDT(county_land_flow_sums)
-county_land_flow_sums_total <- county_land_flow_sums[, lapply(.SD, sum, na.rm = TRUE), by = .(scenario_diet, scenario_waste, county), .SDcols = c('flow_inbound', 'flow_outbound')]
+county_land_flow_sums_total <- county_land_flow_sums[, lapply(.SD, sum, na.rm = TRUE), by = .(scenario_diet, scenario_waste, county), .SDcols = patterns('flow')]
 county_land_flow_sums_total[, land_type := 'total']
 county_land_flow_sums <- rbind(county_land_flow_sums, county_land_flow_sums_total)
 
 # Separate out baseline
 county_land_flow_sums_baseline <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
 county_land_flow_sums_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
-setnames(county_land_flow_sums_baseline, old = c('flow_inbound', 'flow_outbound'), new = c('flow_inbound_baseline', 'flow_outbound_baseline'))
+flow_names <- grep('flow', names(county_land_flow_sums_baseline), value = TRUE)
+setnames(county_land_flow_sums_baseline, old = flow_names, new = paste(flow_names, 'baseline', sep = '_'))
 
 # Join baseline data to full data. Express as percent change.
 county_land_flow_sums <- county_land_flow_sums_baseline[county_land_flow_sums, on = .NATURAL]
 county_land_flow_sums[, inbound_vs_baseline := flow_inbound/flow_inbound_baseline - 1]
 county_land_flow_sums[, outbound_vs_baseline := flow_outbound/flow_outbound_baseline - 1]
+county_land_flow_sums[, inbound_foreign_vs_baseline := flow_inbound_foreign/flow_inbound_foreign_baseline - 1]
+county_land_flow_sums[, inbound_total_vs_baseline := flow_inbound_total/flow_inbound_total_baseline - 1]
+
+county_land_flow_sums[, paste(flow_names, 'baseline', sep = '_') := NULL]
 
 # Nest county map to list column
 county_land_map_panels <- group_nest_dt(county_land_flow_sums, scenario_diet, scenario_waste, land_type)
