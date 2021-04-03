@@ -190,33 +190,160 @@ ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_gra
 foreign_extinction_export_tnc <- foreign_extinction_export[, .(species_lost = sum(species_lost, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use, taxon)]
 foreign_extinction_export_country <- foreign_extinction_export[, .(species_lost = sum(species_lost, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, land_use, taxon)]
 
-# Test map, countries, baseline, animals only
-extinction_country_baseline_animals <- foreign_extinction_export_country[
-  scenario_diet %in% "baseline" & scenario_waste %in% "baseline" & !taxon %in% 'plants', 
-  .(species_lost = sum(species_lost, na.rm = TRUE)),
-  by = .(country_name, ISO_A3)]
+# For both TNC and country maps, calculate sums by land use and by taxon (animals and total)
+foreign_extinction_export_tnc_animals <- foreign_extinction_export_tnc[!taxon %in% 'plants', .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use)][,
+  taxon := 'animals'
+]
+foreign_extinction_export_country_animals <- foreign_extinction_export_country[!taxon %in% 'plants', .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, land_use)][,
+  taxon := 'animals'
+]
+
+foreign_extinction_export_tnc_total <- foreign_extinction_export_tnc[, .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use)][,
+  taxon := 'total'
+]
+foreign_extinction_export_country_total <- foreign_extinction_export_country[, .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, land_use)][,
+  taxon := 'total'
+]
+
+foreign_extinction_export_tnc <- rbindlist(list(foreign_extinction_export_tnc, foreign_extinction_export_tnc_animals, foreign_extinction_export_tnc_total), use.names = TRUE)
+foreign_extinction_export_country <- rbindlist(list(foreign_extinction_export_country, foreign_extinction_export_country_animals, foreign_extinction_export_country_total), use.names = TRUE)
+
+foreign_extinction_export_tnc_totalland <- foreign_extinction_export_tnc[, .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, taxon)][,
+  land_use := 'total'
+]
+
+foreign_extinction_export_country_totalland <- foreign_extinction_export_country[, .(species_lost = sum(species_lost)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, taxon)][,
+  land_use := 'total'
+]
+
+foreign_extinction_export_tnc <- rbindlist(list(foreign_extinction_export_tnc, foreign_extinction_export_tnc_totalland), use.names = TRUE)
+foreign_extinction_export_country <- rbindlist(list(foreign_extinction_export_country, foreign_extinction_export_country_totalland), use.names = TRUE)
+
+# Calculate the difference between each scenario and the baseline.
+foreign_ext_tnc_base <- foreign_extinction_export_tnc[scenario_waste %in% 'baseline' & scenario_diet %in% 'baseline']
+setnames(foreign_ext_tnc_base, old = 'species_lost', new = 'species_lost_baseline')
+foreign_ext_tnc_base[, c('scenario_diet', 'scenario_waste') := NULL]
+
+foreign_ext_country_base <- foreign_extinction_export_country[scenario_waste %in% 'baseline' & scenario_diet %in% 'baseline']
+setnames(foreign_ext_country_base, old = 'species_lost', new = 'species_lost_baseline')
+foreign_ext_country_base[, c('scenario_diet', 'scenario_waste') := NULL]
+
+foreign_extinction_export_tnc <- foreign_ext_tnc_base[foreign_extinction_export_tnc, on = .NATURAL]
+foreign_extinction_export_tnc[, species_vs_baseline := species_lost/species_lost_baseline]
+
+foreign_extinction_export_country <- foreign_ext_country_base[foreign_extinction_export_country, on = .NATURAL]
+foreign_extinction_export_country[, species_vs_baseline := species_lost/species_lost_baseline]
+
+# Nest into panels
+library(Rutilitybelt)
+
+foreign_extinction_tnc_panels <- group_nest_dt(foreign_extinction_export_tnc, scenario_diet, scenario_waste, land_use, taxon)
+foreign_extinction_country_panels <- group_nest_dt(foreign_extinction_export_country, scenario_diet, scenario_waste, land_use, taxon)
+
+# Loop through with pmap
+# Do relative and absolute plots. PDF takes up too much space so do as images.
 
 country_map_toplot <- global_country_map %>%
   st_transform("+proj=robin") %>%
-  rename(country_name = NAME_LONG) %>%
-  left_join(extinction_country_baseline_animals)
-
-ggplot(country_map_toplot) +
-  geom_sf(aes(fill = species_lost)) +
-  scale_fill_viridis_c()
-
-# Test map, ecoregions, baseline, animals only
-extinction_tnc_baseline_animals <- foreign_extinction_export_tnc[
-  scenario_diet %in% "baseline" & scenario_waste %in% "baseline" & !taxon %in% 'plants', 
-  .(species_lost = sum(species_lost, na.rm = TRUE)),
-  by = .(TNC, TNC_name)]
+  rename(country_name = NAME_LONG)
 
 tnc_map_toplot <- global_eco_map %>%
   st_transform("+proj=robin") %>%
   rename(TNC = ECO_CODE, TNC_name = ECO_NAME) %>%
-  select(TNC, TNC_name) %>%
-  left_join(extinction_tnc_baseline_animals)
+  select(TNC, TNC_name)
 
-ggplot(tnc_map_toplot) +
-  geom_sf(aes(fill = species_lost)) +
-  scale_fill_viridis_c()
+div_pal <- scico::scico(15, palette = 'berlin')
+
+# PNG ---------------------------------------------------------------------
+
+calc_range <- function(x) {
+  w <- max(abs(range(x, na.rm = TRUE) - 1))
+  c(1 - w, 1 + w)
+}
+
+pwalk(foreign_extinction_country_panels[taxon %in% c('animals','plants','total')], 
+      function(scenario_diet, scenario_waste, land_use, taxon, data) {
+        dat <- country_map_toplot %>%
+          left_join(data, by = 'country_name')
+        
+        # Calculate range for divergent palette.
+        div_range <- calc_range(data$species_vs_baseline)
+        
+        p1 <- ggplot(dat) +
+          geom_sf(aes(fill = species_lost), size = 0.25) +
+          scale_fill_viridis_c(name = 'Extinction\nexport', trans = 'log10',
+                               breaks = scales::trans_breaks("log10", function(x) 10^x),
+                               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
+        p2 <- ggplot(dat) +
+          geom_sf(aes(fill = species_vs_baseline), size = 0.25) +
+          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', limits = div_range) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in threats to {taxon} from {land_use} land use'))
+        ggsave(glue('{fp_fig}/foreign_bioflow_maps/country_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
+        ggsave(glue('{fp_fig}/foreign_bioflow_maps/country_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}_change.png'), p2, height = 5, width = 7, dpi = 200)
+      })
+
+pwalk(foreign_extinction_tnc_panels[taxon %in% c('animals','plants','total')], 
+      function(scenario_diet, scenario_waste, land_use, taxon, data) {
+        dat <- tnc_map_toplot %>%
+          left_join(data, by = 'TNC')
+        
+        # Calculate range for divergent palette.
+        div_range <- calc_range(data$species_vs_baseline)
+        
+        p1 <- ggplot(dat) +
+          geom_sf(aes(fill = species_lost), size = 0.25) +
+          scale_fill_viridis_c(name = 'Extinction\nexport', trans = 'log10',
+                               breaks = scales::trans_breaks("log10", function(x) 10^x),
+                               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
+        p2 <- ggplot(dat) +
+          geom_sf(aes(fill = species_vs_baseline), size = 0.25) +
+          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', range = div_range) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in threats to {taxon} from {land_use} land use'))
+        ggsave(glue('{fp_fig}/foreign_bioflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
+        ggsave(glue('{fp_fig}/foreign_bioflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}_change.png'), p2, height = 5, width = 7, dpi = 200)
+      })
+
+# PDF (don't run) ---------------------------------------------------------
+
+
+pdf('data/cfs_io_analysis/scenario_v2_figs/foreign_bioflow_maps_bycountry.pdf', height = 5, width = 7)
+pwalk(foreign_extinction_country_panels[taxon %in% c('animals','plants','total')], 
+     function(scenario_diet, scenario_waste, land_use, taxon, data) {
+       dat <- country_map_toplot %>%
+         left_join(data, by = 'country_name')
+       print(
+         ggplot(dat) +
+           geom_sf(aes(fill = species_lost)) +
+           scale_fill_viridis_c(name = 'Extinction\nexport', trans = 'log10',
+                                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                                labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+           theme(legend.position = 'bottom') +
+           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
+       )
+     })
+dev.off()
+
+
+pdf('data/cfs_io_analysis/scenario_v2_figs/foreign_landflow_maps_byecoregion.pdf', height = 5, width = 7)
+pwalk(foreign_extinction_tnc_panels[taxon %in% c('animals','plants','total')], 
+      function(scenario_diet, scenario_waste, land_use, taxon, data) {
+        dat <- tnc_map_toplot %>%
+          left_join(data, by = 'TNC')
+        print(
+          ggplot(dat) +
+            geom_sf(aes(fill = species_lost)) +
+            scale_fill_viridis_c(name = 'Extinction\nexport', trans = 'log10',
+                                 breaks = scales::trans_breaks("log10", function(x) 10^x),
+                                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+            theme(legend.position = 'bottom') +
+            ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
+        )
+      })
+dev.off()
+
