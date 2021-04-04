@@ -184,7 +184,7 @@ p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT/1
 
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_grandtotals, height = 6*0.8, width = 10*0.8, dpi = 400)
 
-# Maps: foreign exports to counties ---------------------------------------
+# Process data: foreign extinction exports to counties ---------------------------------------
 
 # Threats shown as exports from the originating ecoregion and originating country, depending on how they are totaled.
 foreign_extinction_export_tnc <- foreign_extinction_export[, .(species_lost = sum(species_lost, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use, taxon)]
@@ -240,6 +240,51 @@ library(Rutilitybelt)
 foreign_extinction_tnc_panels <- group_nest_dt(foreign_extinction_export_tnc, scenario_diet, scenario_waste, land_use, taxon)
 foreign_extinction_country_panels <- group_nest_dt(foreign_extinction_export_country, scenario_diet, scenario_waste, land_use, taxon)
 
+
+# Process data: foreign land exports to counties --------------------------
+
+# Get rid of the columns that were not divided out by region weights
+cols_remove <- names(foreign_vlt_export)[grepl('VLT', names(foreign_vlt_export)) & !grepl('region', names(foreign_vlt_export))]
+foreign_vlt_export[, (cols_remove) := NULL]
+
+# Melt to long form
+foreign_vlt_export_long <- melt(foreign_vlt_export, measure.vars = patterns('VLT'), variable.name = 'land_use', value.name = 'VLT')
+foreign_vlt_export_long <- foreign_vlt_export_long[, .(scenario_diet, scenario_waste, TNC, TNC_name, country_name, ISO_A3, land_use, VLT)]
+foreign_vlt_export_long[, land_use := gsub('(VLT_)|(_region)', '', land_use)]
+
+# Total VLT across land types and then bind.
+foreign_vlt_export_long_total <- foreign_vlt_export_long[, .(VLT = sum(VLT, na.rm = TRUE)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, country_name, ISO_A3)]
+foreign_vlt_export_long_total[, land_use := 'total']
+
+foreign_vlt_export_long <- rbindlist(list(foreign_vlt_export_long, foreign_vlt_export_long_total), use.names = TRUE)
+
+# Calculate sums by TNC ecoregion and by country separately.
+foreign_vlt_tnc <- foreign_vlt_export_long[, .(VLT = sum(VLT)), by = .(scenario_diet, scenario_waste, TNC, TNC_name, land_use)]
+foreign_vlt_country <- foreign_vlt_export_long[, .(VLT = sum(VLT)), by = .(scenario_diet, scenario_waste, country_name, ISO_A3, land_use)]
+
+# Calculate the difference between each scenario and the baseline.
+foreign_vlt_tnc_base <- foreign_vlt_tnc[scenario_waste %in% 'baseline' & scenario_diet %in% 'baseline']
+setnames(foreign_vlt_tnc_base, old = 'VLT', new = 'VLT_baseline')
+foreign_vlt_tnc_base[, c('scenario_diet', 'scenario_waste') := NULL]
+
+foreign_vlt_tnc <- foreign_vlt_tnc_base[foreign_vlt_tnc, on = .NATURAL]
+foreign_vlt_tnc[, VLT_vs_baseline := VLT/VLT_baseline]
+foreign_vlt_tnc[is.nan(VLT_vs_baseline), VLT_vs_baseline := 0]
+
+foreign_vlt_country_base <- foreign_vlt_country[scenario_waste %in% 'baseline' & scenario_diet %in% 'baseline']
+setnames(foreign_vlt_country_base, old = 'VLT', new = 'VLT_baseline')
+foreign_vlt_country_base[, c('scenario_diet', 'scenario_waste') := NULL]
+
+foreign_vlt_country <- foreign_vlt_country_base[foreign_vlt_country, on = .NATURAL]
+foreign_vlt_country[, VLT_vs_baseline := VLT/VLT_baseline]
+foreign_vlt_country[is.nan(VLT_vs_baseline), VLT_vs_baseline := 0]
+
+# Nest to panels
+foreign_vlt_tnc_panels <- group_nest_dt(foreign_vlt_tnc, scenario_diet, scenario_waste, land_use)
+foreign_vlt_country_panels <- group_nest_dt(foreign_vlt_country, scenario_diet, scenario_waste, land_use)
+
+# Draw the maps -----------------------------------------------------------
+
 # Loop through with pmap
 # Do relative and absolute plots. PDF takes up too much space so do as images.
 
@@ -254,7 +299,7 @@ tnc_map_toplot <- global_eco_map %>%
 
 div_pal <- scico::scico(15, palette = 'berlin')
 
-# PNG ---------------------------------------------------------------------
+# Draw maps: PNG ---------------------------------------------------------------------
 
 calc_range <- function(x) {
   w <- max(abs(range(x, na.rm = TRUE) - 1))
@@ -302,12 +347,62 @@ pwalk(foreign_extinction_tnc_panels[taxon %in% c('animals','plants','total')],
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
         p2 <- ggplot(dat) +
           geom_sf(aes(fill = species_vs_baseline), size = 0.25) +
-          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', range = div_range) +
+          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', limits = div_range) +
           theme(legend.position = 'bottom') +
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in threats to {taxon} from {land_use} land use'))
         ggsave(glue('{fp_fig}/foreign_bioflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
         ggsave(glue('{fp_fig}/foreign_bioflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}_change.png'), p2, height = 5, width = 7, dpi = 200)
       })
+
+pwalk(foreign_vlt_country_panels, 
+      function(scenario_diet, scenario_waste, land_use, data) {
+        dat <- country_map_toplot %>%
+          left_join(data, by = 'country_name')
+        
+        # Calculate range for divergent palette.
+        div_range <- calc_range(data$VLT_vs_baseline)
+        
+        p1 <- ggplot(dat) +
+          geom_sf(aes(fill = VLT), size = 0.25) +
+          scale_fill_viridis_c(name = 'Virtual land\nexport', trans = 'log10',
+                               breaks = scales::trans_breaks("log10", function(x) 10^x),
+                               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('virtual exports of {land_use} land to USA'))   
+        p2 <- ggplot(dat) +
+          geom_sf(aes(fill = VLT_vs_baseline), size = 0.25) +
+          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', limits = div_range) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in virtual exports of {land_use} land to USA'))
+        ggsave(glue('{fp_fig}/foreign_landflow_maps/country_{scenario_diet}_{scenario_waste}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
+        ggsave(glue('{fp_fig}/foreign_landflow_maps/country_{scenario_diet}_{scenario_waste}_{land_use}_change.png'), p2, height = 5, width = 7, dpi = 200)
+      })
+
+pwalk(foreign_vlt_tnc_panels, 
+      function(scenario_diet, scenario_waste, land_use, data) {
+        dat <- tnc_map_toplot %>%
+          left_join(data, by = 'TNC')
+        
+        # Calculate range for divergent palette.
+        div_range <- calc_range(data$VLT_vs_baseline)
+        
+        p1 <- ggplot(dat) +
+          geom_sf(aes(fill = VLT), size = 0.25) +
+          scale_fill_viridis_c(name = 'Virtual land\nexport', trans = 'log10',
+                               breaks = scales::trans_breaks("log10", function(x) 10^x),
+                               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('virtual exports of {land_use} land to USA'))   
+        p2 <- ggplot(dat) +
+          geom_sf(aes(fill = VLT_vs_baseline), size = 0.25) +
+          scale_fill_gradientn(name = 'Change vs.\nbaseline', colours = div_pal, na.value = 'gray75', limits = div_range) +
+          theme(legend.position = 'bottom') +
+          ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in virtual exports of {land_use} land to USA'))
+        ggsave(glue('{fp_fig}/foreign_landflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
+        ggsave(glue('{fp_fig}/foreign_landflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{land_use}_change.png'), p2, height = 5, width = 7, dpi = 200)
+      })
+
+
 
 # PDF (don't run) ---------------------------------------------------------
 
