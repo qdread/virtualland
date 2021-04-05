@@ -1,0 +1,87 @@
+---
+title: 'Appendix 2: Supplemental figures'
+author: "Quentin D. Read"
+date: "r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+This document contains supplemental figures for the currently unpublished virtual land scenarios manuscript. *Update this with citation when it is available.*
+
+## Figures Sx-Sx. Summary maps
+
+- Need to make: Map showing the ecoregions in the United States, categorized by realm, possibly superimposed with states to show how they overlap
+- Need to make: Map showing the ecoregions around the world, categorized by realm, possibly superimposed with countries to show how they overlap
+
+## Figures Sx-Sx. Disaggregated consumption totals
+
+- Total consumption in absolute units
+- Foreign versus domestic sourced consumption (if this figure can be made)
+
+## Figures Sx-Sx. Disaggregated virtual land transfers
+
+- Foreign versus domestic by scenario (already have this fig)
+- Foreign versus domestic separated by land type and scenario
+
+## Figures Sx-Sx. Disaggregated virtual biodiversity threat transfers
+
+- Disaggregated by land type (already have this fig)
+- Foreign versus domestic, animals, by scenario (already have this fig)
+- Foreign versus domestic, plants, by scenario (already have this fig)
+- Need to make: foreign versus domestic, individual taxa and total, by scenario
+- Need to make: foreign versus domestic, disaggregated by the type of land being used.
+
+## Figures Sx-Sx. Maps showing domestic goods production
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing domestic goods consumption
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing domestic virtual land exports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing domestic virtual land imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing foreign virtual land imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing total virtual land imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing domestic virtual biodiversity exports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing domestic virtual biodiversity imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing foreign virtual biodiversity imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
+
+## Figures Sx-Sx. Maps showing total virtual biodiversity imports
+
+- Absolute in each scenario
+- Change relative to baseline in each scenario
