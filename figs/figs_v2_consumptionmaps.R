@@ -9,7 +9,6 @@ fp_fig <- 'data/cfs_io_analysis/scenario_v2_figs/baseline_maps'
 county_land_map_base <- county_land_map_panels[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
 county_extinction_map_base <- county_extinction_map_panels[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
 
-div_pal <- scico::scico(15, palette = 'berlin')
 seq_pal <- viridis::viridis_pal()(15)
 
 land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline', .(min = min(flow_inbound_total[flow_inbound_total > 0]/1e4, na.rm = TRUE), max = max(flow_inbound_total/1e4, na.rm = TRUE)), by = land_type]

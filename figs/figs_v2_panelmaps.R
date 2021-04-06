@@ -127,7 +127,7 @@ county_land_flow_sums[, .(scale_width = max(abs(range(outbound_vs_baseline, na.r
                           min = min(flow_outbound[flow_outbound>0]/1e4, na.rm = TRUE),
                           max = max(flow_outbound/1e4, na.rm = TRUE)), by = land_type]
 
-div_pal <- scico::scico(15, palette = 'berlin')
+div_pal <- scico::scico(15, palette = 'vik')
 seq_pal <- viridis::viridis_pal()(15)
 
 # Total land, outbound vs. baseline

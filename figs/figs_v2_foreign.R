@@ -297,7 +297,7 @@ tnc_map_toplot <- global_eco_map %>%
   rename(TNC = ECO_CODE, TNC_name = ECO_NAME) %>%
   select(TNC, TNC_name)
 
-div_pal <- scico::scico(15, palette = 'berlin')
+div_pal <- scico::scico(15, palette = 'vik')
 
 # Draw maps: PNG ---------------------------------------------------------------------
 
