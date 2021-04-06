@@ -34,13 +34,16 @@ Following is a list of the input files needed for this pipeline. The accompanyin
 
 # Clip TNC ecoregion raster to USA extent
 
-This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA administrative boundaries shapefile and intersects them. The result (TNC ecoregions for the United States) is written to a shapefile.
+This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA counties shapefile (used later) and intersects them. The result (TNC ecoregions for the United States) is written to a shapefile.
 
 ```{r}
 # Read TNC and USA shapefiles
 library(sf)
 tnc <- st_read(dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_terr_ecoregions')
-usa <- st_read(dsn = '/nfs/public-data/GADM/USA_adm', layer = 'USA_adm0')
+usa <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k') %>%
+  filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>% # Remove Puerto Rico and territories
+  st_union() %>%
+  st_transform(st_crs(tnc))
 
 tnc_usa <- st_intersection(tnc, usa)
 
@@ -52,13 +55,13 @@ st_write(tnc_usa, dsn = '/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa.gpk
 This code chunk containing bash shell commands first creates a virtual raster for the NLCD 2016 raster and extracts its projection information (Albers equal-area). Next it projects the TNC USA shapefile to that same Albers equal-area projection. The result is written to .shp and .gpkg. It also projects the global TNC shapefile, and a global country boundaries shapefile, to the Mollweide equal-area projection. Next it projects the global cropland and pastureland rasters to the Mollweide projection. 
 
 ```{bash}
-gdalbuildvrt data/raw_data/landuse/NLCD/nlcd2016landcover.vrt /nfs/public-data/NLCD/NLCD_2016_Land_Cover_L48_20190424/NLCD_2016_Land_Cover_L48_20190424.img
+gdalbuildvrt /nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt /nfs/public-data/NLCD/NLCD_2016_Land_Cover_L48_20190424/NLCD_2016_Land_Cover_L48_20190424.img
 
 cd /nfs/qread-data/raw_data/landuse/ecoregions
 
 # Transform TNC ecoregions clipped to USA extent to Albers equal area.
 tncusaproj=`gdalsrsinfo tnc_usa.gpkg -o proj4 | xargs`
-nlcdproj=`gdalsrsinfo data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
+nlcdproj=`gdalsrsinfo /nfs/qread-data/data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
 
 ogr2ogr -f "GPKG" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.gpkg tnc_usa.gpkg
 
