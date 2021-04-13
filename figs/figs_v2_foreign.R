@@ -184,6 +184,31 @@ p_land_grandtotals <- ggplot(all_vlt_sum[!land_type %in% 'total'], aes(y = VLT/1
 
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_land_grandtotals.png'), p_land_grandtotals, height = 6*0.8, width = 10*0.8, dpi = 400)
 
+
+# Combine land and extinction grandtotals into one fig --------------------
+
+# land on top so has strip labels but no x axis labels
+# ext on bottom so has x axis labels but no strip labels, and no pattern legend.
+p_top <- p_land_grandtotals +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.ticks.x = element_blank(),
+        strip.text = element_text(size = rel(0.7)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.key.size = unit(0.5, 'cm'),
+        legend.position = c(0.93, 0.71),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.05, 'cm')) 
+p_bottom <- p_ext_grandtotals +
+  theme(legend.key.size = unit(0.5, 'cm'),
+        strip.background = element_blank(), 
+        strip.text = element_blank()) +
+  guides(pattern = FALSE)
+
+png(file.path(fp_fig, 'foreign_vs_domestic_all_grandtotals.png'), height = 7, width = 7, res = 400, units = 'in')
+  grid.draw(gridExtra::gtable_rbind(ggplotGrob(p_top), ggplotGrob(p_bottom)))
+dev.off()
+
 # Process data: foreign extinction exports to counties ---------------------------------------
 
 # Threats shown as exports from the originating ecoregion and originating country, depending on how they are totaled.
