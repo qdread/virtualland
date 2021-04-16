@@ -193,7 +193,7 @@ p_top <- p_land_grandtotals +
   theme(axis.text.x = element_blank(), 
         axis.title.x = element_blank(), 
         axis.ticks.x = element_blank(),
-        strip.text = element_text(size = rel(0.7)),
+        strip.text = element_text(size = rel(0.65)),
         legend.title = element_text(size = rel(0.8)),
         legend.key.size = unit(0.5, 'cm'),
         legend.position = c(0.93, 0.71),
