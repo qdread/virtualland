@@ -39,8 +39,10 @@ This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA 
 ```{r}
 # Read TNC and USA shapefiles
 library(sf)
+library(tidyverse)
 tnc <- st_read(dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_terr_ecoregions')
 usa <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k') %>%
+  st_zm() %>% # Drop Z-dimension
   filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>% # Remove Puerto Rico and territories
   st_union() %>%
   st_transform(st_crs(tnc))
@@ -141,12 +143,11 @@ tncmap <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
-county_tnc <- st_intersection(county_aea, tncmap) 
+county_tnc <- st_intersection(county_aea, st_make_valid(tncmap)) 
 # This results in 4690 polygons combining the two
 
 # Write result as geopackage
 st_write(county_tnc, dsn = file.path(fp_out, 'county_tnc_aea_intersect.gpkg'))
-
 ```
 
 # Intersect country and global TNC ecoregion polygons
@@ -250,11 +251,10 @@ The following bash shell commands are run to submit the job to the Slurm compute
 ```{bash}
 EXEC="countpixels.sh"
 outdir="/nfs/qread-data/raw_data/landuse/output_csvs"
+usaraster="/nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt"
 cd ~/virtualland/jobscripts
 
-sbatch -J nlcdcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,\
-  raster_file=/nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt,\
-  output_file=${outdir}/NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J nlcdcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${usaraster},output_file=${outdir}/NLCD_2016_countyTNC.csv ${EXEC}
 ```
 
 ## Counts for Alaska and Hawaii
@@ -283,13 +283,9 @@ hiraster="/nfs/qread-data/raw_data/landuse/NLCD/NLCD2001_Hawaii/nlcd2001landcove
 cd ~/virtualland/jobscripts
 
 # Extract AK and HI NLCD2016 
-sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg,\
-  raster_file=${akraster},\
-  output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
 
-sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg,\
-  raster_file=${hiraster},\
-  output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
+sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
 ```
 
 # Combine CONUS, Alaska, and Hawaii NLCD counts and extract cropland and pastureland
