@@ -293,9 +293,9 @@ sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/count
 The relevant land cover classes are cropland, pastureland, and water, if we want the proportion of land (non-water) area in each county-ecoregion intersection that is taken up by cropland and pastureland. In the following R code chunk, we combine the summarized NLCD pixel counts for CONUS, Alaska, and Hawaii, then sum all classes other than cropland, pastureland, and water to an "other" category.
 
 ```{r}
-nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnnnnn")
-nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnn")
-nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnn")
+nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnnnnnnnn")
 
 # Fill in the Alaska and Hawaii rows: get rid of AK and HI from main df, retain only AK and HI from smaller ones,
 # and then bind rows together.
