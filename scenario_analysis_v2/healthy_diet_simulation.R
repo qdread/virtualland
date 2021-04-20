@@ -5,7 +5,7 @@
 # Instead of doing this, and instead of manually doing the linear programming, 
 # let's just get the lancet planetary health diet and USA healthy diet guidelines diets.
 # See Lancet report (summary), Dietary Guidelines report, and Blackstone et al. which gave me the idea of the approach.
-
+# Modified 20 April 2021 to use 2020-2025 dietary guidelines
 
 # Read dietary guidelines -----------------------------------
 
@@ -18,7 +18,7 @@ fp_out <- 'data/cfs_io_analysis'
 # Read Lancet dietary guidelines
 diet_lancet <- read_csv(file.path(fp_diet, 'lancet_planetary_health_diet.csv'))
 # Read USA dietary guidelines
-diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines_long.csv'))
+diet_usa <- read_csv(file.path(fp_diet, 'us_dietary_guidelines2020-2025_long.csv'))
 
 # Harmonization of LAFA category names with dietary guidelines food pattern equivalent, and Lancet food categories
 # Created from lafa_category_structure.csv
@@ -62,7 +62,7 @@ diet_usa_wide <- diet_usa %>%
 # whole and refined grains are not distinguished.
 # The "other" category is equivalent to calories_other and is all sugar/sweeteners.
 # Add legumes as protein to legumes for vegetarians.
-# Note that soy is classed with nuts and seeds for the non-vegetarian diets, but needs to be separated then added to legumes for LAFA (since it will have the waste pattern of legumes).
+# In 2020-2025 dietary guidelines, soy is 0 for non-vegetarian diets, but separate for veg. Add it to legumes for the vegetarian diet.
 # Finally, eggs are separated for vegetarians. Use LAFA proportion of eggs versus other foods to split out eggs for non-vegetarian diets.
 
 diet_usa_wide_fixed <- diet_usa_wide
@@ -83,19 +83,7 @@ diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
   summarize_if(is.numeric, sum) %>%
   ungroup
 
-# Separate soy from nuts_seeds_soy for the non-vegetarian diets
-# Then for all diets, add it to legumes (since LAFA does not distinguish soy from other legumes)
-# Use the same ratio of other nuts and seeds to soy for the veg diet, for the other two
-nut_seed_soy_veg_diet <- diet_usa_wide_fixed$vegetarian[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy')]
-proportion_soy_veg_diet <- nut_seed_soy_veg_diet[2] / sum(nut_seed_soy_veg_diet) # About 50%
-
-diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy'), c('us_style')] <- as.numeric(diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds_soy'), c('us_style')]) * c(1 - proportion_soy_veg_diet, proportion_soy_veg_diet)
-diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds', 'soy'), c('med_style')] <- as.numeric(diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% c('nuts_seeds_soy'), c('med_style')]) * c(1 - proportion_soy_veg_diet, proportion_soy_veg_diet)
-
-diet_usa_wide_fixed <- diet_usa_wide_fixed %>%
-  filter(!name %in% c('nuts_seeds_soy'))
-
-# Now add soy to legumes.
+# Add soy to legumes for vegetarian diet
 diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'legumes', c('us_style', 'med_style', 'vegetarian')] <- diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'legumes', c('us_style', 'med_style', 'vegetarian')] + diet_usa_wide_fixed[diet_usa_wide_fixed$name %in% 'soy', c('us_style', 'med_style', 'vegetarian')]
 
 # Remove soy

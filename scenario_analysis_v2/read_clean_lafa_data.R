@@ -147,7 +147,7 @@ lafa_clean_names <- map(lafa, clean_lafa)
 
 # Process LAFA to single year and no aggregates ---------------------------
 
-# We only want the most recent year with complete data, and only the primary (not aggregated) categories
+# We want the year closest to 2012 with complete data (this change made 20 Apr 2021), and only the primary (not aggregated) categories
 # Note that the aggregated groups do not have any individual loss rates for stages, only "total"
 
 lafa_agg_groups <- lafa_cat_lookup %>% select(starts_with('subgroup')) %>% unlist %>% unique
@@ -155,9 +155,11 @@ lafa_agg_groups <- lafa_cat_lookup %>% select(starts_with('subgroup')) %>% unlis
 lafa_df <- bind_rows(lafa_clean_names) %>%
   filter(!Category %in% lafa_agg_groups) %>%
   filter(!is.na(primary_weight_lb_y)) %>%
+  mutate(yeardiff = abs(Year - 2012)) %>%
   group_by(Category) %>%
-  filter(Year == max(Year)) %>%
-  ungroup
+  filter(yeardiff == min(yeardiff)) %>%
+  ungroup %>%
+  select(-yeardiff)
 
 # Legumes should be removed (misclassified as a primary food when it is in fact a category). 
 # Also, there is a double counted row, one is "White and whole wheat flour" and the other "Wheat flour" but they contain the same values
