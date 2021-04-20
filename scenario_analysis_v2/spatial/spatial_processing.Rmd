@@ -290,21 +290,22 @@ sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/count
 The relevant land cover classes are cropland, pastureland, and water, if we want the proportion of land (non-water) area in each county-ecoregion intersection that is taken up by cropland and pastureland. In the following R code chunk, we combine the summarized NLCD pixel counts for CONUS, Alaska, and Hawaii, then sum all classes other than cropland, pastureland, and water to an "other" category.
 
 ```{r}
-nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnnnnn")
-nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnn")
-nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnncccccccccccccccccnnnnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnn")
+nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnnnnnnnn")
 
 # Fill in the Alaska and Hawaii rows: get rid of AK and HI from main df, retain only AK and HI from smaller ones,
 # and then bind rows together.
-nlcd_county_tnc <- nlcd_county_tnc %>% filter(!STATEFP %in% c('02', '15'))
-nlcd_county_tnc_hi <- nlcd_county_tnc_hi %>% filter(STATEFP %in% c('15'))
-nlcd_county_tnc_ak <- nlcd_county_tnc_ak %>% filter(STATEFP %in% c('02'))
+nlcd_county_tnc <- nlcd_county_tnc %>% filter(!fips_state %in% c('02', '15'))
+nlcd_county_tnc_hi <- nlcd_county_tnc_hi %>% filter(fips_state %in% c('15'))
+nlcd_county_tnc_ak <- nlcd_county_tnc_ak %>% filter(fips_state %in% c('02'))
 
 nlcd_county_tnc <- bind_rows(nlcd_county_tnc, nlcd_county_tnc_hi, nlcd_county_tnc_ak)
 
 # Reshape to long
 # Aggregate by cropland, pastureland, and other codes. Pasture 81, Crop 82, Water 11, Other Land = all others.
 nlcd_county_tnc_long <- nlcd_county_tnc %>%
+  rename(county = fips) %>%
   select(county, ECO_CODE, matches('^[0-9]{2}$')) %>%
   pivot_longer(-c(county, ECO_CODE), names_to = 'NLCD', values_to = 'n_pixels') %>%
   mutate(cover_class = case_when(NLCD == '81' ~ 'pasture',
