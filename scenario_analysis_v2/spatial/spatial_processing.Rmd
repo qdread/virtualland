@@ -93,42 +93,44 @@ gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" -of "VRT" GFSAD1KCD.2010.00
 
 # Do QC on USA county shapefile and project to equal area
 
-This R code chunk reads in the raw county boundaries shapefile, projects it to Albers equal area, corrects the county codes so that they matches the county codes we have in our other datasets, and writes it to a .gpkg.
+This R code chunk reads in the raw county boundaries shapefile, projects it to Albers equal area, and corrects the county codes so that they matches the county codes we have in our other datasets. In order to do that, we also need to do a spatial union of some counties so that the codes match. We load an external crosswalk table of which counties to dissolve (these are mainly independent cities in Virginia that are merged with the county surrounding them). Finally the result is written to a .gpkg.
 
 ```{r}
 library(sf)
 library(tidyverse)
 tnc_p4s <- '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs'
-countymap <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k')
+county_map <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k') %>%
+  filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>% # Remove Puerto Rico and other overseas dependencies
+  mutate(fips = paste0(STATEFP, COUNTYFP)) %>%
+  st_zm() %>% # Get rid of Z dimension
+  st_transform(tnc_p4s) # Transform to equal area projection
 
-county_aea <- st_transform(countymap, tnc_p4s)
+# Summary of differences:
+# Harmonization must be done on the map to dissolve independent cities in VA with less than 100K population with the surrounding county
+# Kalawao County and Maui County also need to be dissolved on the map.
+# code 55901 in data is for an aggregation of two counties in WI that no longer exists so can be ignored
+# 46113 recoded to 46102, 02270 recoded to 02158
+# The remaining inconsistencies are with Alaska, but they are all "legacy rows" that are NA in the data so can be ignored too.
 
-# Update the FIPS codes to reflect the mismatches between this map and the data.
-# The differences are Washington DC (different code used in the data), Aleutians (two counties split), and Oglala Lakota (fips code changed when name changed)
-# For DC and Oglala Lakota we just need to change the code.
-# For Aleutians, we need to merge two counties.
+fips_harmonization <- read_csv('data/crossreference_tables/fips_harmonization.csv', col_types = 'ccccc')
 
-# Correct the codes.
-county_aea <- county_aea %>%
-  mutate(COUNTYFP = case_when(STATEFP == '11' ~ '000',
-                              STATEFP == '46' & COUNTYFP == '113' ~ '102',
-                              TRUE ~ COUNTYFP),
-         county = paste0(STATEFP, COUNTYFP)) 
+# For each row of fips_harmonization, dissolve those map polygons into a single one and rename it.
+# first reshape the data frame 
+fips_harmonization <- fips_harmonization %>% 
+  pivot_longer(starts_with("FIPS_map"), values_to = 'FIPS_map') %>%
+  select(-name, -name_data) %>%
+  filter(!is.na(FIPS_map))
 
-# Merge the two Aleutians counties 
-aleutians <- county_aea %>%
-  filter(county %in% c('02013', '02016')) %>%
-  st_combine
+# Join map with harmonization, group by harmonized fips, and dissolve
+county_harmonized <- county_map %>%
+  left_join(fips_harmonization, by = c('fips' = 'FIPS_map')) %>%
+  mutate(FIPS_data = if_else(is.na(FIPS_data), fips, FIPS_data)) %>%
+  group_by(FIPS_data) %>%
+  summarize %>%
+  mutate(fips_state = substr(FIPS_data, 1, 2), fips_county = substr(FIPS_data, 3, 5)) %>%
+  rename(fips = FIPS_data)
 
-# Replace one of the Aleutians geometries with the merged one.
-county_aea$geometry[county_aea$county == '02013'] <- aleutians
-
-county_aea <- county_aea %>%
-  filter(!county %in% '02016') %>%
-  mutate(NAME = if_else(NAME == 'Aleutians East', 'Aleutians (East & West merged)', NAME),
-         county = if_else(county == '02013', '02010', county))
-
-st_write(county_aea, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG')
+st_write(county_harmonized, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG')
 ```
 
 # Intersect county and TNC ecoregion polygons
@@ -144,7 +146,7 @@ county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
 county_tnc <- st_intersection(county_aea, st_make_valid(tncmap)) 
-# This results in 4690 polygons combining the two
+# This results in 4655 polygons combining the two
 
 # Write result as geopackage
 st_write(county_tnc, dsn = file.path(fp_out, 'county_tnc_aea_intersect.gpkg'))

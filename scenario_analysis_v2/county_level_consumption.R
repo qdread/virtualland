@@ -2,31 +2,19 @@
 # Find by multiplying the total PCE for each BEA category from the input-output table (2012) times the percentage of personal income
 # that each county consists of, out of the USA total.
 
+# Modification 19 Apr 2021: Replace old county income data with the one downloaded directly from BEA
 # Modification 24 Mar 2021: Replace old PCE and DRC with the new ones from USEEIOv2.0 alpha.
 # Modification 15 Jan 2021: correct Bedford City being merged with Bedford County, VA
 # Modification 06 Jan 2021: add the alternative scenarios as well as the baseline.
 
-# Final consumer expenditures ---------------------------------------------
 
-# Read the county-level income data from Lin et al. (provided by Landon 9 Dec 2020)
+# Read data ---------------------------------------------------------------
+
+# Read the county-level income data from BEA
 
 library(tidyverse)
-library(readxl)
 
-fp_lin <- 'data/raw_data/commodity_flows/Lin_supp_info'
-
-county_income <- read_xlsx(file.path(fp_lin, 'County Personal Income.xlsx'), sheet = 'Total County Income', skip = 5)
-
-# This is a complex spreadsheet with formulas but it seems like just skipping the rows is OK.
-names(county_income) <- c('FIPS', 'state_FIPS', 'county_FIPS', 'state_name', 'county_name', paste('per_capita_income', 2012:2014, sep = '_'), 'per_capita_rank_2014', 'percent_change_2013', 'percent_change_2014', 'percent_change_rank_2014', 'total_income_2012')
-
-# Remove state total rows
-# Modified 17 Dec 2020: do not remove DC.
-county_income <- county_income %>% filter(county_FIPS != 0 | state_FIPS == 11) %>% select(-state_name)
-
-# Modified 15 Jan 2021: convert total income of Bedford County VA to the weighted mean of Bedford City and Bedford County
-county_income$total_income_2012[county_income$FIPS == 51019] <- sum(county_income$total_income_2012[county_income$FIPS %in% c(51515, 51019)])
-county_income <- filter(county_income, !FIPS %in% 51515)
+county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138)
 
 # Load the personal consumption expenditure for each good, and the DRC tables, extracted from USEEIO2012v2.0
 load('data/cfs_io_analysis/useeio2012v2.0_pce_drc.RData')
@@ -52,14 +40,14 @@ scenario_vectors_bea <- scenario_factors_bea %>%
   mutate(consumption_factor = map(data, ~ expand_vec(.$BEA_389_code, .$value)))
 
 # Normalize the county income 2012 vector
-county_income_norm2012 <- setNames(county_income$total_income_2012/sum(county_income$total_income_2012), county_income$FIPS)
+county_income_norm2012 <- setNames(county_income$`2012`/sum(county_income$`2012`), county_income$GeoFips)
 
 # County consumption for each scenario: personal consumption vector multiplied elementwise by the consumption factor for the scenario
 # then take the outer product with the county income normalized vector.
 county_consumption2012 <- scenario_vectors_bea %>%
   select(-data) %>%
   mutate(county_consumption = map(consumption_factor, ~ pce2012 * . %*% t(county_income_norm2012)))
-# Each element of the consumption list is a 411 x 3142 matrix, each row is a good and each column a county.
+# Each element of the consumption list is a 411 x 3138 matrix, each row is a good and each column a county.
 # It represents the consumption in each of the 20 scenarios.
 # Units are million USD.
 
