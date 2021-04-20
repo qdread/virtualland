@@ -11,10 +11,11 @@
 # Read data ---------------------------------------------------------------
 
 # Read the county-level income data from BEA
-
+# Remove outdated counties with no income for 2012.
 library(tidyverse)
 
-county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138)
+county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138, col_types = 'ccn', na = '(NA)') %>%
+  filter(!is.na(`2012`))
 
 # Load the personal consumption expenditure for each good, and the DRC tables, extracted from USEEIO2012v2.0
 load('data/cfs_io_analysis/useeio2012v2.0_pce_drc.RData')
@@ -71,21 +72,12 @@ write_csv(county_consumption2012_df, 'data/cfs_io_analysis/county_consumption201
 # Use the domestic DRC since we are looking at domestic transactions.
 
 all(dimnames(drc2012)[[1]] == dimnames(drc2012)[[2]]) # Already sorted OK.
-
-# Remove the scrap category
-
 all(county_consumption2012_df$BEA_code[1:411] == dimnames(drc2012)[[1]]) # Already sorted OK
 
 # Take Leontief inverse
 leontief_inverse2012 <- solve(diag(nrow(drc2012_domestic)) - drc2012_domestic)
 
-# Convert county consumption data frame back to a list column of matrices.
-county_demand2012 <- county_consumption2012 %>%
-  group_by(scenario) %>%
-  nest(directdemand = -scenario)
-
 # Columnwise, multiply the matrix drc2012 times the consumption vectors for each county.
-# Then sum indirect and total demand.
 county_demand2012 <- county_consumption2012 %>%
   mutate(totaldemand = map(county_consumption, ~ apply(.x, 2, function(f) leontief_inverse2012 %*% f))) 
 
