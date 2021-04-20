@@ -1,6 +1,7 @@
 # Harmonize LAFA food production baseline and scenario values with BEA and supplement missing categories with FAO waste rates.
 # QDR / Virtualland / 05 Jan 2021
 
+# Modified 20 Apr 2021: Exclude wild-caught fish from the scenarios, to assume that all demand is met by increased aquaculture.
 # Modified 22 Mar 2021: Simultaneously harmonize a separate data frame of foreign production factors.
 
 library(tidyverse)
@@ -51,6 +52,10 @@ names(scenario_production_weights_foreign)[-1] <- new_names
 qfahpd2lafa <- read_csv(file.path(fp_crosswalk, 'qfahpd_lafa_crosswalk.csv'))
 lafa_struct <- read_csv(file.path(fp_crosswalk, 'lafa_category_structure.csv'))
 bea2lafa <- read_csv(file.path(fp_crosswalk, 'bea_lafa_crosswalk.csv'))
+
+# Exclude wild-caught fish from the BEA categories to which LAFA categories will be assigned
+# This assumes that all excess demand is met by aquaculture
+bea2lafa <- bea2lafa %>% filter(!BEA_389_code %in% '114000')
 
 # Also load the QFAHPD data so that we can get the prices.
 qfahpd2 <- read_csv('~/foodwasteinterventions/data/intermediate_output/qfahpd2.csv')
