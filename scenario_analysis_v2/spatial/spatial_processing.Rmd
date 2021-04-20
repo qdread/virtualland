@@ -179,42 +179,37 @@ In this R code chunk, we aggregate the gridded USA population data product from 
 
 ```{r}
 library(raster)
+library(sf)
+library(tidyverse)
+library(exactextractr)
 
+# Read shapefile and the three grids: L48, HI, and AK
+county_tnc <- st_read('data/cfs_io_analysis/county_tnc_aea_intersect.gpkg')
 usgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'uspop10.tif'))
-
-# Transform usgrid to AEA
-usgrid_aea <- projectRaster(usgrid, crs = crs(county_tnc))
-
-# Extract population totals by intersected polygon
-# The additional wrapper around sum is necessary for na.rm (I think)
-county_tnc_pop <- raster::extract(usgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
-
-# Do the same for Hawaii and the two sections of Alaska, for completeness
 higrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'hipop10.tif'))
 akgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'akpop10.tif'))
 
-# Transform the two other grids to AEA
-higrid_aea <- projectRaster(higrid, crs = crs(county_tnc))
-akgrid_aea <- projectRaster(akgrid, crs = crs(county_tnc))
+# Return shapefile to longlat. Each of the three uspopgrids is in the same longlat projection.
+county_tnc_longlat <- county_tnc %>% st_transform(st_crs(usgrid))
 
-hi_pop <- raster::extract(higrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
-ak_pop <- raster::extract(akgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
+# Extract population totals by intersected polygon
+county_tnc_pop <- exact_extract(usgrid, county_tnc_longlat, fun = 'sum')
+hi_pop <- exact_extract(higrid, county_tnc_longlat, fun = 'sum')
+ak_pop <- exact_extract(akgrid, county_tnc_longlat, fun = 'sum')
 
 # Combine all three sections into one data frame. 
-county_tnc_pop_all <- Reduce(left_join, list(county_tnc_pop, hi_pop, ak_pop))
-
-county_tnc_pop_all <- county_tnc_pop_all %>%
-  group_by(ID) %>%
-  summarize(pop = sum(uspop10, hipop10, akpop10, na.rm = TRUE))
+county_tnc_pop_all <- rowSums(cbind(county_tnc_pop, hi_pop, ak_pop))
 
 county_tnc_pop_df <- county_tnc %>%
   mutate(pop = county_tnc_pop_all$pop)
 
-county_tnc_pop_df %>% 
+county_tnc_df <- county_tnc %>% 
+  mutate(pop = county_tnc_pop_all) %>%
   st_drop_geometry %>%
-  dplyr::select(STATEFP, COUNTYFP, NAME, ECO_CODE, pop) %>%
-  setNames(c('state_fips', 'county_fips', 'name_county', 'TNC', 'pop')) %>%
-  write_csv(file.path(fp_out, 'population_county_x_TNC_longform.csv'))
+  dplyr::select(fips_state, fips_county, ECO_CODE, pop) %>%
+  setNames(c('state_fips', 'county_fips', 'TNC', 'pop'))
+
+write_csv(county_tnc_df, 'data/cfs_io_analysis/population_county_x_TNC_longform.csv')
 ```
 
 # Get NLCD pixel counts in the county-TNC intersected polygons
