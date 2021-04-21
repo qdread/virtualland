@@ -5,9 +5,8 @@
 # Load and clean data -----------------------------------------------------
 
 library(data.table)
-library(readxl)
+library(tidyverse)
 library(Rutilitybelt)
-library(purrr)
 
 # Read foreign VLT imports by ecoregion and income by county used to split up the VLT by recipient county.
 
@@ -25,7 +24,7 @@ county_income_norm2012 <- setNames(county_income$`2012`/sum(county_income$`2012`
 
 # Multiply VLT by normalized income vector --------------------------------
 
-# For each ecoregion and each scenario, multiply the 3142x1 vector times the 1x4 VLT to get a 3142x4 vector of VLT types x county.
+# For each ecoregion and each scenario, multiply the 3112x1 vector times the 1x4 VLT to get a 3112x4 vector of VLT types x county.
 
 # Nest foreign VLT by ecoregion
 foreign_vlt_eco[, c('pasture_area', 'crop_area') := NULL]
@@ -35,7 +34,7 @@ foreign_vlt_eco <- group_nest_dt(foreign_vlt_eco, scenario_diet, scenario_waste,
 assign_vlt_to_counties <- function(VLT) {
   VLT <- t(unlist(VLT)) # Convert to a row vector
   VLT_product <- county_income_norm2012 %*% VLT
-  cbind(county = county_income$FIPS, as.data.frame(VLT_product))
+  cbind(county = county_income$GeoFips, as.data.frame(VLT_product))
 }
 
 foreign_vlt_eco[, VLT_counties := map(data, assign_vlt_to_counties)]
