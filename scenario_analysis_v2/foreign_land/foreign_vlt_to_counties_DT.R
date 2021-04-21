@@ -13,7 +13,10 @@ library(purrr)
 
 foreign_vlt_eco <- fread('data/cfs_io_analysis/foreign_VLT_by_TNC.csv')
 
-county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138)
+county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138, col_types = 'ccn', na = '(NA)') 
+county_income$`2012`[county_income$GeoFips == '02010'] <- sum(county_income$`2012`[county_income$GeoFips %in% c('02013', '02016')]) #Aleutians correction
+county_income <- county_income %>%
+  filter(!is.na(`2012`), !GeoFips %in% c('02013', '02016'))
 setDT(county_income)
 
 # Normalize the county income 2012 vector

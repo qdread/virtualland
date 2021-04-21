@@ -111,6 +111,7 @@ county_map <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_count
 # code 55901 in data is for an aggregation of two counties in WI that no longer exists so can be ignored
 # 46113 recoded to 46102, 02270 recoded to 02158
 # The remaining inconsistencies are with Alaska, but they are all "legacy rows" that are NA in the data so can be ignored too.
+# Also combine Aleutians east and west into one area since it is not separated in the production data.
 
 fips_harmonization <- read_csv('data/crossreference_tables/fips_harmonization.csv', col_types = 'ccccc')
 
@@ -146,7 +147,7 @@ county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
 county_tnc <- st_intersection(county_aea, st_make_valid(tncmap)) 
-# This results in 4655 polygons combining the two
+# This results in 4654 polygons combining the two
 
 # Write result as geopackage
 st_write(county_tnc, dsn = file.path(fp_out, 'county_tnc_aea_intersect.gpkg'))
@@ -199,9 +200,6 @@ ak_pop <- exact_extract(akgrid, county_tnc_longlat, fun = 'sum')
 
 # Combine all three sections into one data frame. 
 county_tnc_pop_all <- rowSums(cbind(county_tnc_pop, hi_pop, ak_pop))
-
-county_tnc_pop_df <- county_tnc %>%
-  mutate(pop = county_tnc_pop_all$pop)
 
 county_tnc_df <- county_tnc %>% 
   mutate(pop = county_tnc_pop_all) %>%

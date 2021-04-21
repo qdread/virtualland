@@ -12,10 +12,13 @@
 
 # Read the county-level income data from BEA
 # Remove outdated counties with no income for 2012.
+# Combine Aleutians east and west into a single data point.
 library(tidyverse)
 
-county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138, col_types = 'ccn', na = '(NA)') %>%
-  filter(!is.na(`2012`))
+county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138, col_types = 'ccn', na = '(NA)') 
+county_income$`2012`[county_income$GeoFips == '02010'] <- sum(county_income$`2012`[county_income$GeoFips %in% c('02013', '02016')]) #Aleutians correction
+county_income <- county_income %>%
+  filter(!is.na(`2012`), !GeoFips %in% c('02013', '02016'))
 
 # Load the personal consumption expenditure for each good, and the DRC tables, extracted from USEEIO2012v2.0
 load('data/cfs_io_analysis/useeio2012v2.0_pce_drc.RData')
@@ -26,7 +29,7 @@ load('data/cfs_io_analysis/useeio2012v2.0_pce_drc.RData')
 scenario_factors_bea <- read_csv('data/cfs_io_analysis/bea_consumption_factors_diet_waste_scenarios.csv')
 
 # Multiply the appropriate BEA code by its production factor for each scenario.
-# Only the 36 food BEA codes will be multiplied, so create an expanded vector for each scenario with 0 in all other elements.
+# Only the 35 food BEA codes will be multiplied, so create an expanded vector for each scenario with 0 in all other elements.
 # This will remove the nonfood codes from the total demand.
 
 expand_vec <- function(BEA_389_code, value) {
@@ -48,9 +51,9 @@ county_income_norm2012 <- setNames(county_income$`2012`/sum(county_income$`2012`
 county_consumption2012 <- scenario_vectors_bea %>%
   select(-data) %>%
   mutate(county_consumption = map(consumption_factor, ~ pce2012 * . %*% t(county_income_norm2012)))
-# Each element of the consumption list is a 411 x 3138 matrix, each row is a good and each column a county.
+# Each element of the consumption list is a 411 x 3112 matrix, each row is a good and each column a county.
 # It represents the consumption in each of the 20 scenarios.
-# Units are million USD.
+# Units are USD.
 
 # Add column for the BEA code and concatenate the list of matrices into a data frame.
 county_consumption2012_df <- county_consumption2012 %>%
