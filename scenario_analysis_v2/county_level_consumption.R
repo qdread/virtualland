@@ -85,7 +85,35 @@ county_demand2012 <- county_consumption2012 %>%
   mutate(totaldemand = map(county_consumption, ~ apply(.x, 2, function(f) leontief_inverse2012 %*% f))) 
 
 # Combine everything into a single data frame for each demand type.
-
 county_totaldemand2012 <- cbind(county_consumption2012_df[,c('BEA_code', 'scenario')], do.call(rbind, county_demand2012$totaldemand))
 
-write_csv(county_totaldemand2012, 'data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv')
+# Here, make the assumption that any demand greater than baseline for wild-caught fish is applied to animal farms and aquaculture instead.
+# Wild-caught fish 114000, animal farms and aquaculture 112A00
+
+county_totaldemand2012_long <- county_totaldemand2012 %>%
+  pivot_longer(-c(BEA_code, scenario), names_to = 'county', values_to = 'demand')
+
+county_totaldemand2012_base <- county_totaldemand2012_long %>% 
+  filter(scenario %in% 'D_baseline_WR_baseline') %>%
+  select(-scenario) %>%
+  rename(demand_base = demand)
+
+county_fishdemandincrease <- county_totaldemand2012_long %>%
+  left_join(county_totaldemand2012_base) %>%
+  mutate(fish_demand_increase = pmax(0, demand - demand_base)) %>%
+  filter(BEA_code %in% '114000') %>%
+  rename(fish_demand_base = demand_base) %>%
+  select(-BEA_code, -demand)
+
+county_totaldemand2012_long <- county_totaldemand2012_long %>%
+  left_join(county_fishdemandincrease) %>%
+  mutate(demand = case_when(
+    BEA_code %in% '112A00' ~ demand + fish_demand_increase,
+    BEA_code %in% '114000' ~ pmin(demand, fish_demand_base),
+    TRUE ~ demand))
+
+county_totaldemand2012_aquaculture_corrected <- county_totaldemand2012_long %>%
+  select(-fish_demand_base, -fish_demand_increase) %>%
+  pivot_wider(names_from = county, values_from = demand)
+
+write_csv(county_totaldemand2012_aquaculture_corrected, 'data/cfs_io_analysis/county_totaldemand2012_allscenarios.csv')
