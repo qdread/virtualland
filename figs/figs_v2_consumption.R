@@ -68,11 +68,11 @@ totaldemand_sums <- totaldemand_sums %>%
          scenario_waste = factor(scenario_waste, levels = unique(scenario_waste)))
 
 # Absolute values
-p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
+p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand/1e9)) +
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (million USD)') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -115,11 +115,11 @@ ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_tota
 # With only no waste and all waste.
 
 # Absolute values
-p_totaldemand_sums <- ggplot(totaldemand_sums %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand)) +
+p_totaldemand_sums <- ggplot(totaldemand_sums %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand/1e9)) +
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (million USD)') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),

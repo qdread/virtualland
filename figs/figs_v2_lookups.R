@@ -2,14 +2,14 @@
 # QDR / Virtualland / 26 Jan 2021
 
 # Order levels for the different scenarios
-diet_levels_ordered <- c('baseline', 'planetaryhealth', 'usstyle', 'medstyle', 'vegetarian')
+diet_levels_ordered <- c('baseline', 'usstyle', 'medstyle', 'vegetarian', 'planetaryhealth')
 waste_levels_ordered <- c('baseline', 'preconsumer', 'consumer', 'allavoidable')
 land_levels_ordered <- c('annual', 'permanent', 'pasture')
 
 # Lookup tables for longer legend names
 diet_long_names <- data.frame(scenario_diet = diet_levels_ordered,
-                              long_name = c('baseline diet', 'planetary health (Lancet)', 'healthy US-style (USDA)', 'healthy Mediterranean-style (USDA)', 'healthy vegetarian (USDA)'),
-                              medium_name = c('baseline diet', 'planetary health', 'USDA US-style', 'USDA Mediterranean-style', 'USDA vegetarian'))
+                              long_name = c('baseline diet', 'healthy US-style (USDA)', 'healthy Mediterranean-style (USDA)', 'healthy vegetarian (USDA)', 'planetary health (Lancet)'),
+                              medium_name = c('baseline diet', 'USDA US-style', 'USDA Mediterranean-style', 'USDA vegetarian', 'planetary health'))
 waste_long_names <- data.frame(scenario_waste = waste_levels_ordered,
                                long_name = c('no waste reduction', 'pre-consumer waste cut 50%', 'consumer waste cut 50%', 'all waste cut 50%'),
                                medium_name = c('no reduction', 'pre-consumer -50%', 'consumer -50%', 'all -50%'))
