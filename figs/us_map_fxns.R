@@ -81,7 +81,8 @@ panel_plot <- function(plots, x_labels, y_labels, x_title, y_title, global_legen
 }
 
 # Define function to programmatically make paneled map.
-make_20panel_map <- function(map_panel_data, base_map, region_type, variable, file_name, percent_scale = TRUE, ...) {
+# Modified to also allow 10 panels (2x5)
+make_20panel_map <- function(map_panel_data, base_map, region_type, variable, file_name, n_waste = 4, percent_scale = TRUE, ...) {
   
   args <- list(...)
   
@@ -106,9 +107,12 @@ make_20panel_map <- function(map_panel_data, base_map, region_type, variable, fi
                            scale_fill_gradientn(colours = args$scale_palette, name = args$scale_name, na.value = 'gray75',  limits = args$scale_range, trans = args$scale_trans, guide = guide_colorbar(direction = 'horizontal'), breaks = args$scale_breaks, labels = scale_labs) +
                            theme(legend.key.width = unit(1.5, 'cm')))
   
+  waste_labels <- waste_long_names$long_name
+  if (n_waste == 2) waste_labels <- waste_labels[c(1, 4)]
+  
   maps_laidout <- panel_plot(plots = maps_list, 
                              x_labels = diet_long_names$long_name, 
-                             y_labels = waste_long_names$long_name,
+                             y_labels = waste_labels,
                              x_title = 'diet scenario',
                              y_title = 'waste scenario',
                              global_legend = plot_leg,
@@ -120,8 +124,9 @@ make_20panel_map <- function(map_panel_data, base_map, region_type, variable, fi
                              title_width = 10,
                              legend_height = 15)
   
-  png(glue('{fp_fig}/{file_name}.png'), height=4.5*4+1+1.5,width=6.0*5+1,res=100,units='cm')
+  png(glue('{fp_fig}/{file_name}.png'), height=4.5*n_waste+1+1.5,width=6.0*5+1,res=100,units='cm')
   grid.draw(maps_laidout)
   dev.off()
   
 }
+

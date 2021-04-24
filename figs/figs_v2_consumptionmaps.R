@@ -21,7 +21,7 @@ leg_bottom_theme <- theme_void() + theme(legend.position = c(0.62, 0.1),
 
 # Draw all maps programmatically ------------------------------------------
 
-pmap(county_land_map_base[land_range, on = .NATURAL],
+pwalk(county_land_map_base[land_range, on = .NATURAL],
      function(data, min, max, land_type, ...)
        draw_usmap_with_insets(map_data = left_join(county_map, data),
                               ak_idx = county_ak_idx,
@@ -41,7 +41,7 @@ pmap(county_land_map_base[land_range, on = .NATURAL],
 # These essentially all look the same.
 
 # Inbound extinctions: do total only
-pmap(county_extinction_map_base[extinction_range, on = .NATURAL][taxon %in% 'total'],
+pwalk(county_extinction_map_base[extinction_range, on = .NATURAL][taxon %in% 'total'],
      function(data, min, max, land_use, ...)
        draw_usmap_with_insets(map_data = left_join(county_map, data),
                               ak_idx = county_ak_idx,
@@ -64,7 +64,7 @@ outbound_land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & sce
                                              .(min = min(flow_outbound/1e4, na.rm = TRUE), max = max(flow_outbound/1e4, na.rm = TRUE)), 
                                              by = land_type]
 
-pmap(county_land_map_base[outbound_land_range, on = .NATURAL],
+pwalk(county_land_map_base[outbound_land_range, on = .NATURAL],
      function(data, min, max, land_type, ...)
        draw_usmap_with_insets(map_data = left_join(county_map, data),
                               ak_idx = county_ak_idx,
@@ -86,7 +86,7 @@ outbound_extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'bas
                                                          .(min = min(extinction_outbound, na.rm = TRUE), max = max(extinction_outbound, na.rm = TRUE)),
                                                          by = .(land_use, taxon)]
 
-pmap(county_extinction_map_base[outbound_extinction_range, on = .NATURAL],
+pwalk(county_extinction_map_base[outbound_extinction_range, on = .NATURAL],
      function(data, min, max, land_use, taxon, ...)
        draw_usmap_with_insets(map_data = left_join(county_map, data),
                               ak_idx = county_ak_idx,

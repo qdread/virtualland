@@ -140,8 +140,8 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'total']
                  scale_factor = 1,
                  scale_trans = 'identity',
                  scale_palette = div_pal,
-                 scale_range = c(-1.17, 1.17),
-                 scale_breaks = c(-1, -0.5, 0, 0.5, 1),
+                 scale_range = c(-1.21, 1.21),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
                  add_theme = theme_void() + theme(legend.position = 'none')
@@ -157,8 +157,8 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'annual_
                  scale_factor = 1,
                  scale_trans = 'identity',
                  scale_palette = div_pal,
-                 scale_range = c(-.94, .94),
-                 scale_breaks = c(-.9, -0.45, 0, 0.45, .9),
+                 scale_range = c(-1.035, 1.035),
+                 scale_breaks = c(-1, -0.5, 0, 0.5, 1),
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
                  add_theme = theme_void() + theme(legend.position = 'none')
@@ -174,8 +174,8 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'permane
                  scale_factor = 1,
                  scale_trans = 'identity',
                  scale_palette = div_pal,
-                 scale_range = c(-1.47, 1.47),
-                 scale_breaks = c(-1, -0.5, 0, 0.5, 1),
+                 scale_range = c(-1.5, 1.5),
+                 scale_breaks = c(-1.5, -1, -0.5, 0, 0.5, 1, 1.5),
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
                  add_theme = theme_void() + theme(legend.position = 'none')
@@ -191,7 +191,7 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pasture
                  scale_factor = 1,
                  scale_trans = 'identity',
                  scale_palette = div_pal,
-                 scale_range = c(-1.04, 1.04),
+                 scale_range = c(-1.1, 1.1),
                  scale_breaks = c(-1, -0.5, 0, 0.5, 1),
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -212,7 +212,7 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'total']
                  scale_factor = 10000,
                  scale_trans = 'log10',
                  scale_palette = seq_pal,
-                 scale_range = c(1e0, 3e6),
+                 scale_range = c(0.7, 3e6),
                  scale_breaks = c(3e0, 3e2, 3e4, 3e6),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
@@ -230,7 +230,7 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'annual_
                  scale_factor = 10000,
                  scale_trans = 'log10',
                  scale_palette = seq_pal,
-                 scale_range = c(1e0, 3e5),
+                 scale_range = c(0.38, 3e5),
                  scale_breaks = c(3e1, 3e3, 3e5),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
@@ -248,7 +248,7 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'permane
                  scale_factor = 10000,
                  scale_trans = 'log10',
                  scale_palette = seq_pal,
-                 scale_range = c(1e1, 5e5),
+                 scale_range = c(4, 5e5),
                  scale_breaks = c(5e1, 5e3, 5e5),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
@@ -266,12 +266,169 @@ make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pasture
                  scale_factor = 10000,
                  scale_trans = 'log10',
                  scale_palette = seq_pal,
-                 scale_range = c(1e0, 3e6),
+                 scale_range = c(0.4, 3e6),
                  scale_breaks = c(3e0, 3e2, 3e4, 3e6),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
                  add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+
+# County land maps, 10 scenarios ------------------------------------------
+
+# only all or nothing waste
+
+# Total land, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'total' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_palette = div_pal,
+                 scale_range = c(-1.21, 1.21),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Annual crops, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'annual_cropland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = '10scenarios_county_annualcrop_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_palette = div_pal,
+                 scale_range = c(-1.035, 1.035),
+                 scale_breaks = c(-1, -0.5, 0, 0.5, 1),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Permanent crops, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'permanent_cropland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = '10scenarios_county_permanentcrop_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_palette = div_pal,
+                 scale_range = c(-1.5, 1.5),
+                 scale_breaks = c(-1.5, -1, -0.5, 0, 0.5, 1, 1.5),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Pastureland, outbound vs. baseline
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pastureland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'outbound_vs_baseline',
+                 file_name = '10scenarios_county_pasture_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_palette = div_pal,
+                 scale_range = c(-1.1, 1.1),
+                 scale_breaks = c(-1, -0.5, 0, 0.5, 1),
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+###
+
+# County outbound land, raw values
+
+# Total land, outbound
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'total' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'flow_outbound',
+                 file_name = '10scenarios_county_totalland_outbound',
+                 scale_name = 'Virtual land\nexport (ha)',
+                 scale_factor = 10000,
+                 scale_trans = 'log10',
+                 scale_palette = seq_pal,
+                 scale_range = c(0.7, 3e6),
+                 scale_breaks = c(3e0, 3e2, 3e4, 3e6),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Annual crops, outbound
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'annual_cropland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'flow_outbound',
+                 file_name = '10scenarios_county_annualcrop_outbound',
+                 scale_name = 'Virtual land\nexport (ha)',
+                 scale_factor = 10000,
+                 scale_trans = 'log10',
+                 scale_palette = seq_pal,
+                 scale_range = c(0.38, 3e5),
+                 scale_breaks = c(3e1, 3e3, 3e5),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Permanent crops, outbound 
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'permanent_cropland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'flow_outbound',
+                 file_name = '10scenarios_county_permanentcrop_outbound',
+                 scale_name = 'Virtual land\nexport (ha)',
+                 scale_factor = 10000,
+                 scale_trans = 'log10',
+                 scale_palette = seq_pal,
+                 scale_range = c(4, 5e5),
+                 scale_breaks = c(5e1, 5e3, 5e5),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Pastureland, outbound
+make_20panel_map(map_panel_data = county_land_map_panels[land_type %in% 'pastureland' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'flow_outbound',
+                 file_name = '10scenarios_county_pasture_outbound',
+                 scale_name = 'Virtual land\nexport (ha)',
+                 scale_factor = 10000,
+                 scale_trans = 'log10',
+                 scale_palette = seq_pal,
+                 scale_range = c(0.4, 3e6),
+                 scale_breaks = c(3e0, 3e2, 3e4, 3e6),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
 )
 
 
@@ -282,7 +439,7 @@ scale_width <- function(x) max(abs(range(x, na.rm = TRUE)))
 county_ext_ob_widths <- county_extinction_flow_sums[, lapply(.SD, scale_width), keyby = .(land_use, taxon), .SDcols = patterns('baseline')]
 county_ext_ob_max <- county_extinction_flow_sums[, lapply(.SD, max), keyby = .(land_use, taxon), .SDcols = c('extinction_outbound', 'extinction_inbound')]
 
-div_pal <- scico::scico(15, palette = 'berlin')
+div_pal <- scico::scico(15, palette = 'vik')
 seq_pal <- viridis::viridis_pal()(15)
 
 # For each taxon, total land use, change vs. baseline.
@@ -295,8 +452,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -312,8 +469,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -329,8 +486,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -346,8 +503,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -363,8 +520,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -380,8 +537,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -397,8 +554,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Change vs.\nbaseline',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(-1.15, 1.15),
-                 scale_breaks = c(-1, -.5, 0, 0.5, 1),
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
                  scale_palette = div_pal,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
@@ -435,7 +592,7 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 1.7),
+                 scale_range = c(0, 1.75),
                  scale_breaks = c(0, 0.5, 1, 1.5),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
@@ -453,7 +610,7 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 1.7),
+                 scale_range = c(0, 1.75),
                  scale_breaks = c(0, 0.5, 1, 1.5),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
@@ -471,7 +628,7 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 0.17),
+                 scale_range = c(0, 0.185),
                  scale_breaks = c(0, 0.05, 0.1, 0.15),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
@@ -489,7 +646,7 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 16),
+                 scale_range = c(0, 16.3),
                  scale_breaks = c(0, 5, 10, 15),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
@@ -507,8 +664,8 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 0.11),
-                 scale_breaks = c(0, .025, .05, .075, 1),
+                 scale_range = c(0, 0.14),
+                 scale_breaks = c(0, .025, .05, .075, .1, .125),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
@@ -525,11 +682,277 @@ make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'to
                  scale_name = 'Extinctions',
                  scale_factor = 1,
                  scale_trans = 'identity',
-                 scale_range = c(0, 17),
+                 scale_range = c(0, 18),
                  scale_breaks = c(0, 5, 10, 15),
                  scale_palette = viridis::viridis_pal()(15),
                  percent_scale = FALSE,
                  ak_idx = county_ak_idx,
                  hi_idx = county_hi_idx,
                  add_theme = theme_void() + theme(legend.position = 'none')
+)
+
+
+# County extinction maps, 10 scenario version -----------------------------
+
+# For each taxon, total land use, change vs. baseline.
+# Amphibians, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'amphibians' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_amphibianextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Animals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'animals' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_animalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Birds, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'birds' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_birdextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Mammals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'mammals' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_mammalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Plants, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'plants' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_plantextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Reptiles, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'reptiles' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_reptileextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# All taxa, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'total' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound_vs_baseline',
+                 file_name = '10scenarios_county_totalland_totalextinction_outbound_vs_baseline',
+                 scale_name = 'Change vs.\nbaseline',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(-1.2, 1.2),
+                 scale_breaks = c(-1.2, -.6, 0, 0.6, 1.2),
+                 scale_palette = div_pal,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+###
+# For each taxon, total land use, raw extinction outbound.
+
+# Amphibians, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'amphibians' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_amphibianextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 0.32),
+                 scale_breaks = c(0, 0.1, 0.2, 0.3),
+                 scale_palette = seq_pal,
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Animals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'animals' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_animalextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 1.75),
+                 scale_breaks = c(0, 0.5, 1, 1.5),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Birds, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'birds' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_birdextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 1.75),
+                 scale_breaks = c(0, 0.5, 1, 1.5),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Mammals, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'mammals' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_mammalextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 0.185),
+                 scale_breaks = c(0, 0.05, 0.1, 0.15),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Plants, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'plants' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_plantextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 16.3),
+                 scale_breaks = c(0, 5, 10, 15),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# Reptiles, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'reptiles' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_reptileextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 0.14),
+                 scale_breaks = c(0, .025, .05, .075, .1, .125),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
+)
+
+# All taxa, total land use
+make_20panel_map(map_panel_data = county_extinction_map_panels[land_use %in% 'total' & taxon %in% 'total' & scenario_waste %in% c('baseline', 'allavoidable')],
+                 base_map = county_map,
+                 region_type = 'county',
+                 variable = 'extinction_outbound',
+                 file_name = '10scenarios_county_totalland_totalextinction_outbound',
+                 scale_name = 'Extinctions',
+                 scale_factor = 1,
+                 scale_trans = 'identity',
+                 scale_range = c(0, 18),
+                 scale_breaks = c(0, 5, 10, 15),
+                 scale_palette = viridis::viridis_pal()(15),
+                 percent_scale = FALSE,
+                 ak_idx = county_ak_idx,
+                 hi_idx = county_hi_idx,
+                 add_theme = theme_void() + theme(legend.position = 'none'),
+                 n_waste = 2
 )
