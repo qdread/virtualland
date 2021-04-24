@@ -28,7 +28,7 @@ load(file.path(fp_out, 'state_land_exchange_tables.RData'))
 land_consumption_by_scenario <- function(diet, waste) {
   
   consumption <- fread(glue::glue('/nfs/qread-data/cfs_io_analysis/county_consumption_csvs/D_{diet}_WR_{waste}_wide.csv'),
-                       colClasses = rep(c('character','double'), c(3, 3141)))
+                       colClasses = rep(c('character','double'), c(3, 3112)))
   
   # Pivot consumption matrix to long form
   setnames(consumption, "county_fips", "county_from")

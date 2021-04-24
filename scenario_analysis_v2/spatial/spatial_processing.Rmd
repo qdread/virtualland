@@ -34,13 +34,18 @@ Following is a list of the input files needed for this pipeline. The accompanyin
 
 # Clip TNC ecoregion raster to USA extent
 
-This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA administrative boundaries shapefile and intersects them. The result (TNC ecoregions for the United States) is written to a shapefile.
+This R code chunk takes the Nature Conservancy ecoregions shapefile and the USA counties shapefile (used later) and intersects them. The result (TNC ecoregions for the United States) is written to a shapefile.
 
 ```{r}
 # Read TNC and USA shapefiles
 library(sf)
+library(tidyverse)
 tnc <- st_read(dsn = '/nfs/qread-data/raw_data/landuse/ecoregions', layer = 'tnc_terr_ecoregions')
-usa <- st_read(dsn = '/nfs/public-data/GADM/USA_adm', layer = 'USA_adm0')
+usa <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k') %>%
+  st_zm() %>% # Drop Z-dimension
+  filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>% # Remove Puerto Rico and territories
+  st_union() %>%
+  st_transform(st_crs(tnc))
 
 tnc_usa <- st_intersection(tnc, usa)
 
@@ -52,13 +57,13 @@ st_write(tnc_usa, dsn = '/nfs/qread-data/raw_data/landuse/ecoregions/tnc_usa.gpk
 This code chunk containing bash shell commands first creates a virtual raster for the NLCD 2016 raster and extracts its projection information (Albers equal-area). Next it projects the TNC USA shapefile to that same Albers equal-area projection. The result is written to .shp and .gpkg. It also projects the global TNC shapefile, and a global country boundaries shapefile, to the Mollweide equal-area projection. Next it projects the global cropland and pastureland rasters to the Mollweide projection. 
 
 ```{bash}
-gdalbuildvrt data/raw_data/landuse/NLCD/nlcd2016landcover.vrt /nfs/public-data/NLCD/NLCD_2016_Land_Cover_L48_20190424/NLCD_2016_Land_Cover_L48_20190424.img
+gdalbuildvrt /nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt /nfs/public-data/NLCD/NLCD_2016_Land_Cover_L48_20190424/NLCD_2016_Land_Cover_L48_20190424.img
 
 cd /nfs/qread-data/raw_data/landuse/ecoregions
 
 # Transform TNC ecoregions clipped to USA extent to Albers equal area.
 tncusaproj=`gdalsrsinfo tnc_usa.gpkg -o proj4 | xargs`
-nlcdproj=`gdalsrsinfo data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
+nlcdproj=`gdalsrsinfo /nfs/qread-data/data/raw_data/landuse/NLCD/nlcd2016landcover.vrt -o proj4 | xargs`
 
 ogr2ogr -f "GPKG" -t_srs "${nlcdproj}" -s_srs "${tncusaproj}" tnc_usa_aea.gpkg tnc_usa.gpkg
 
@@ -88,42 +93,45 @@ gdalwarp -t_srs "${proj_moll}" -s_srs "${cropdproj}" -of "VRT" GFSAD1KCD.2010.00
 
 # Do QC on USA county shapefile and project to equal area
 
-This R code chunk reads in the raw county boundaries shapefile, projects it to Albers equal area, corrects the county codes so that they matches the county codes we have in our other datasets, and writes it to a .gpkg.
+This R code chunk reads in the raw county boundaries shapefile, projects it to Albers equal area, and corrects the county codes so that they matches the county codes we have in our other datasets. In order to do that, we also need to do a spatial union of some counties so that the codes match. We load an external crosswalk table of which counties to dissolve (these are mainly independent cities in Virginia that are merged with the county surrounding them). Finally the result is written to a .gpkg.
 
 ```{r}
 library(sf)
 library(tidyverse)
 tnc_p4s <- '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs'
-countymap <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k')
+county_map <- st_read(dsn = '/nfs/public-data/census-tiger-2013/cb_2014_us_county_500k', layer = 'cb_2014_us_county_500k') %>%
+  filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>% # Remove Puerto Rico and other overseas dependencies
+  mutate(fips = paste0(STATEFP, COUNTYFP)) %>%
+  st_zm() %>% # Get rid of Z dimension
+  st_transform(tnc_p4s) # Transform to equal area projection
 
-county_aea <- st_transform(countymap, tnc_p4s)
+# Summary of differences:
+# Harmonization must be done on the map to dissolve independent cities in VA with less than 100K population with the surrounding county
+# Kalawao County and Maui County also need to be dissolved on the map.
+# code 55901 in data is for an aggregation of two counties in WI that no longer exists so can be ignored
+# 46113 recoded to 46102, 02270 recoded to 02158
+# The remaining inconsistencies are with Alaska, but they are all "legacy rows" that are NA in the data so can be ignored too.
+# Also combine Aleutians east and west into one area since it is not separated in the production data.
 
-# Update the FIPS codes to reflect the mismatches between this map and the data.
-# The differences are Washington DC (different code used in the data), Aleutians (two counties split), and Oglala Lakota (fips code changed when name changed)
-# For DC and Oglala Lakota we just need to change the code.
-# For Aleutians, we need to merge two counties.
+fips_harmonization <- read_csv('data/crossreference_tables/fips_harmonization.csv', col_types = 'ccccc')
 
-# Correct the codes.
-county_aea <- county_aea %>%
-  mutate(COUNTYFP = case_when(STATEFP == '11' ~ '000',
-                              STATEFP == '46' & COUNTYFP == '113' ~ '102',
-                              TRUE ~ COUNTYFP),
-         county = paste0(STATEFP, COUNTYFP)) 
+# For each row of fips_harmonization, dissolve those map polygons into a single one and rename it.
+# first reshape the data frame 
+fips_harmonization <- fips_harmonization %>% 
+  pivot_longer(starts_with("FIPS_map"), values_to = 'FIPS_map') %>%
+  select(-name, -name_data) %>%
+  filter(!is.na(FIPS_map))
 
-# Merge the two Aleutians counties 
-aleutians <- county_aea %>%
-  filter(county %in% c('02013', '02016')) %>%
-  st_combine
+# Join map with harmonization, group by harmonized fips, and dissolve
+county_harmonized <- county_map %>%
+  left_join(fips_harmonization, by = c('fips' = 'FIPS_map')) %>%
+  mutate(FIPS_data = if_else(is.na(FIPS_data), fips, FIPS_data)) %>%
+  group_by(FIPS_data) %>%
+  summarize %>%
+  mutate(fips_state = substr(FIPS_data, 1, 2), fips_county = substr(FIPS_data, 3, 5)) %>%
+  rename(fips = FIPS_data)
 
-# Replace one of the Aleutians geometries with the merged one.
-county_aea$geometry[county_aea$county == '02013'] <- aleutians
-
-county_aea <- county_aea %>%
-  filter(!county %in% '02016') %>%
-  mutate(NAME = if_else(NAME == 'Aleutians East', 'Aleutians (East & West merged)', NAME),
-         county = if_else(county == '02013', '02010', county))
-
-st_write(county_aea, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG')
+st_write(county_harmonized, 'data/raw_data/landuse/USA/USA_county_2014_aea.gpkg', driver = 'GPKG')
 ```
 
 # Intersect county and TNC ecoregion polygons
@@ -138,12 +146,11 @@ tncmap <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 county_aea <- st_read('data/raw_data/landuse/USA/USA_county_2014_aea.gpkg')
 
 # Intersect the two
-county_tnc <- st_intersection(county_aea, tncmap) 
-# This results in 4690 polygons combining the two
+county_tnc <- st_intersection(county_aea, st_make_valid(tncmap)) 
+# This results in 4654 polygons combining the two
 
 # Write result as geopackage
 st_write(county_tnc, dsn = file.path(fp_out, 'county_tnc_aea_intersect.gpkg'))
-
 ```
 
 # Intersect country and global TNC ecoregion polygons
@@ -173,42 +180,34 @@ In this R code chunk, we aggregate the gridded USA population data product from 
 
 ```{r}
 library(raster)
+library(sf)
+library(tidyverse)
+library(exactextractr)
 
+# Read shapefile and the three grids: L48, HI, and AK
+county_tnc <- st_read('data/cfs_io_analysis/county_tnc_aea_intersect.gpkg')
 usgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'uspop10.tif'))
-
-# Transform usgrid to AEA
-usgrid_aea <- projectRaster(usgrid, crs = crs(county_tnc))
-
-# Extract population totals by intersected polygon
-# The additional wrapper around sum is necessary for na.rm (I think)
-county_tnc_pop <- raster::extract(usgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
-
-# Do the same for Hawaii and the two sections of Alaska, for completeness
 higrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'hipop10.tif'))
 akgrid <- raster(file.path('data/raw_data/Census/uspopgrid/geotiff', 'akpop10.tif'))
 
-# Transform the two other grids to AEA
-higrid_aea <- projectRaster(higrid, crs = crs(county_tnc))
-akgrid_aea <- projectRaster(akgrid, crs = crs(county_tnc))
+# Return shapefile to longlat. Each of the three uspopgrids is in the same longlat projection.
+county_tnc_longlat <- county_tnc %>% st_transform(st_crs(usgrid))
 
-hi_pop <- raster::extract(higrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
-ak_pop <- raster::extract(akgrid_aea, county_tnc, fun = function(x, ...) sum(x, na.rm = TRUE), df = TRUE)
+# Extract population totals by intersected polygon
+county_tnc_pop <- exact_extract(usgrid, county_tnc_longlat, fun = 'sum')
+hi_pop <- exact_extract(higrid, county_tnc_longlat, fun = 'sum')
+ak_pop <- exact_extract(akgrid, county_tnc_longlat, fun = 'sum')
 
 # Combine all three sections into one data frame. 
-county_tnc_pop_all <- Reduce(left_join, list(county_tnc_pop, hi_pop, ak_pop))
+county_tnc_pop_all <- rowSums(cbind(county_tnc_pop, hi_pop, ak_pop))
 
-county_tnc_pop_all <- county_tnc_pop_all %>%
-  group_by(ID) %>%
-  summarize(pop = sum(uspop10, hipop10, akpop10, na.rm = TRUE))
-
-county_tnc_pop_df <- county_tnc %>%
-  mutate(pop = county_tnc_pop_all$pop)
-
-county_tnc_pop_df %>% 
+county_tnc_df <- county_tnc %>% 
+  mutate(pop = county_tnc_pop_all) %>%
   st_drop_geometry %>%
-  dplyr::select(STATEFP, COUNTYFP, NAME, ECO_CODE, pop) %>%
-  setNames(c('state_fips', 'county_fips', 'name_county', 'TNC', 'pop')) %>%
-  write_csv(file.path(fp_out, 'population_county_x_TNC_longform.csv'))
+  dplyr::select(fips_state, fips_county, ECO_CODE, pop) %>%
+  setNames(c('state_fips', 'county_fips', 'TNC', 'pop'))
+
+write_csv(county_tnc_df, 'data/cfs_io_analysis/population_county_x_TNC_longform.csv')
 ```
 
 # Get NLCD pixel counts in the county-TNC intersected polygons
@@ -247,11 +246,10 @@ The following bash shell commands are run to submit the job to the Slurm compute
 ```{bash}
 EXEC="countpixels.sh"
 outdir="/nfs/qread-data/raw_data/landuse/output_csvs"
+usaraster="/nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt"
 cd ~/virtualland/jobscripts
 
-sbatch -J nlcdcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,\
-  raster_file=/nfs/qread-data/raw_data/landuse/NLCD/nlcd2016landcover.vrt,\
-  output_file=${outdir}/NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J nlcdcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_aea_intersect.gpkg,raster_file=${usaraster},output_file=${outdir}/NLCD_2016_countyTNC.csv ${EXEC}
 ```
 
 ## Counts for Alaska and Hawaii
@@ -280,13 +278,9 @@ hiraster="/nfs/qread-data/raw_data/landuse/NLCD/NLCD2001_Hawaii/nlcd2001landcove
 cd ~/virtualland/jobscripts
 
 # Extract AK and HI NLCD2016 
-sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg,\
-  raster_file=${akraster},\
-  output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
+sbatch -J akcountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_alaska_crs.gpkg,raster_file=${akraster},output_file=${outdir}/AK_NLCD_2016_countyTNC.csv ${EXEC}
 
-sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg,\
-  raster_file=${hiraster},\
-  output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
+sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/county_tnc_intersect_hawaii_crs.gpkg,raster_file=${hiraster},output_file=${outdir}/HI_NLCD_2001_countyTNC.csv ${EXEC}
 ```
 
 # Combine CONUS, Alaska, and Hawaii NLCD counts and extract cropland and pastureland
@@ -294,21 +288,22 @@ sbatch -J hicountytnc --export=vector_file=/nfs/qread-data/cfs_io_analysis/count
 The relevant land cover classes are cropland, pastureland, and water, if we want the proportion of land (non-water) area in each county-ecoregion intersection that is taken up by cropland and pastureland. In the following R code chunk, we combine the summarized NLCD pixel counts for CONUS, Alaska, and Hawaii, then sum all classes other than cropland, pastureland, and water to an "other" category.
 
 ```{r}
-nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnnnnn")
-nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnn")
-nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnncnccncncccnccccccncnnnnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc <- read_csv('data/raw_data/landuse/output_csvs/NLCD_2016_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnnnnn")
+nlcd_county_tnc_hi <- read_csv('data/raw_data/landuse/output_csvs/HI_NLCD_2001_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnn")
+nlcd_county_tnc_ak <- read_csv('data/raw_data/landuse/output_csvs/AK_NLCD_2016_countyTNC.csv', col_types = "ncccccccnnccccccccccnnnnnnnnnnnnnnnnnnnn")
 
 # Fill in the Alaska and Hawaii rows: get rid of AK and HI from main df, retain only AK and HI from smaller ones,
 # and then bind rows together.
-nlcd_county_tnc <- nlcd_county_tnc %>% filter(!STATEFP %in% c('02', '15'))
-nlcd_county_tnc_hi <- nlcd_county_tnc_hi %>% filter(STATEFP %in% c('15'))
-nlcd_county_tnc_ak <- nlcd_county_tnc_ak %>% filter(STATEFP %in% c('02'))
+nlcd_county_tnc <- nlcd_county_tnc %>% filter(!fips_state %in% c('02', '15'))
+nlcd_county_tnc_hi <- nlcd_county_tnc_hi %>% filter(fips_state %in% c('15'))
+nlcd_county_tnc_ak <- nlcd_county_tnc_ak %>% filter(fips_state %in% c('02'))
 
 nlcd_county_tnc <- bind_rows(nlcd_county_tnc, nlcd_county_tnc_hi, nlcd_county_tnc_ak)
 
 # Reshape to long
 # Aggregate by cropland, pastureland, and other codes. Pasture 81, Crop 82, Water 11, Other Land = all others.
 nlcd_county_tnc_long <- nlcd_county_tnc %>%
+  rename(county = fips) %>%
   select(county, ECO_CODE, matches('^[0-9]{2}$')) %>%
   pivot_longer(-c(county, ECO_CODE), names_to = 'NLCD', values_to = 'n_pixels') %>%
   mutate(cover_class = case_when(NLCD == '81' ~ 'pasture',

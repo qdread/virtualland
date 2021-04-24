@@ -11,7 +11,7 @@ fp_out <- 'data/cfs_io_analysis'
 nlcd_county_tnc <- fread(file.path(fp_out, 'NLCDcrop_county_x_TNC.csv'), colClasses = rep(c('character', 'integer'), c(2, 4)))
 
 # Population counts by the intersection of county and TNC region in the USA
-pop_county_tnc <- fread(file.path(fp_out, 'population_county_x_TNC_longform.csv'), colClasses = rep(c('character', 'double'), c(4, 1)))
+pop_county_tnc <- fread(file.path(fp_out, 'population_county_x_TNC_longform.csv'), colClasses = rep(c('character', 'double'), c(3, 1)))
 
 
 # Process weighting factors -----------------------------------------------
@@ -27,7 +27,6 @@ county_tnc_weights <- pop_county_tnc[nlcd_county_tnc, on = c('TNC', 'county_fips
 proportion_cols <- c('cropland_ecoregion_proportion', 'pastureland_ecoregion_proportion', 'pop_ecoregion_proportion')
 county_tnc_weights[, (proportion_cols) := list(crop / sum(crop, na.rm = TRUE), pasture / sum(pasture, na.rm = TRUE), pop / sum(pop, na.rm = TRUE)), by = county_fips]
 county_tnc_weights[, (proportion_cols) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = proportion_cols]
-county_tnc_weights[county_fips == '02013', county_fips := '02010']
 county_tnc_weights <- county_tnc_weights[, c('county_fips', 'TNC', proportion_cols), with = FALSE]
 
 # DEFINE FUNCTION TO CONVERT FLOWS ----------------------------------------

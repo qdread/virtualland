@@ -70,15 +70,14 @@ tnc_map <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 source('figs/figs_v2_lookups.R')
 source('figs/us_map_fxns.R')
 
-# Remove areas other than the 50 states plus DC from county_map. (anything beginning with 6 or 7)
-county_map <- county_map %>% filter(!substr(STATEFP,1,1) %in% c('6','7'))
-# Now the 3141 counties and county equivalents match up between the data and the map.
+# Rename fips to county in county_map for compatibility.
+county_map <- county_map %>%
+  rename(county = fips)
 
 # Merge county map to state map.
 state_map <- county_map %>%
-  group_by(STATEFP) %>%
+  group_by(fips_state) %>%
   summarize
-
 
 # Index of Alaska and Hawaii in ecoregion map
 tnc_ak_idx <- substr(tnc_map$ECO_CODE, 1, 4) %in% c('NA06', 'NA11') | tnc_map$ECO_CODE %in% c('NA0509', 'NA0518')

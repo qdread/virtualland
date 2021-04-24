@@ -38,25 +38,29 @@ county_consumption_ag <- county_consumption %>%
 
 # Join data ---------------------------------------------------------------
 
+# Harmonize production codes with consumption codes
+
 # Check county codes match
-setdiff(x = county_production_ag$county_fips, y = county_consumption_ag$county_fips)
-setdiff(y = county_production_ag$county_fips, x = county_consumption_ag$county_fips)
-# There are quite a few that aren't in production but I think it's because those do not produce anything. Most are cities in VA and some places in AK.
-# The two counties not accounted for in consumption are Aleutian islands 02010 and Oglala Lakota 46102
-# 02010 was split into an east and west region 02013 and 02016
-# 46102 was changed from 46113.
+prod_unmatched <- setdiff(x = county_production_ag$county_fips, y = county_consumption_ag$county_fips)
+cons_unmatched <- setdiff(y = county_production_ag$county_fips, x = county_consumption_ag$county_fips)
+# There are quite a few that aren't in production but I think it's because those do not produce anything. 
 
-# To fix, just change 46113 in consumption to 46102. Then add the consumption from 02013 and 02016 together.
-aleutians_consumption <- county_consumption_ag %>% 
-  filter(county_fips %in% c('02013','02016')) %>%
-  group_by(BEA_code, scenario) %>%
-  summarize(consumption = sum(consumption)) %>%
-  mutate(county_fips = '02010')
+# The mismatches are:
+# We have Maui 15009 which is combined with Kalawao 15005 and renamed 15901. 
+# We have 23 counties in Virginia which were merged with an independent city they contain, and renamed. 
+# In all cases it is a one to one correspondence so we can use our harmonization crosswalk to rename.
 
-county_consumption_ag <- county_consumption_ag %>%
-  mutate(county_fips = if_else(county_fips == '46113', '46102', county_fips)) %>%
-  filter(!county_fips %in% c('02013','02016')) %>%
-  bind_rows(aleutians_consumption)
+fips_harmonization <- read_csv('data/crossreference_tables/fips_harmonization.csv')
+fips_tojoin <- fips_harmonization %>%
+  filter(grepl('^15', FIPS_data) | grepl('^51', FIPS_data)) %>% # keep VA and HI
+  select(FIPS_data, FIPS_map1) %>%
+  setNames(c('county_fips_replacement', 'county_fips'))
+
+# Join production with the codes to rename, and rename where appropriate.
+county_production_ag <- county_production_ag %>% 
+  left_join(fips_tojoin) %>%
+  mutate(county_fips = if_else(is.na(county_fips_replacement), county_fips, county_fips_replacement)) %>%
+  select(-county_fips_replacement)
 
 # Join consumption and production
 # Fill NA values in with zeroes.

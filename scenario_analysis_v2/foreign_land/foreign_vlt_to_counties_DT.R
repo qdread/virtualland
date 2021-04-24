@@ -5,38 +5,26 @@
 # Load and clean data -----------------------------------------------------
 
 library(data.table)
-library(readxl)
+library(tidyverse)
 library(Rutilitybelt)
-library(purrr)
 
 # Read foreign VLT imports by ecoregion and income by county used to split up the VLT by recipient county.
 
 foreign_vlt_eco <- fread('data/cfs_io_analysis/foreign_VLT_by_TNC.csv')
 
-fp_lin <- 'data/raw_data/commodity_flows/Lin_supp_info'
-
-county_income <- read_xlsx(file.path(fp_lin, 'County Personal Income.xlsx'), sheet = 'Total County Income', skip = 5)
+county_income <- read_csv('data/raw_data/BEA/countypersonalincome2012.csv', skip = 4, n_max = 3138, col_types = 'ccn', na = '(NA)') 
+county_income$`2012`[county_income$GeoFips == '02010'] <- sum(county_income$`2012`[county_income$GeoFips %in% c('02013', '02016')]) #Aleutians correction
+county_income <- county_income %>%
+  filter(!is.na(`2012`), !GeoFips %in% c('02013', '02016'))
 setDT(county_income)
 
-# This is a complex spreadsheet with formulas but it seems like just skipping the rows is OK.
-setnames(county_income, c('FIPS', 'state_FIPS', 'county_FIPS', 'state_name', 'county_name', paste('per_capita_income', 2012:2014, sep = '_'), 'per_capita_rank_2014', 'percent_change_2013', 'percent_change_2014', 'percent_change_rank_2014', 'total_income_2012'))
-
-# Remove state total rows
-# Modified 17 Dec 2020: do not remove DC.
-county_income <- county_income[county_FIPS != 0 | state_FIPS == 11][, state_name := NULL]
-
-# Modified 15 Jan 2021: convert total income of Bedford County VA to the weighted mean of Bedford City and Bedford County
-county_income[FIPS %in% 51019, total_income_2012 := sum(total_income_2012[FIPS %in% c(51515, 51019)])]
-county_income <- county_income[!FIPS %in% 51515]
-
 # Normalize the county income 2012 vector
-county_income[, FIPS := sprintf('%05d', FIPS)]
-county_income_norm2012 <- setNames(county_income$total_income_2012/sum(county_income$total_income_2012), county_income$FIPS)
+county_income_norm2012 <- setNames(county_income$`2012`/sum(county_income$`2012`), county_income$GeoFips)
 
 
 # Multiply VLT by normalized income vector --------------------------------
 
-# For each ecoregion and each scenario, multiply the 3142x1 vector times the 1x4 VLT to get a 3142x4 vector of VLT types x county.
+# For each ecoregion and each scenario, multiply the 3112x1 vector times the 1x4 VLT to get a 3112x4 vector of VLT types x county.
 
 # Nest foreign VLT by ecoregion
 foreign_vlt_eco[, c('pasture_area', 'crop_area') := NULL]
@@ -46,7 +34,7 @@ foreign_vlt_eco <- group_nest_dt(foreign_vlt_eco, scenario_diet, scenario_waste,
 assign_vlt_to_counties <- function(VLT) {
   VLT <- t(unlist(VLT)) # Convert to a row vector
   VLT_product <- county_income_norm2012 %*% VLT
-  cbind(county = county_income$FIPS, as.data.frame(VLT_product))
+  cbind(county = county_income$GeoFips, as.data.frame(VLT_product))
 }
 
 foreign_vlt_eco[, VLT_counties := map(data, assign_vlt_to_counties)]

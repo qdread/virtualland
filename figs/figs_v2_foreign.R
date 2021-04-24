@@ -51,8 +51,8 @@ all_vlt_sum <- foreign_vlt_sum[domestic_vlt_sum, on = .NATURAL]
 all_vlt_sum <- melt(all_vlt_sum, id.vars = c('scenario_diet', 'scenario_waste', 'land_type'), variable.name = 'origin', value.name = 'VLT')
 
 # Reorder factor levels
-all_vlt_sum[, scenario_diet := factor(scenario_diet, levels = unique(scenario_diet))]
-all_vlt_sum[, scenario_waste := factor(scenario_waste, levels = unique(scenario_waste))]
+all_vlt_sum[, scenario_diet := factor(scenario_diet, levels = diet_levels_ordered)]
+all_vlt_sum[, scenario_waste := factor(scenario_waste, levels = waste_levels_ordered)]
 
 ggplot(all_vlt_sum[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline'], aes(x = land_type, y = VLT, fill = origin)) +
   geom_col(position = 'dodge') +
@@ -86,8 +86,8 @@ domestic_extinction_sum <- county_extinction_flow_sums[, .(domestic = sum(extinc
 all_extinction_sum <- foreign_extinction_sum[domestic_extinction_sum, on = .NATURAL]
 all_extinction_sum <- melt(all_extinction_sum, id.vars = c('scenario_diet', 'scenario_waste', 'land_use', 'taxon'), variable.name = 'origin', value.name = 'extinctions')
 
-all_extinction_sum[, scenario_diet := factor(scenario_diet, levels = unique(scenario_diet))]
-all_extinction_sum[, scenario_waste := factor(scenario_waste, levels = unique(scenario_waste))]
+all_extinction_sum[, scenario_diet := factor(scenario_diet, levels = diet_levels_ordered)]
+all_extinction_sum[, scenario_waste := factor(scenario_waste, levels = waste_levels_ordered)]
 
 ggplot(all_extinction_sum[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline'], aes(x = land_use, y = extinctions, fill = origin)) +
   facet_wrap(~ taxon, scales = 'free_y') +
@@ -208,6 +208,64 @@ p_bottom <- p_ext_grandtotals +
 png(file.path(fp_fig, 'foreign_vs_domestic_all_grandtotals.png'), height = 7, width = 7, res = 400, units = 'in')
   grid.draw(gridExtra::gtable_rbind(ggplotGrob(p_top), ggplotGrob(p_bottom)))
 dev.off()
+
+
+# Alternative combined fig with only 2 waste scenarios --------------------
+
+# 2x2 land x species, no waste reduction x all waste reduction
+# Each one will have 5 bars.
+
+
+p_ext_grandtotals_10 <- ggplot(extinction_grandtotals[scenario_waste %in% c('baseline','allavoidable')], aes(y = extinctions, x = scenario_diet, pattern = origin, fill = kingdom)) +
+  facet_grid(. ~ scenario_waste, labeller = scenario_labeller) +
+  geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
+  scale_x_discrete(name = 'diet scenario', labels = diet_long_names$medium_name) +
+  scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
+  scale_pattern_manual(values = c('circle', 'none')) +
+  scale_fill_manual(values = as.character(okabe_colors[c('reddishpurple', 'bluishgreen')])) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        strip.text = element_text(size = rel(0.7)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.position = c(0.93, 0.78),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.1, 'cm')) +
+  guides(fill = guide_legend(override.aes = list(pattern = 'none')))
+
+p_land_grandtotals_10 <- ggplot(all_vlt_sum[!land_type %in% 'total' & scenario_waste %in% c('baseline','allavoidable')], aes(y = VLT/1e6, x = scenario_diet, pattern = origin, fill = land_type)) +
+  facet_grid(. ~ scenario_waste, labeller = scenario_labeller) +
+  geom_bar_pattern(position = 'stack', stat = 'identity', pattern_fill = 'black', pattern_spacing = 0.02, color = 'black') +
+  scale_pattern_manual(values = c('circle', 'none')) +
+  scale_x_discrete(name = 'diet scenario', labels = diet_long_names$medium_name) +
+  scale_y_continuous(name = 'land footprint (million ha)', expand = expansion(mult = c(0, 0.01))) +
+  scale_fill_manual(name = 'land use', values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        strip.text = element_text(size = rel(0.7)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.position = c(0.93, 0.71),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.1, 'cm')) +
+  guides(fill = guide_legend(override.aes = list(pattern = 'none')))
+
+p_top <- p_land_grandtotals_10 +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.ticks.x = element_blank(),
+        strip.text = element_text(size = rel(1)),
+        legend.title = element_text(size = rel(0.8)),
+        legend.key.size = unit(0.5, 'cm'),
+        legend.position = c(0.93, 0.71),
+        legend.background = element_blank(),
+        legend.spacing.y = unit(0.05, 'cm')) 
+p_bottom <- p_ext_grandtotals_10 +
+  theme(legend.key.size = unit(0.5, 'cm'),
+        strip.background = element_blank(), 
+        strip.text = element_blank()) +
+  guides(pattern = FALSE)
+
+png(file.path(fp_fig, 'foreign_vs_domestic_10scenarios_grandtotals.png'), height = 7, width = 7, res = 400, units = 'in')
+  grid.draw(gridExtra::gtable_rbind(ggplotGrob(p_top), ggplotGrob(p_bottom)))
+dev.off()
+
 
 # Process data: foreign extinction exports to counties ---------------------------------------
 

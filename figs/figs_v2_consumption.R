@@ -68,11 +68,11 @@ totaldemand_sums <- totaldemand_sums %>%
          scenario_waste = factor(scenario_waste, levels = unique(scenario_waste)))
 
 # Absolute values
-p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand)) +
+p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand/1e9)) +
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (million USD)') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -110,43 +110,40 @@ p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = un
 ggsave(file.path(fp_fig, 'total_consumption_relative_all_scenarios.png'), p_totaldemand_relative, height = 9*.75, width = 12*.75, dpi = 400)
 
 
-# Table of results for relative total demand ------------------------------
+# Alternative figs with 10 scenarios --------------------------------------
 
-# Waste overall
-totaldemand_relative %>%
-  filter(scenario_diet %in% 'baseline') %>%
-  group_by(scenario_waste) %>%
-  summarize(demand = mean(demand))
+# With only no waste and all waste.
 
-# Animal products by diet
-totaldemand_relative %>%
-  filter(scenario_waste %in% 'baseline', !short_name %in% 'wild-caught fish') %>%
-  group_by(scenario_diet, kingdom) %>%
-  summarize(demand = mean(demand))
-
-totaldemand_relative %>%
-  filter(scenario_waste %in% 'baseline', kingdom %in% 'animal') %>% print(n=25)
-
-totaldemand_relative %>%
-  filter(short_name %in% 'fruits & nuts') 
-
-### Deprecated: plot with bea_factors (does not account for the full footprint, it's just the final demand)
-bea_factors_long <- bea_scenario_factors %>%
-  pivot_longer(-c(BEA_389_code, BEA_389_def), names_to = 'scenario', values_to = 'factor') %>%
-  separate(scenario, into = c('d', 'scenario_diet', 'w', 'scenario_waste'), sep = '_') %>% 
-  select(-d, -w) %>%
-  mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
-         scenario_waste = factor(scenario_waste, levels = waste_levels_ordered)) %>% 
-  left_join(ag_names_lookup)
-
-# Plot 4x5 diet x waste scenarios
-bea_factors_long %>%
-  filter(substr(BEA_389_code, 1, 1) == '1') %>%
-  ggplot(aes(x = short_name, y = factor)) +
-  geom_col() +
-  geom_hline(yintercept = 1, linetype = 'dotted', color = 'indianred', size = 0.5) +
-  facet_grid(scenario_waste ~ scenario_diet) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
+# Absolute values
+p_totaldemand_sums <- ggplot(totaldemand_sums %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand/1e9)) +
+  geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_x_discrete(name = 'food category') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
+  scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = 'none')
 
+p_totaldemand_sums <- ggdraw(p_totaldemand_sums + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+  draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
+  draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
+
+ggsave(file.path(fp_fig, 'total_consumption_10_scenarios.png'), p_totaldemand_sums, height = 9*.75, width = 12, dpi = 400)
+
+# Relative to baseline
+p_totaldemand_relative <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand)) +
+  geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
+  geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_fn(diet = 'medium', waste = 'long')) +
+  scale_x_discrete(name = 'food category') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
+  scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = rel(0.9)),
+        legend.position = 'none')
+
+p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+  draw_label(label = 'diet scenario', x = 0.5, y = 0.97) +
+  draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
+
+ggsave(file.path(fp_fig, 'total_consumption_relative_10_scenarios.png'), p_totaldemand_relative, height = 9*.75*.75, width = 12*.75, dpi = 400)

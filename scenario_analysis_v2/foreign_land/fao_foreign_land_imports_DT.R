@@ -30,14 +30,6 @@ scenario_factors_long[, BEA_389_def := NULL]
 # Get proportion of trade sent to USA -------------------------------------
 
 # Find imports sent to United States for each item.
-# Create a separate trade matrix for each item.
-
-# # Example for one item.
-# maize <- trade_matrix %>% filter(item_code == 56)
-# 
-# # US reported, China partner
-# maize %>% filter(`Reporter Country Code` == 231, `Partner Country Code` == 41)
-# maize %>% filter(`Reporter Country Code` == 41, `Partner Country Code` == 231)
 
 trade_tousa <- trade_matrix[partner_country_code == 231]
 
