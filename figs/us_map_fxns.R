@@ -2,7 +2,7 @@ draw_usmap_with_insets <- function(map_data, ak_idx, hi_idx, variable,
                                    title = NULL, subtitle = NULL, 
                                    scale_name = 'Value\n(billion $)', scale_factor = 1000, scale_trans = 'identity', 
                                    scale_breaks = NULL, scale_range = NULL, scale_labels = NULL,
-                                   scale_palette = viridis::viridis.pal()(15),
+                                   scale_palette = viridis::viridis_pal()(15),
                                    ak_pos = c(0.01, 0.15), hi_pos = c(0.26, 0.15),
                                    ak_ratio = 0.58, ak_size = 0.32, hi_ratio = 0.71, hi_size = 0.2,
                                    linewidth = 0.25, add_theme = theme_void(), write_to_file = NULL, img_size = NULL) {

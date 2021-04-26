@@ -69,6 +69,7 @@ tnc_map <- st_read('data/raw_data/landuse/ecoregions/tnc_usa_aea.gpkg')
 # Plotting functions/themes, and lookup tables/vectors of names for plot labels.
 source('figs/figs_v2_lookups.R')
 source('figs/us_map_fxns.R')
+source('figs/us_map_fxns_v2.R')
 
 # Rename fips to county in county_map for compatibility.
 county_map <- county_map %>%
