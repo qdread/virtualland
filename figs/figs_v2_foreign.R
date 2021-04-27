@@ -312,10 +312,10 @@ setnames(foreign_ext_country_base, old = 'species_lost', new = 'species_lost_bas
 foreign_ext_country_base[, c('scenario_diet', 'scenario_waste') := NULL]
 
 foreign_extinction_export_tnc <- foreign_ext_tnc_base[foreign_extinction_export_tnc, on = .NATURAL]
-foreign_extinction_export_tnc[, species_vs_baseline := species_lost/species_lost_baseline]
+foreign_extinction_export_tnc[, species_vs_baseline := species_lost/species_lost_baseline - 1]
 
 foreign_extinction_export_country <- foreign_ext_country_base[foreign_extinction_export_country, on = .NATURAL]
-foreign_extinction_export_country[, species_vs_baseline := species_lost/species_lost_baseline]
+foreign_extinction_export_country[, species_vs_baseline := species_lost/species_lost_baseline - 1]
 
 # Nest into panels
 library(Rutilitybelt)
@@ -351,7 +351,7 @@ setnames(foreign_vlt_tnc_base, old = 'VLT', new = 'VLT_baseline')
 foreign_vlt_tnc_base[, c('scenario_diet', 'scenario_waste') := NULL]
 
 foreign_vlt_tnc <- foreign_vlt_tnc_base[foreign_vlt_tnc, on = .NATURAL]
-foreign_vlt_tnc[, VLT_vs_baseline := VLT/VLT_baseline]
+foreign_vlt_tnc[, VLT_vs_baseline := VLT/VLT_baseline - 1]
 foreign_vlt_tnc[is.nan(VLT_vs_baseline), VLT_vs_baseline := 0]
 
 foreign_vlt_country_base <- foreign_vlt_country[scenario_waste %in% 'baseline' & scenario_diet %in% 'baseline']
@@ -359,7 +359,7 @@ setnames(foreign_vlt_country_base, old = 'VLT', new = 'VLT_baseline')
 foreign_vlt_country_base[, c('scenario_diet', 'scenario_waste') := NULL]
 
 foreign_vlt_country <- foreign_vlt_country_base[foreign_vlt_country, on = .NATURAL]
-foreign_vlt_country[, VLT_vs_baseline := VLT/VLT_baseline]
+foreign_vlt_country[, VLT_vs_baseline := VLT/VLT_baseline - 1]
 foreign_vlt_country[is.nan(VLT_vs_baseline), VLT_vs_baseline := 0]
 
 # Nest to panels
@@ -391,7 +391,7 @@ pwalk(foreign_extinction_country_panels[taxon %in% c('animals','plants','total')
         
         # Calculate scale remapping for divergent palette.
         div_range <- range(data$species_vs_baseline, na.rm = TRUE)
-        div_scale_remap <- scale_begin_end(data$species_vs_baseline - 1)
+        div_scale_remap <- scale_begin_end(data$species_vs_baseline)
         
         p1 <- ggplot(dat) +
           geom_sf(aes(fill = species_lost), size = 0.25) +
@@ -402,7 +402,7 @@ pwalk(foreign_extinction_country_panels[taxon %in% c('animals','plants','total')
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
         p2 <- ggplot(dat) +
           geom_sf(aes(fill = species_vs_baseline), size = 0.25) +
-          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range) +
+          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range, labels = scales::percent) +
           theme(legend.position = 'bottom') +
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in threats to {taxon} from {land_use} land use'))
         ggsave(glue('{fp_fig}/foreign_bioflow_maps/country_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
@@ -416,7 +416,7 @@ pwalk(foreign_extinction_tnc_panels[taxon %in% c('animals','plants','total')],
         
         # Calculate scale remapping for divergent palette.
         div_range <- range(data$species_vs_baseline, na.rm = TRUE)
-        div_scale_remap <- scale_begin_end(data$species_vs_baseline - 1)
+        div_scale_remap <- scale_begin_end(data$species_vs_baseline)
         
         p1 <- ggplot(dat) +
           geom_sf(aes(fill = species_lost), size = 0.25) +
@@ -427,7 +427,7 @@ pwalk(foreign_extinction_tnc_panels[taxon %in% c('animals','plants','total')],
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('threats to {taxon} from {land_use} land use'))   
         p2 <- ggplot(dat) +
           geom_sf(aes(fill = species_vs_baseline), size = 0.25) +
-          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range) +
+          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range, labels = scales::percent) +
           theme(legend.position = 'bottom') +
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in threats to {taxon} from {land_use} land use'))
         ggsave(glue('{fp_fig}/foreign_bioflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{taxon}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
@@ -441,7 +441,7 @@ pwalk(foreign_vlt_country_panels,
         
         # Calculate scale remapping for divergent palette.
         div_range <- range(data$VLT_vs_baseline, na.rm = TRUE)
-        div_scale_remap <- scale_begin_end(data$VLT_vs_baseline - 1)
+        div_scale_remap <- scale_begin_end(data$VLT_vs_baseline)
         
         p1 <- ggplot(dat) +
           geom_sf(aes(fill = VLT), size = 0.25) +
@@ -452,7 +452,7 @@ pwalk(foreign_vlt_country_panels,
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('virtual exports of {land_use} land to USA'))   
         p2 <- ggplot(dat) +
           geom_sf(aes(fill = VLT_vs_baseline), size = 0.25) +
-          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range) +
+          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range, labels = scales::percent) +
           theme(legend.position = 'bottom') +
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in virtual exports of {land_use} land to USA'))
         ggsave(glue('{fp_fig}/foreign_landflow_maps/country_{scenario_diet}_{scenario_waste}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
@@ -466,7 +466,7 @@ pwalk(foreign_vlt_tnc_panels,
         
         # Calculate scale remapping for divergent palette.
         div_range <- range(data$VLT_vs_baseline, na.rm = TRUE)
-        div_scale_remap <- scale_begin_end(data$VLT_vs_baseline - 1)
+        div_scale_remap <- scale_begin_end(data$VLT_vs_baseline)
         
         p1 <- ggplot(dat) +
           geom_sf(aes(fill = VLT), size = 0.25) +
@@ -477,7 +477,7 @@ pwalk(foreign_vlt_tnc_panels,
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('virtual exports of {land_use} land to USA'))   
         p2 <- ggplot(dat) +
           geom_sf(aes(fill = VLT_vs_baseline), size = 0.25) +
-          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range) +
+          scale_fill_scico(name = 'Change vs.\nbaseline', palette = 'vik', begin = div_scale_remap[1], end = div_scale_remap[2], na.value = 'gray75', limits = div_range, labels = scales::percent) +
           theme(legend.position = 'bottom') +
           ggtitle(glue('{scenario_diet} diet x {scenario_waste} waste'), glue('change vs. baseline in virtual exports of {land_use} land to USA'))
         ggsave(glue('{fp_fig}/foreign_landflow_maps/ecoregion_{scenario_diet}_{scenario_waste}_{land_use}.png'), p1, height = 5, width = 7, dpi = 200)
