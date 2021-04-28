@@ -14,6 +14,21 @@ leg_longbottom_theme <- theme_void() + theme(legend.position = 'bottom',
                                          legend.title = element_text(size = rel(1)),
                                          legend.key.width = unit(0.3, 'in'))
 
+seq_pal <- viridis::viridis_pal()(15)
+
+# Calculate some ranges
+land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline', .(min = min(flow_inbound_total[flow_inbound_total > 0]/1e4, na.rm = TRUE), max = max(flow_inbound_total/1e4, na.rm = TRUE)), by = land_type]
+
+extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline', .(min = min(extinction_inbound_total[extinction_inbound_total > 0], na.rm = TRUE), max = max(extinction_inbound_total, na.rm = TRUE)), by = .(land_use, taxon)]
+
+outbound_land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & flow_outbound > 0, 
+                                             .(min = min(flow_outbound/1e4, na.rm = TRUE), max = max(flow_outbound/1e4, na.rm = TRUE)), 
+                                             by = land_type]
+
+outbound_extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & extinction_outbound > 0,
+                                                         .(min = min(extinction_outbound, na.rm = TRUE), max = max(extinction_outbound, na.rm = TRUE)),
+                                                         by = .(land_use, taxon)]
+
 # Map 1 -------------------------------------------------------------------
 
 # Inbound land
@@ -100,10 +115,6 @@ dev.off()
 # Map 2 -------------------------------------------------------------------
 
 # Outbound extinction, by taxon, total land. Combine 6 or 7 panels into one figure.
-
-outbound_extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & extinction_outbound > 0,
-                                                         .(min = min(extinction_outbound, na.rm = TRUE), max = max(extinction_outbound, na.rm = TRUE)),
-                                                         by = .(land_use, taxon)]
 
 ext_outbound_dat_bytaxon <- county_extinction_map_base[outbound_extinction_range, on = .NATURAL][land_use %in% 'total' & !taxon %in% 'total']
 ext_outbound_dat_bytaxon[taxon == 'animals', taxon := 'total animals']

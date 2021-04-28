@@ -72,7 +72,7 @@ p_totaldemand_sums <- ggplot(totaldemand_sums, aes(x = short_name, y = demand/1e
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'production (billion USD)') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -98,7 +98,7 @@ p_totaldemand_relative <- ggplot(totaldemand_relative, aes(x = short_name, y = d
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_medium) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'production relative to baseline') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = rel(0.9)),
         legend.position = 'none')
@@ -119,7 +119,7 @@ p_totaldemand_sums <- ggplot(totaldemand_sums %>% filter(scenario_waste %in% c('
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption (billion USD)') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'production (billion USD)') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -137,7 +137,7 @@ p_totaldemand_relative <- ggplot(totaldemand_relative %>% filter(scenario_waste 
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 0.5) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_fn(diet = 'medium', waste = 'long')) +
   scale_x_discrete(name = 'food category') +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'consumption relative to baseline') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'production relative to baseline') +
   scale_fill_manual(values = setNames(okabe_colors[c(8, 4)], c('animal', 'plant'))) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = rel(0.9)),
         legend.position = 'none')
@@ -147,3 +147,13 @@ p_totaldemand_relative <- ggdraw(p_totaldemand_relative + theme(plot.margin = un
   draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90)
 
 ggsave(file.path(fp_fig, 'total_consumption_relative_10_scenarios.png'), p_totaldemand_relative, height = 9*.75*.75, width = 12*.75, dpi = 400)
+
+
+# Percentage reduction (for MS) -------------------------------------------
+
+# Value of production for all goods summed, relative to baseline.
+
+demand_grandtotals <- totaldemand_sums %>%
+  group_by(scenario_diet, scenario_waste) %>%
+  summarize(demand = sum(demand)) %>%
+  mutate(demand_change = 1 - demand/demand[1])
