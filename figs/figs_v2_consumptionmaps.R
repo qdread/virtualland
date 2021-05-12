@@ -15,6 +15,14 @@ land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_was
 
 extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline', .(min = min(extinction_inbound_total[extinction_inbound_total > 0], na.rm = TRUE), max = max(extinction_inbound_total, na.rm = TRUE)), by = .(land_use, taxon)]
 
+outbound_land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & flow_outbound > 0, 
+                                             .(min = min(flow_outbound/1e4, na.rm = TRUE), max = max(flow_outbound/1e4, na.rm = TRUE)), 
+                                             by = land_type]
+
+outbound_extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & extinction_outbound > 0,
+                                                         .(min = min(extinction_outbound, na.rm = TRUE), max = max(extinction_outbound, na.rm = TRUE)),
+                                                         by = .(land_use, taxon)]
+
 leg_bottom_theme <- theme_void() + theme(legend.position = c(0.62, 0.1),
                                          legend.title = element_text(size = rel(0.8)),
                                          legend.key.width = unit(0.2, 'in'))
@@ -60,10 +68,6 @@ pwalk(county_extinction_map_base[extinction_range, on = .NATURAL][taxon %in% 'to
        ))
 
 # Outbound land and extinctions
-outbound_land_range <- county_land_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & flow_outbound > 0, 
-                                             .(min = min(flow_outbound/1e4, na.rm = TRUE), max = max(flow_outbound/1e4, na.rm = TRUE)), 
-                                             by = land_type]
-
 pwalk(county_land_map_base[outbound_land_range, on = .NATURAL],
      function(data, min, max, land_type, ...)
        draw_usmap_with_insets(map_data = left_join(county_map, data),
@@ -81,10 +85,6 @@ pwalk(county_land_map_base[outbound_land_range, on = .NATURAL],
                               write_to_file = glue('{fp_fig}/land_outbound_{land_type}_baseline.png'),
                               img_size = c(7, 7)
        ))
-
-outbound_extinction_range <- county_extinction_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline' & extinction_outbound > 0,
-                                                         .(min = min(extinction_outbound, na.rm = TRUE), max = max(extinction_outbound, na.rm = TRUE)),
-                                                         by = .(land_use, taxon)]
 
 pwalk(county_extinction_map_base[outbound_extinction_range, on = .NATURAL],
      function(data, min, max, land_use, taxon, ...)
