@@ -70,6 +70,17 @@ p_vlt_fvsd <- ggplot(all_vlt_sum, aes(x = land_type, y = VLT, fill = origin)) +
 
 p_vlt_fvsd <- label_scenario_categories(p_vlt_fvsd)
 
+# By scenario, show only baseline and all waste
+p_vlt_fvsd_10 <- ggplot(all_vlt_sum[scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_type, y = VLT/100, fill = origin)) +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  geom_col(position = 'dodge') +
+  fill_fvsd +
+  scale_y_continuous(name = parse(text = 'Virtual~land~consumption~(km^2/yr)'), expand = expansion(mult = c(0, 0.01))) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_vlt_fvsd_10 <- label_scenario_categories(p_vlt_fvsd_10)
+
 # Summary figs comparing species lost -------------------------------------
 
 setDT(foreign_extinction_import)
@@ -128,9 +139,97 @@ p_animal_fvsd <- ggplot(all_extinction_sum[kingdom %in% 'animals'], aes(x = land
 
 p_animal_fvsd <- label_scenario_categories(p_animal_fvsd)
 
+# By scenario, only show baseline and all waste reduction.
+p_plantextinction_fvsd_10 <- ggplot(all_extinction_sum[taxon %in% 'plants' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  geom_col(position = 'dodge') +
+  fill_fvsd +
+  scale_y_continuous(name = 'Plant extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_plantextinction_fvsd_10 <- label_scenario_categories(p_plantextinction_fvsd_10)
+
+p_animal_fvsd_10 <- ggplot(all_extinction_sum[kingdom %in% 'animals' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Animal extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_animal_fvsd_10 <- label_scenario_categories(p_animal_fvsd_10)
+
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_vlt_by_scenario.png'), p_vlt_fvsd, height = 9, width = 12, dpi = 400)
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_plantextinctions_by_scenario.png'), p_plantextinction_fvsd, height = 9, width = 12, dpi = 400)
 ggsave(file.path(fp_fig, 'foreign_vs_domestic_animalextinctions_by_scenario.png'), p_animal_fvsd, height = 9, width = 12, dpi = 400)
+
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_vlt_by_scenario_10.png'), p_vlt_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_plantextinctions_by_scenario_10.png'), p_plantextinction_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_animalextinctions_by_scenario_10.png'), p_animal_fvsd_10, height = 7, width = 12, dpi = 400)
+
+
+# Additional f vs d figs for supplement -----------------------------------
+
+# Here show only 10 scenarios.
+# All taxa summed, and each animal taxon separately.
+extinction_alltaxa <- all_extinction_sum[scenario_waste %in% c('baseline', 'allavoidable'), .(extinctions = sum(extinctions)), by = .(scenario_diet, scenario_waste, land_use, origin)]
+
+p_alltaxa_fvsd_10 <- ggplot(extinction_alltaxa, aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Total extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_alltaxa_fvsd_10 <- label_scenario_categories(p_alltaxa_fvsd_10)
+
+p_amphibian_fvsd_10 <- ggplot(all_extinction_sum[taxon %in% 'amphibians' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Amphibian extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_amphibian_fvsd_10 <- label_scenario_categories(p_amphibian_fvsd_10)
+
+p_bird_fvsd_10 <- ggplot(all_extinction_sum[taxon %in% 'birds' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Bird extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_bird_fvsd_10 <- label_scenario_categories(p_bird_fvsd_10)
+
+p_mammal_fvsd_10 <- ggplot(all_extinction_sum[taxon %in% 'mammals' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Mammal extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_mammal_fvsd_10 <- label_scenario_categories(p_mammal_fvsd_10)
+
+p_reptile_fvsd_10 <- ggplot(all_extinction_sum[taxon %in% 'reptiles' & scenario_waste %in% c('baseline', 'allavoidable')], aes(x = land_use, y = extinctions, fill = origin)) +
+  fill_fvsd +
+  facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller) +
+  scale_y_continuous(name = 'Reptile extinctions imported to USA', expand = expansion(mult = c(0, 0.01))) +
+  geom_bar(stat = 'sum', position = 'dodge', show.legend = c(fill = TRUE, size = FALSE)) +
+  scale_x_discrete(name = 'Land use type') +
+  theme(legend.position = c(0.95, 0.92), legend.background = element_blank())
+
+p_reptile_fvsd_10 <- label_scenario_categories(p_reptile_fvsd_10)
+
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_alltaxaextinctions_by_scenario_10.png'), p_alltaxa_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_amphibianextinctions_by_scenario_10.png'), p_amphibian_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_birdextinctions_by_scenario_10.png'), p_bird_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_mammalextinctions_by_scenario_10.png'), p_mammal_fvsd_10, height = 7, width = 12, dpi = 400)
+ggsave(file.path(fp_fig, 'foreign_vs_domestic_reptileextinctions_by_scenario_10.png'), p_reptile_fvsd_10, height = 7, width = 12, dpi = 400)
 
 
 # Sum foreign and domestic extinctions ------------------------------------

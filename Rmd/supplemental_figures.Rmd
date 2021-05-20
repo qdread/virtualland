@@ -1,85 +1,167 @@
 ---
 title: 'Appendix 2: Supplemental figures'
 author: "Quentin D. Read"
-date: "r format(Sys.time(), '%B %d, %Y')`"
-output: html_document
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    dev: png
     toc: true
     toc_depth: 3
+header-includes:
+- \usepackage{caption}
+- \usepackage{multirow}
+- \usepackage{float}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-```
+\newcommand{\fpfig}{/nfs/qread-data/cfs_io_analysis/scenario_v2_figs}
 
 This document contains supplemental figures for the currently unpublished virtual land scenarios manuscript. *Update this with citation when it is available.*
 
-## Figures Sx-Sx. Summary maps
+\newpage
 
-- Need to make: Map showing the ecoregions in the United States, categorized by realm, possibly superimposed with states to show how they overlap
-- Need to make: Map showing the ecoregions around the world, categorized by realm, possibly superimposed with countries to show how they overlap
+## Figures S1-S2. Summary maps
 
-## Figures Sx-Sx. Disaggregated consumption totals
+Figures S1 and S2 show global ecoregions colored by WWF realm in the United States and across the entire world respectively.
 
-- Total consumption in absolute units
-- Foreign versus domestic sourced consumption (if this figure can be made)
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/usa_ecoregions.png}}
+\caption*{Figure S1: United States map showing global ecoregions categorized by realm}
+\end{figure}
 
-## Figures Sx-Sx. Disaggregated virtual land transfers
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/world_ecoregions.png}}
+\caption*{Figure S2: World map showing global ecoregions categorized by realm}
+\end{figure}
 
-- Foreign versus domestic by scenario (already have this fig)
-- Foreign versus domestic separated by land type and scenario
+\newpage
 
-## Figures Sx-Sx. Disaggregated virtual biodiversity threat transfers
+## Figure S3. Disaggregated production totals
 
-- Disaggregated by land type (already have this fig)
-- Foreign versus domestic, animals, by scenario (already have this fig)
-- Foreign versus domestic, plants, by scenario (already have this fig)
-- Need to make: foreign versus domestic, individual taxa and total, by scenario
-- Need to make: foreign versus domestic, disaggregated by the type of land being used.
+Figure S3 shows the total production, in units of value (billion USD), of each type of domestically produced primary agricultural good in each scenario (in contrast to Figure 2 in the main text, which shows the same values divided by the baseline consumption). Bars representing plant-derived goods are shaded in green, and bars representing animal-derived goods are shaded in pink. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). 
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/total_consumption_10_scenarios.png}}
+\caption*{Figure S3: Total consumption of each primary domestic agricultural good in each scenario, by value}
+\end{figure}
+
+\newpage
+
+## Figure S4. Disaggregated virtual land footprints
+
+Figure S4 shows the virtual land footprint of food consumed in the United States in the baseline scenario and alternative diet and waste scenarios, disaggregated by domestic (blue shading) versus foreign origin (orange shading), with separate totals for annual cropland, pastureland, and permanent cropland. The bars represent total amounts of land virtually consumed in the United States each year, in units of square kilometers per year. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). 
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_vlt_by_scenario_10.png}}
+\caption*{Figure S4: Total virtual land consumption in each scenario, by origin and land type}
+\end{figure}
+
+\newpage
+
+## Figures S5-S11. Disaggregated virtual biodiversity threat footprints
+
+The following figures show the virtual biodiversity threat footprints for the baseline case and the alternative diet and waste scenarios, disaggregated by origin, land use type, and taxon. In all these figures, the heights of the bars represent the number of terrestrial species forecast to eventually become globally extinct due to land used to produce food consumed in the United States. The biodiversity threat footprints are disaggregated by origin (blue shading represents domestic origin and orange shading represents foreign origin) and by land use type. Each panel of each figure represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). Figure S5 shows the values for all taxa summed, Figure S6 shows plants only, Figure S7 shows all animal taxa summed, Figure S8 shows amphibians, Figure S9 shows birds, Figure S10 shows mammals, and Figure S11 shows reptiles.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_alltaxaextinctions_by_scenario_10.png}}
+\caption*{Figure S5: Total virtual biodiversity threat footprint in each scenario, by origin and land type: all taxa summed}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_plantextinctions_by_scenario_10.png}}
+\caption*{Figure S6: Total virtual biodiversity threat footprint in each scenario, by origin and land type: plants}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_animalextinctions_by_scenario_10.png}}
+\caption*{Figure S7: Total virtual biodiversity threat footprint in each scenario, by origin and land type: all animals summed}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_amphibianextinctions_by_scenario_10.png}}
+\caption*{Figure S8: Total virtual biodiversity threat footprint in each scenario, by origin and land type: amphibians}
+\end{figure}
+
+\begin{figure}[h!]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_birdextinctions_by_scenario_10.png}}
+\caption*{Figure S9: Total virtual biodiversity threat footprint in each scenario, by origin and land type: birds}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_mammalextinctions_by_scenario_10.png}}
+\caption*{Figure S10: Total virtual biodiversity threat footprint in each scenario, by origin and land type: mammals}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_reptileextinctions_by_scenario_10.png}}
+\caption*{Figure S11: Total virtual biodiversity threat footprint in each scenario, by origin and land type: reptiles}
+\end{figure}
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing domestic goods production
 
+The remaining figures in this document are all maps showing spatially disaggregated values. In all cases we present absolute values of each of the quantities for each scenario, as well as values relative to the baseline case for each scenario. The colorblind-friendly `viridis` color gradient used to fill the polygons on the maps showing absolute values is log-transformed. On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
+
 - Absolute in each scenario
 - Change relative to baseline in each scenario
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing domestic goods consumption
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
 
+\newpage
+
 ## Figures Sx-Sx. Maps showing domestic virtual land exports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing domestic virtual land imports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
 
+\newpage
+
 ## Figures Sx-Sx. Maps showing foreign virtual land imports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing total virtual land imports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
 
+\newpage
+
 ## Figures Sx-Sx. Maps showing domestic virtual biodiversity exports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing domestic virtual biodiversity imports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
 
+\newpage
+
 ## Figures Sx-Sx. Maps showing foreign virtual biodiversity imports
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
+
+\newpage
 
 ## Figures Sx-Sx. Maps showing total virtual biodiversity imports
 
