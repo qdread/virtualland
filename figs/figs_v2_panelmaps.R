@@ -1,6 +1,7 @@
 # Paneled map figures
 # QDR / Virtualland / 15 Feb 2021
 
+# Modified 21 May 2021: Add goods flows; set order for all nested DFs so that maps draw in the right places.
 # Modified 26 Apr 2021: Use alternative map functions with better behavior for fill scale.
 
 # Figures with 20 maps showing how the flows change for different scenarios (relative to baseline)
@@ -120,7 +121,49 @@ county_land_flow_sums[, paste(flow_names, 'baseline', sep = '_') := NULL]
 # Nest county map to list column
 county_land_map_panels <- group_nest_dt(county_land_flow_sums, scenario_diet, scenario_waste, land_type)
 
+# Set order so that the panels appear correctly.
+county_land_map_panels[, scenario_diet := factor(scenario_diet, levels = diet_levels_ordered)]
+county_land_map_panels[, scenario_waste := factor(scenario_waste, levels = waste_levels_ordered)]
+county_land_map_panels <- county_land_map_panels[order(scenario_diet, scenario_waste, land_type)]
 
+# County goods data processing --------------------------------------------
+
+# Goods flows, inbound and outbound, by value
+# This will show domestic only, as this accounting isn't possible for foreign due to different methodology.
+
+# Sum up total and bind it to the rest
+setDT(county_goods_flow_sums)
+county_goods_flow_sums_total <- county_goods_flow_sums[, lapply(.SD, sum, na.rm = TRUE), by = .(scenario_diet, scenario_waste, county), .SDcols = patterns('flow')]
+county_goods_flow_sums_total[, BEA_code := 'total']
+county_goods_flow_sums <- rbind(county_goods_flow_sums, county_goods_flow_sums_total)
+
+# Separate out baseline
+county_goods_flow_sums_baseline <- county_goods_flow_sums[scenario_diet %in% 'baseline' & scenario_waste %in% 'baseline']
+county_goods_flow_sums_baseline[, c('scenario_diet', 'scenario_waste') := NULL]
+flow_names <- grep('flow', names(county_goods_flow_sums_baseline), value = TRUE)
+setnames(county_goods_flow_sums_baseline, old = flow_names, new = paste(flow_names, 'baseline', sep = '_'))
+
+# Join baseline data to full data. Express as percent change.
+county_goods_flow_sums <- county_goods_flow_sums_baseline[county_goods_flow_sums, on = .NATURAL]
+county_goods_flow_sums[, inbound_vs_baseline := flow_inbound/flow_inbound_baseline - 1]
+county_goods_flow_sums[, outbound_vs_baseline := flow_outbound/flow_outbound_baseline - 1]
+
+county_goods_flow_sums[, paste(flow_names, 'baseline', sep = '_') := NULL]
+
+# Nest county map to list column
+county_goods_map_panels <- group_nest_dt(county_goods_flow_sums, scenario_diet, scenario_waste, BEA_code)
+
+# Give descriptive names for the BEA codes (short, for filenames)
+bea_names <- data.frame(BEA_code = c("1111A0", "1111B0", "111200", "111300", "111400", "111900", 
+                                      "112120", "1121A0", "112300", "112A00", "114000", "total"),
+                        BEA_name = c('oilseeds', 'grains', 'vegetables', 'fruits', 'greenhouse_crops', 'other_crops', 'dairy' ,'beef', 'poultry', 'other_meat', 'wild_seafood', 'total'))
+
+county_goods_map_panels <- county_goods_map_panels[bea_names, on = 'BEA_code', nomatch = 0] # Inner join
+
+# Set order so that the panels appear correctly.
+county_goods_map_panels[, scenario_diet := factor(scenario_diet, levels = diet_levels_ordered)]
+county_goods_map_panels[, scenario_waste := factor(scenario_waste, levels = waste_levels_ordered)]
+county_goods_map_panels <- county_goods_map_panels[order(scenario_diet, scenario_waste, BEA_code)]
 
 # County land maps --------------------------------------------------------
 
@@ -856,3 +899,82 @@ make_20panel_map_v2(map_panel_data = county_extinction_map_panels[land_use %in% 
                     add_theme = theme_void() + theme(legend.position = 'none'),
                     n_waste = 2
 )
+
+
+# County goods flow maps --------------------------------------------------
+
+# Do this one programmatically
+# For each good produce four paneled map figures: flow outbound relative 20 panels, flow outbound absolute 20 panels, flow outbound relative 10 panels, flow outbound absolute 10 panels 
+
+bea_codes <- unique(county_goods_map_panels$BEA_code)
+
+for (code in bea_codes) {
+  dat <- county_goods_map_panels[BEA_code %in% code]
+  bea_name <- dat$BEA_name[1]
+  message(paste('Drawing maps for', bea_name))
+  
+  # Outbound, relative, 20 panels
+  make_20panel_map_v2(map_panel_data = dat,
+                      base_map = county_map,
+                      region_type = 'county',
+                      variable = 'outbound_vs_baseline',
+                      file_name = glue('county_{bea_name}_outbound_vs_baseline'),
+                      scale_name = 'Change vs.\nbaseline',
+                      scale_factor = 1,
+                      scale_trans = 'identity',
+                      scale_type = 'divergent',
+                      ak_idx = county_ak_idx,
+                      hi_idx = county_hi_idx,
+                      add_theme = theme_void() + theme(legend.position = 'none')
+  )
+  
+  # Outbound, absolute, 20 panels
+  make_20panel_map_v2(map_panel_data = dat,
+                      base_map = county_map,
+                      region_type = 'county',
+                      variable = 'flow_outbound',
+                      file_name = glue('county_{bea_name}_outbound'),
+                      scale_name = 'Production\n(million USD)',
+                      scale_factor = 1e6,
+                      scale_trans = 'log10',
+                      scale_type = 'sequential',
+                      percent_scale = FALSE,
+                      ak_idx = county_ak_idx,
+                      hi_idx = county_hi_idx,
+                      add_theme = theme_void() + theme(legend.position = 'none')
+  )
+  
+  # Outbound, relative, 10 panels
+  make_20panel_map_v2(map_panel_data = dat[scenario_waste %in% c('baseline', 'allavoidable')],
+                      base_map = county_map,
+                      region_type = 'county',
+                      variable = 'outbound_vs_baseline',
+                      file_name = glue('10scenarios_county_{bea_name}_outbound_vs_baseline'),
+                      scale_name = 'Change vs.\nbaseline',
+                      scale_factor = 1,
+                      scale_trans = 'identity',
+                      scale_type = 'divergent',
+                      ak_idx = county_ak_idx,
+                      hi_idx = county_hi_idx,
+                      add_theme = theme_void() + theme(legend.position = 'none'),
+                      n_waste = 2
+  )
+  
+  # Outbound, absolute, 10 panels
+  make_20panel_map_v2(map_panel_data = dat[scenario_waste %in% c('baseline', 'allavoidable')],
+                      base_map = county_map,
+                      region_type = 'county',
+                      variable = 'flow_outbound',
+                      file_name = glue('10scenarios_county_{bea_name}_outbound'),
+                      scale_name = 'Production\n(million USD)',
+                      scale_factor = 1e6,
+                      scale_trans = 'log10',
+                      scale_type = 'sequential',
+                      percent_scale = FALSE,
+                      ak_idx = county_ak_idx,
+                      hi_idx = county_hi_idx,
+                      add_theme = theme_void() + theme(legend.position = 'none'),
+                      n_waste = 2
+  )
+
+}

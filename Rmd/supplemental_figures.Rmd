@@ -37,7 +37,7 @@ Figures S1 and S2 show global ecoregions colored by WWF realm in the United Stat
 
 ## Figure S3. Disaggregated production totals
 
-Figure S3 shows the total production, in units of value (billion USD), of each type of domestically produced primary agricultural good in each scenario (in contrast to Figure 2 in the main text, which shows the same values divided by the baseline consumption). Bars representing plant-derived goods are shaded in green, and bars representing animal-derived goods are shaded in pink. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). 
+Figure S3 shows the total production, in units of value (billion USD), of each type of domestically produced primary agricultural good in each scenario (in contrast to Figure 2 in the main text, which shows the same values divided by the baseline consumption). Bars representing plant-derived goods are shaded in green, and bars representing animal-derived goods are shaded in pink. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). *Note*: A similar accounting is not possible for agricultural goods imported from foreign countries because of the different methodology and underlying data used for foreign imports.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/total_consumption_10_scenarios.png}}
@@ -81,7 +81,7 @@ The following figures show the virtual biodiversity threat footprints for the ba
 \caption*{Figure S8: Total virtual biodiversity threat footprint in each scenario, by origin and land type: amphibians}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_birdextinctions_by_scenario_10.png}}
 \caption*{Figure S9: Total virtual biodiversity threat footprint in each scenario, by origin and land type: birds}
 \end{figure}
@@ -98,9 +98,11 @@ The following figures show the virtual biodiversity threat footprints for the ba
 
 \newpage
 
-## Figures Sx-Sx. Maps showing domestic goods production
+## Figures S12-Sx. Maps showing domestic goods production
 
 The remaining figures in this document are all maps showing spatially disaggregated values. In all cases we present absolute values of each of the quantities for each scenario, as well as values relative to the baseline case for each scenario. The colorblind-friendly `viridis` color gradient used to fill the polygons on the maps showing absolute values is log-transformed. On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
+
+
 
 - Absolute in each scenario
 - Change relative to baseline in each scenario
