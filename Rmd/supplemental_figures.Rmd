@@ -98,21 +98,262 @@ The following figures show the virtual biodiversity threat footprints for the ba
 
 \newpage
 
-## Figures S12-Sx. Maps showing domestic goods production
+## Figures S12-S33. Maps showing domestic goods production across scenarios
 
-The remaining figures in this document are all maps showing spatially disaggregated values. In all cases we present absolute values of each of the quantities for each scenario, as well as values relative to the baseline case for each scenario. The colorblind-friendly `viridis` color gradient used to fill the polygons on the maps showing absolute values is log-transformed. On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
+The following groups of figures in this document are all maps showing values spatially disaggregated by county in the United States. In all cases we present absolute values of each of the quantities for each scenario, as well as values relative to the baseline case for each scenario. The colorblind-friendly `viridis` color gradient is used to fill the polygons on the maps showing absolute values. For maps depicting flows of land and goods, the values are log-transformed.
 
+On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
 
+The maps showing differences across scenarios have ten panels, each of which represents a combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction).
 
-- Absolute in each scenario
-- Change relative to baseline in each scenario
+The contiguous United States map is displayed with an Albers equal-area projection for the continental United States identical to the one used by the National Land Cover Database. The inset maps for Alaska and Hawaii are displayed with Albers equal-area projections with parameters appropriate for those regions.
+
+Figures S12-S21 show the absolute value of domestic production of the following ten groups of primary agricultural goods, in units of million USD (2012), with a log-transformed color gradient: 
+
+- oilseeds and soybeans
+- grains
+- vegetables, including melons and potatoes
+- fruits and nuts
+- greenhouse crops grown for food, including mushrooms
+- other crops, primarily sugar crops, peanuts, and herbs
+- dairy products
+- beef cattle
+- poultry and eggs
+- other meat, including farm-raised fish
+
+Figure S22 shows the total across the ten groups of goods.
+
+Figures S23-S32 show the total values from the previous set of figures, all divided by the baseline value, resulting in a difference for each scenario relative to the baseline. Figure S33 shows the total relative to baseline.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_oilseeds_outbound.png}}
+\caption*{Figure S12: Total production value of oilseeds in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_grains_outbound.png}}
+\caption*{Figure S13: Total production value of grains in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_vegetables_outbound.png}}
+\caption*{Figure S14: Total production value of vegetables in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_fruits_outbound.png}}
+\caption*{Figure S15: Total production value of fruits and nuts in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_greenhouse_crops_outbound.png}}
+\caption*{Figure S16: Total production value of greenhouse crops in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_crops_outbound.png}}
+\caption*{Figure S17: Total production value of other crops in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_dairy_outbound.png}}
+\caption*{Figure S18: Total production value of dairy products in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_beef_outbound.png}}
+\caption*{Figure S19: Total production value of beef cattle in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_poultry_outbound.png}}
+\caption*{Figure S20: Total production value of poultry and eggs in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_meat_outbound.png}}
+\caption*{Figure S21: Total production value of other meat (including farmed fish) in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound.png}}
+\caption*{Figure S22: Total production value of all agricultural goods in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_oilseeds_outbound_vs_baseline.png}}
+\caption*{Figure S23: Production relative to baseline of oilseeds in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_grains_outbound_vs_baseline.png}}
+\caption*{Figure S24: Production relative to baseline of grains in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_vegetables_outbound_vs_baseline.png}}
+\caption*{Figure S25: Production relative to baseline of vegetables in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_fruits_outbound_vs_baseline.png}}
+\caption*{Figure S26: Production relative to baseline of fruits and nuts in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_greenhouse_crops_outbound_vs_baseline.png}}
+\caption*{Figure S27: Production relative to baseline of greenhouse crops in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_crops_outbound_vs_baseline.png}}
+\caption*{Figure S28: Production relative to baseline of other crops in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_dairy_outbound_vs_baseline.png}}
+\caption*{Figure S29: Production relative to baseline of dairy products in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_beef_outbound_vs_baseline.png}}
+\caption*{Figure S30: Production relative to baseline of beef cattle in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_poultry_outbound_vs_baseline.png}}
+\caption*{Figure S31: Production relative to baseline of poultry and eggs in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_meat_outbound_vs_baseline.png}}
+\caption*{Figure S32: Production relative to baseline of other meat (including farmed fish) in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound_vs_baseline.png}}
+\caption*{Figure S33: Production relative to baseline of all agricultural goods in each county by diet and waste scenario}
+\end{figure}
 
 \newpage
 
-## Figures Sx-Sx. Maps showing domestic goods consumption
+## Figures S34-S55. Maps showing domestic goods production and consumption, baseline scenario only
 
-- Absolute in each scenario
-- Change relative to baseline in each scenario
+The following set of figures shows the baseline scenario only for domestic production and consumption of each of the primary agricultural goods, spatially disaggregated by USA county. Note that foreign-sourced consumption is not included because the breakdown by category of goods does not match the domestic categorization (although the foreign-sourced land and biodiversity footprints are included in the following figures in this document). 
+
+Figures S34-S43 show the domestic production, by value in million USD, of the ten primary agricultural goods listed above in this document, and S44 the total. Note that these figures correspond to the upper left panel of Figures S12-S22.
+
+Figures S45-S54 show the domestic consumption, by value in million USD, of the same ten goods groups, and Figure S55 shows the total. 
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/oilseeds_outbound_baseline.png}}
+\caption*{Figure S34: Total production value of oilseeds in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/grains_outbound_baseline.png}}
+\caption*{Figure S35: Total production value of grains in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/vegetables_outbound_baseline.png}}
+\caption*{Figure S36: Total production value of vegetables in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/fruits_outbound_baseline.png}}
+\caption*{Figure S37: Total production value of fruits and nuts in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/greenhouse_crops_outbound_baseline.png}}
+\caption*{Figure S38: Total production value of greenhouse crops in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/other_crops_outbound_baseline.png}}
+\caption*{Figure S39: Total production value of other crops in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/dairy_outbound_baseline.png}}
+\caption*{Figure S40: Total production value of dairy products in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/beef_outbound_baseline.png}}
+\caption*{Figure S41: Total production value of beef cattle in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/poultry_outbound_baseline.png}}
+\caption*{Figure S42: Total production value of poultry and eggs in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/other_meat_outbound_baseline.png}}
+\caption*{Figure S43: Total production value of other meat (including farmed fish) in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/total_outbound_baseline.png}}
+\caption*{Figure S44: Total production value of all agricultural goods in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/oilseeds_inbound_baseline.png}}
+\caption*{Figure S45: Total consumption value of oilseeds in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/grains_inbound_baseline.png}}
+\caption*{Figure S46: Total consumption value of grains in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/vegetables_inbound_baseline.png}}
+\caption*{Figure S47: Total consumption value of vegetables in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/fruits_inbound_baseline.png}}
+\caption*{Figure S48: Total consumption value of fruits and nuts in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/greenhouse_crops_inbound_baseline.png}}
+\caption*{Figure S49: Total consumption value of greenhouse crops in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/other_crops_inbound_baseline.png}}
+\caption*{Figure S50: Total consumption value of other crops in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/dairy_inbound_baseline.png}}
+\caption*{Figure S51: Total consumption value of dairy products in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/beef_inbound_baseline.png}}
+\caption*{Figure S52: Total consumption value of beef cattle in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/poultry_inbound_baseline.png}}
+\caption*{Figure S53: Total consumption value of poultry and eggs in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/other_meat_inbound_baseline.png}}
+\caption*{Figure S54: Total consumption value of other meat (including farmed fish) in each county in the baseline scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.6\textwidth]{\fpfig/baseline_maps/total_inbound_baseline.png}}
+\caption*{Figure S55: Total consumption value of all agricultural goods in each county in the baseline scenario}
+\end{figure}
 
 \newpage
 
