@@ -156,3 +156,4 @@ scale_begin_end <- function(x) {
   out <- 0.5 + 0.5 * (r/max(abs(r)))
   if (any(!is.finite(out))) c(0, 1) else out
 }
+
