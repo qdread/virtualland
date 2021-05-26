@@ -4,6 +4,7 @@
 # Modified 18 Feb 2021: Get the goods transfers for each alternative scenario, before converting VLTs in each scenario.
 # Modified 04 Mar 2021: Remove pre-consumer waste reduction factors for foreign (cannot be affected by USA policy decisions)
 # Modified 22 Mar 2021: Move waste factor modification to another script (but it's still done)
+# Modified 26 May 2021: Save output with land and biodiversity footprints disaggregated by what goods cause them
 
 # Code copied and modified from scripts in the FAO directory
 # Processing done in FAO/extract_faostat.R
@@ -448,6 +449,7 @@ VLT_sums_crop[, crop_type := paste0('VLT_', crop_type)]
 VLT_sums_crop <- dcast(VLT_sums_crop, scenario + country_code + country_name ~ crop_type, fill = 0)
 
 # Write VLT sums for crop and animal separately
+fwrite(production_crops_trade_by_scenario, '/nfs/qread-data/cfs_io_analysis/fao_VLT_provisional_crops_disaggregated.csv')
 fwrite(VLT_sums_crop, '/nfs/qread-data/cfs_io_analysis/fao_VLT_provisional_croponly.csv')
 fwrite(VLT_sums_animal, '/nfs/qread-data/cfs_io_analysis/fao_VLT_provisional_animalonly.csv')
 

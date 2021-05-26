@@ -47,8 +47,9 @@ _rslurm*/
 # Slurm output files that are produced on the cluster
 slurm*.out
 
-# PDFs produced in Rmarkdown directory
+# PDFs and html files produced in Rmarkdown directory
 Rmd/*.pdf
+Rmd/*.html
 
 # Symlinks
 fwe-data

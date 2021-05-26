@@ -1,0 +1,25 @@
+---
+title: 'Appendix 3: Supplemental tables'
+author: "Quentin D. Read"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+This document contains supplemental figures for the currently unpublished virtual land scenarios manuscript. *Update this with citation when it is available.*
+
+## Table S1. Total footprints and footprint intensities
+
+This table shows the total land and biodiversity threat footprint of food consumed in the United States in 2012 (baseline scenario). The land footprint is disaggregated by the three land use types (annual crops, permanent crops, and pasture) as well as origin (domestic and foreign), in units of 1000 km<sup>2</sup>. Biodiversity footprints associated with each of these six land footprint components are shown for animals, plants, and the total of the two, in units of potential global species extinctions. The biodiversity footprints are divided by the land footprints to yield footprint intensities. Cell shading represents relative magnitude of values within each column.
+
+```{r}
+library(gt)
+
+gt_intensity <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_intensity.RDS')
+
+gt_intensity
+```
+
