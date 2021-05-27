@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 This document contains supplemental figures for the currently unpublished virtual land scenarios manuscript. *Update this with citation when it is available.*
 
-## Table S1. Total footprints and footprint intensities
+## Table S1. Total footprints and footprint intensities, baseline scenario
 
 This table shows the total land and biodiversity threat footprint of food consumed in the United States in 2012 (baseline scenario). The land footprint is disaggregated by the three land use types (annual crops, permanent crops, and pasture) as well as origin (domestic and foreign), in units of 1000 km<sup>2</sup>. Biodiversity footprints associated with each of these six land footprint components are shown for animals, plants, and the total of the two, in units of potential global species extinctions. The biodiversity footprints are divided by the land footprints to yield footprint intensities. Cell shading represents relative magnitude of values within each column.
 
@@ -19,7 +19,92 @@ This table shows the total land and biodiversity threat footprint of food consum
 library(gt)
 
 gt_intensity <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_intensity.RDS')
+gt_import_goods_land <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_import_goods_land.RDS')
+gt_import_biodiv <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_import_biodiv.RDS')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_flowchanges.RData')
 
-gt_intensity
+gt_intensity %>% 
+  summary_rows(
+    groups = TRUE,
+    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
+    fns = list(TOTAL = 'sum'),
+    formatter = fmt_number,
+    decimals = 0,
+    use_seps = TRUE
+  ) %>%
+  grand_summary_rows(
+    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
+    fns = list(`GRAND TOTAL` = 'sum'),
+    formatter = fmt_number,
+    decimals = 0,
+    use_seps = TRUE
+  ) %>%
+  tab_options(
+    row_group.background.color = "#D4EBF2",
+    row_group.font.weight = 'bold',
+    column_labels.font.weight = 'bold'
+  )
+
 ```
 
+## Table S2. Virtual land exports by U.S. state across scenarios
+
+This table shows the total area of land consumed in each U.S. state to produce food consumed domestically in 2012, in units of square kilometers, summed across all agricultural land use types. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+gt_county_land %>%
+  tab_options(table.font.size = '85%',
+              column_labels.font.weight = 'bold')
+```
+
+## Table S3. Virtual biodiversity threat exports by U.S. state across scenarios
+
+This table shows the total biodiversity threat caused in each U.S. state by production of food consumed domestically in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+gt_county_extinction %>%
+  tab_options(table.font.size = '85%',
+              column_labels.font.weight = 'bold')
+```
+
+## Table S4. Virtual land imported to the United States by foreign country across scenarios
+
+This table shows the total area of land consumed in each of the United States' trading partners to produce food consumed in the United States in 2012, in units of square kilometers, summed across all agricultural land use types. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 8% of the United States' virtual land imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+gt_foreign_land %>%
+  tab_options(table.font.size = '85%',
+              column_labels.font.weight = 'bold')
+```
+
+## Table S5. Virtual biodiversity threats imported to the United States by foreign country across scenarios
+
+This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+gt_foreign_extinction %>%
+  tab_options(table.font.size = '85%',
+              column_labels.font.weight = 'bold')
+```
+
+
+## Table S6. Virtual imports of biodiversity threats into the United States by taxonomic group, baseline scenario
+
+This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, in the baseline scenario, summed across all agricultural land use types but disaggregated by taxonomic group threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports.
+
+```{r}
+gt_import_biodiv %>%
+  tab_options(column_labels.font.weight = 'bold')
+```
+
+## Table S7. Foreign imports of goods and associated virtual land imports into the United States, baseline scenario
+
+This table contains the quantity of each type of agricultural good, by weight in tonnes, reported by FAOSTAT that each of the United States' trading partners exported to the United States in 2012, in the baseline scenario. The table also lists the virtual land export in square kilometers associated with each of these goods, summed across all land use types (e.g., for beef cattle, the sum of the virtual pastureland export and virtual cropland export due to crops grown for cattle feed). Only the top 20 biodiversity threat exporters to the United States are shown; the remainder are aggregated into the "Other" category (see caption of Table S3). Within each country, goods are sorted in descending order by virtual land export. The names of each good follow FAOSTAT's classification.
+
+```{r}
+gt_import_goods_land %>%
+  tab_options(
+    row_group.background.color = "#FFEFDB",
+    column_labels.font.weight = 'bold'
+  )
+```
