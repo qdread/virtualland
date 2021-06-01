@@ -6,10 +6,10 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-This document contains supplemental figures for the currently unpublished virtual land scenarios manuscript. *Update this with citation when it is available.*
+This document contains supplemental tables for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. **Update this with citation when it is available.**
 
 ## Table S1. Total footprints and footprint intensities, baseline scenario
 
@@ -17,6 +17,8 @@ This table shows the total land and biodiversity threat footprint of food consum
 
 ```{r}
 library(gt)
+library(readxl)
+library(dplyr)
 
 gt_intensity <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_intensity.RDS')
 gt_import_goods_land <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_import_goods_land.RDS')
@@ -105,6 +107,43 @@ This table contains the quantity of each type of agricultural good, by weight in
 gt_import_goods_land %>%
   tab_options(
     row_group.background.color = "#FFEFDB",
+    column_labels.font.weight = 'bold'
+  )
+```
+
+## Table S8. Data sources
+
+The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis.
+
+```{r}
+datasources <- read_xlsx('~/virtualland/TableS1_datasources.xlsx')
+
+datasources %>%
+  mutate(`Data year(s)` = if_else(`Data year(s)` == '-', as.character(NA), `Data year(s)`)) %>%
+  gt(groupname_col = 'Type') %>%
+  fmt_missing(columns = everything(), missing_text = html('&mdash;')) %>%
+  tab_options(
+    row_group.background.color = "#D4EBF2",
+    row_group.font.weight = 'bold',
+    column_labels.font.weight = 'bold',
+    table.font.size = '80%'
+  )
+```
+
+##	Table S9: Primary agricultural commodity and processed food commodity codes 
+
+The following table contains the commodity names and six-character codes from the U.S. Bureau of Economic Analysis input-output tables used in our analysis. Thirty-seven commodities are shown, including both primary agricultural goods (codes beginning with `1`) and processed foods (codes beginning with `3`).
+
+```{r}
+foodcat <- read_xlsx('~/virtualland/foodcategorytable.xlsx')
+
+foodcat %>%
+  mutate(`Primary agricultural commodity` = if_else(`Primary agricultural commodity` == 'yes', 'primary agricultural goods', 'processed foods')) %>%
+  group_by(`Primary agricultural commodity`) %>%
+gt(groupname_col = 'Primary agricultural commodity') %>%
+  tab_options(
+    row_group.background.color = "#D4EBF2",
+    row_group.font.weight = 'bold',
     column_labels.font.weight = 'bold'
   )
 ```
