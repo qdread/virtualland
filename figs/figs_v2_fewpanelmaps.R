@@ -93,7 +93,7 @@ map_ext_outbound <- draw_usmap_with_insets(map_data = left_join(county_map, ext_
 
 # Combine the four into a single figure with labeled columns and rows
 
-x_label_grobs <- map(c('imports (consumption)', 'exports (production)'), ~ textGrob(., gp = gpar(fontsize = 15)))
+x_label_grobs <- map(c('exports (production)', 'imports (consumption)'), ~ textGrob(., gp = gpar(fontsize = 15)))
 y_label_grobs <- map(c('land', 'biodiversity'), ~ textGrob(., gp = gpar(fontsize = 15), rot = 270))
 
 mat <- rbind(c(1,2,NA), c(5,6,3), c(7,8,4))
@@ -102,7 +102,7 @@ panel_width <- 120
 panel_height <- 90
 label_width <- 8
 
-fourmaps <- arrangeGrob(grobs = c(x_label_grobs, y_label_grobs, list(map_land_inbound, map_land_outbound, map_ext_inbound, map_ext_outbound)),
+fourmaps <- arrangeGrob(grobs = c(x_label_grobs, y_label_grobs, list(map_land_outbound, map_land_inbound, map_ext_outbound, map_ext_inbound)),
                         layout_matrix = mat,
                         widths = unit(c(rep(panel_width, 2), label_width), 'mm'),
                         heights = unit(c(label_width, rep(panel_height, 2)), 'mm'))
