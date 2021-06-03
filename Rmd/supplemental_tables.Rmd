@@ -2,7 +2,9 @@
 title: 'Appendix 3: Supplemental tables'
 author: "Quentin D. Read"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -107,7 +109,8 @@ This table contains the quantity of each type of agricultural good, by weight in
 gt_import_goods_land %>%
   tab_options(
     row_group.background.color = "#FFEFDB",
-    column_labels.font.weight = 'bold'
+    column_labels.font.weight = 'bold',
+    table.font.size = '85%'
   )
 ```
 
