@@ -181,7 +181,7 @@ method_graphviz <- grViz("digraph{
          
          label = '  Domestic agricultural  \nproduction'
          node[shape = rectangle, fillcolor = '#009E7380', margin = 0.25]
-         B[label = 'BEA I-O table']
+         B[label = 'BEA I-O tables']
          node[shape = rectangle, fillcolor = '#D55E0080', margin = 0.25]
          C[label = 'USEEIO model']
       }
@@ -194,7 +194,7 @@ method_graphviz <- grViz("digraph{
     
          label = '  Foreign agricultural  \nimports'
          node[shape = rectangle, fillcolor = '#009E7380', margin = 0.25]
-         D[label = 'FAOSTAT\ntrade data']
+         D[label = 'FAOSTAT trade\nand production data']
       }
       
       subgraph cluster_3 {
@@ -205,9 +205,9 @@ method_graphviz <- grViz("digraph{
     
          label = 'Domestic land\nfootprint'
          node[shape = rectangle, fillcolor = '#009E7380', margin = 0.25]
-         E[label = 'USDA Census of Ag.']
+         E[label = 'USDA Census of\nAgriculture']
          node[shape = rectangle, fillcolor = '#D55E0080', margin = 0.25]
-         F[label = 'land satellite table']
+         F[label = 'land exchange tables']
       }
       
       subgraph cluster_4 {
@@ -218,7 +218,7 @@ method_graphviz <- grViz("digraph{
     
          label = 'Foreign land\nfootprint'
          node[shape = rectangle, fillcolor = '#009E7380', margin = 0.25]
-         G[label = 'FAOSTAT\nyield and FBS data']
+         G[label = 'FAOSTAT yield\nand FBS data']
       }
       
       subgraph cluster_6 {
