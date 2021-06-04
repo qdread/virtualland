@@ -82,6 +82,13 @@ import_biodiv_base_wide[, taxon := factor(taxon, levels = c('plants', 'amphibian
 import_goods_base_wide <- import_goods_base_wide[order(country_name, -VLT_total), .(country_name, item, export_qty, VLT_total)]
 import_biodiv_base_wide <- import_biodiv_base_wide[order(country_name, -VBT_total), .(country_name, taxon, VBT_total)]
 
+# Make biodiversity table even wider (by taxon)
+import_biodiv_base_wider <- dcast(import_biodiv_base_wide, country_name ~ taxon)
+import_biodiv_base_wider[, animals := amphibians + birds + mammals + reptiles]
+import_biodiv_base_wider[, total := plants + animals]
+
+# Write R objects to be used if we need to use kable instead of gt
+save(import_goods_base_wide, import_biodiv_base_wider, file = 'data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_import_tables.RData')
 
 # Generate gt tables ------------------------------------------------------
 
@@ -100,11 +107,6 @@ gt_import_goods_land <- import_goods_base_wide %>%
     export_qty = html('Export quantity<br><small><i>tonnes</i></small>'),
     VLT_total = html('Virtual land export<br><small><i>km<sup>2</sup></i></small>')
   )
-
-# Make biodiversity table even wider (by taxon)
-import_biodiv_base_wider <- dcast(import_biodiv_base_wide, country_name ~ taxon)
-import_biodiv_base_wider[, animals := amphibians + birds + mammals + reptiles]
-import_biodiv_base_wider[, total := plants + animals]
 
 gt_import_biodiv <- import_biodiv_base_wider %>%
   gt(rowname_col = 'country_name') %>%

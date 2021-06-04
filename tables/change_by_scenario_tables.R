@@ -182,6 +182,8 @@ foreign_extinction_agg[, country_name := factor(country_name, levels = c(top20bi
 
 foreign_extinction_agg_wide <- dcast(foreign_extinction_agg, country_name ~ scenario_waste + scenario_diet, value.var = 'flow_display')
 
+# Save R objects for creating tables with kable
+save(county_land_agg_wide, county_extinction_agg_wide, foreign_land_agg_wide, foreign_extinction_agg_wide, file = 'data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables.RData')
 
 # Create gt tables --------------------------------------------------------
 

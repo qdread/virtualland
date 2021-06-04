@@ -46,6 +46,9 @@ all_flows <- all_flows[order(origin, land_use)]
 # Convert VLT to 1000 sq km also
 all_flows[, VLT := VLT / 1000 / 100]
 
+# Save R object to be used to create table with kable
+save(all_flows, file = 'data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_intensity_table.RData')
+
 gt_intensity <- as_tibble(all_flows) %>%
   mutate(across(where(is.numeric), ~ signif(., 2))) %>%
   group_by(origin) %>%
