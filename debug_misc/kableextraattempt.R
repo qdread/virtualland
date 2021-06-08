@@ -26,7 +26,9 @@ all_flows_withtotals[, (nc) := lapply(.SD, signif, digits = 2), .SDcols = nc]
 # Column names
 # FIXME put in something to have the column names with little subtitles for the units
 
-kbl(all_flows_withtotals) %>%
+kbl(all_flows_withtotals,
+    col.names = linebreak(c('', 'land\n1000 km^2', 'animals', 'plants', 'total', 'animals', 'plants', 'total')),
+    escape = FALSE) %>%
   column_spec(2, background = flow_bkg_color(all_flows_withtotals$VLT), color = txtcol1) %>%
   column_spec(3, background = flow_bkg_color(all_flows_withtotals$VBT_animals), color = txtcol1) %>%
   column_spec(4, background = flow_bkg_color(all_flows_withtotals$VBT_plants), color = txtcol1) %>%
@@ -36,8 +38,8 @@ kbl(all_flows_withtotals) %>%
   column_spec(8, background = flow_bkg_color(all_flows_withtotals$VBT_total_intensity), color = txtcol2) %>%
   kable_styling() %>%
   add_header_above(c(" " = 1, "Total footprint" = 4, "Footprint intensity" = 3)) %>%
-  pack_rows("domestic origin", 1, 4, latex_gap_space = '2em') %>%
-  pack_rows("foreign origin", 5, 8, latex_gap_space = '2em')
+  pack_rows("domestic origin", 1, 4, latex_gap_space = '2em', background = "#D4EBF2") %>%
+  pack_rows("foreign origin", 5, 8, latex_gap_space = '2em', background = "#D4EBF2")
 
 gt_intensity <- as_tibble(all_flows) %>%
   mutate(across(where(is.numeric), ~ signif(., 2))) %>%

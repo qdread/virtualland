@@ -3,7 +3,6 @@ title: 'Appendix 3: Supplemental tables'
 author: "Quentin D. Read"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  html_document: default
   pdf_document: default
 ---
 
@@ -20,8 +19,10 @@ This table shows the total land and biodiversity threat footprint of food consum
 ```{r}
 library(data.table)
 library(kableExtra)
+library(readxl)
 
 load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables_colorkeys.RData')
 load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_import_tables.RData')
 load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_intensity_table.RData')
 
@@ -50,174 +51,236 @@ all_flows_grandtotals[, land_use := 'Grand Total']
 
 all_flows_withtotals <- rbindlist(list(all_flows[1:3,], all_flows_totals[1,], all_flows[4:6,], all_flows_totals[2,], all_flows_grandtotals), use.names = TRUE, fill = TRUE)
 
-gt_intensity <- as_tibble(all_flows) %>%
-  mutate(across(where(is.numeric), ~ signif(., 2))) %>%
-  group_by(origin) %>%
-  gt(rowname_col = 'land_use') %>%
-  tab_spanner(
-    label = "Total footprint",
-    columns = c(VLT, VBT_animals, VBT_plants, VBT_total)
-  ) %>%
-  tab_spanner(
-    label = "Footprint intensity",
-    columns = contains('intensity')
-  ) %>%
-  cols_label(
-    VBT_animals = html('animals<br><small><i>extinctions</i></small>'),
-    VBT_plants = html('plants<br><small><i>extinctions</i></small>'),
-    VBT_total = html('total<br><small><i>extinctions</i></small>'),
-    VLT = html('land<br><small><i>1000 km<sup>2</sup></i></small>'),
-    VBT_animals_intensity = html('animals<br><small><i>extinctions/1000 km<sup>2</sup></i></small>'),
-    VBT_plants_intensity = html('plants<br><small><i>extinctions/1000 km<sup>2</sup></i></small>'),
-    VBT_total_intensity = html('total<br><small><i>extinctions/1000 km<sup>2</sup></i></small>')
-  ) %>%
-  data_color(
-    columns = starts_with('V'),
-    colors = scales::col_numeric('Reds', domain = NULL),
-    apply_to = c("fill"),
-    alpha = 0.75,
-    autocolor_text = TRUE
-  )
-gt_intensity %>% 
-  summary_rows(
-    groups = TRUE,
-    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
-    fns = list(TOTAL = 'sum'),
-    formatter = fmt_number,
-    decimals = 0,
-    use_seps = TRUE
-  ) %>%
-  grand_summary_rows(
-    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
-    fns = list(`GRAND TOTAL` = 'sum'),
-    formatter = fmt_number,
-    decimals = 0,
-    use_seps = TRUE
-  ) %>%
-  tab_options(
-    row_group.background.color = "#D4EBF2",
-    row_group.font.weight = 'bold',
-    column_labels.font.weight = 'bold'
-  )
+red_pal <- RColorBrewer::brewer.pal(9, 'Reds')
+div_pal <- scico::scico(9, palette = 'vik')
 
+palette_mapper <- function(x, pal) {
+  limits <- range(x)
+  pal[findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside=TRUE)]
+}
+
+# Custom color function for the individual columns, not including the total and grand total rows
+flow_bkg_color <- function(x) {
+  xcol <- palette_mapper(x[c(1:3, 5:7)], red_pal)
+  c(xcol[1:3], 'white', xcol[4:6], 'white', 'white')
+}
+
+# Rearrange columns
+all_flows_withtotals <- all_flows_withtotals[, .(land_use, VLT, VBT_animals, VBT_plants, VBT_total, VBT_animals_intensity, VBT_plants_intensity, VBT_total_intensity)]
+
+# Manually color the dark cell text white
+txtcol1 <- rep(c('black','white','black'), c(2, 1, 6))
+txtcol2 <- rep(c('black','white','black'), c(5, 1, 3))
+
+# To 2 sig figs
+nc <- names(all_flows_withtotals)[sapply(all_flows_withtotals, is.numeric)]
+all_flows_withtotals[, (nc) := lapply(.SD, signif, digits = 2), .SDcols = nc]
+
+kbl(all_flows_withtotals,
+    col.names = linebreak(c('', 'land\n\\footnotesize{1000 km\\textsuperscript{2}}', 'animals\n\\footnotesize{extinctions}', 'plants\n\\footnotesize{extinctions}', 'total\n\\footnotesize{extinctions}', 'animals\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'plants\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'total\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}'), align = 'c'),
+    escape = FALSE, booktabs = TRUE) %>%
+  column_spec(2, background = flow_bkg_color(all_flows_withtotals$VLT), color = txtcol1) %>%
+  column_spec(3, background = flow_bkg_color(all_flows_withtotals$VBT_animals), color = txtcol1) %>%
+  column_spec(4, background = flow_bkg_color(all_flows_withtotals$VBT_plants), color = txtcol1) %>%
+  column_spec(5, background = flow_bkg_color(all_flows_withtotals$VBT_total), color = txtcol1) %>%
+  column_spec(6, background = flow_bkg_color(all_flows_withtotals$VBT_animals_intensity), color = txtcol2) %>%
+  column_spec(7, background = flow_bkg_color(all_flows_withtotals$VBT_plants_intensity), color = txtcol2) %>%
+  column_spec(8, background = flow_bkg_color(all_flows_withtotals$VBT_total_intensity), color = txtcol2) %>%
+  add_header_above(c(" " = 1, "Total footprint" = 4, "Footprint intensity" = 3)) %>%
+  pack_rows("domestic origin", 1, 4, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("foreign origin", 5, 8, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("", 9, 9) %>%
+  kable_styling(latex_options = c('scale_down', 'HOLD_position')) %>%
+  row_spec(4, italic = TRUE) %>%
+  row_spec(8, italic = TRUE) %>%
+  row_spec(9, bold = TRUE, italic = TRUE)
 ```
 
-
-```{r}
-library(gt)
-library(readxl)
-library(dplyr)
-
-gt_intensity <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_intensity.RDS')
-gt_import_goods_land <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_import_goods_land.RDS')
-gt_import_biodiv <- readRDS('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_import_biodiv.RDS')
-load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/gt_flowchanges.RData')
-
-gt_intensity %>% 
-  summary_rows(
-    groups = TRUE,
-    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
-    fns = list(TOTAL = 'sum'),
-    formatter = fmt_number,
-    decimals = 0,
-    use_seps = TRUE
-  ) %>%
-  grand_summary_rows(
-    columns = c(VBT_animals, VBT_plants, VBT_total, VLT),
-    fns = list(`GRAND TOTAL` = 'sum'),
-    formatter = fmt_number,
-    decimals = 0,
-    use_seps = TRUE
-  ) %>%
-  tab_options(
-    row_group.background.color = "#D4EBF2",
-    row_group.font.weight = 'bold',
-    column_labels.font.weight = 'bold'
-  )
-
-```
+\newpage
 
 ## Table S2. Virtual land exports by U.S. state across scenarios
 
 This table shows the total area of land consumed in each U.S. state to produce food consumed domestically in 2012, in units of square kilometers, summed across all agricultural land use types. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
 
 ```{r}
-gt_county_land %>%
-  tab_options(table.font.size = '85%',
-              column_labels.font.weight = 'bold')
+diet_names <- c('baseline diet', 'USDA U.S. style', 'USDA Mediterranean', 'USDA vegetarian', 'Planetary Health')
+
+# Function to return a column spec both text and background color for each column separately
+# Change to white if above a certain threshold. n is the column index
+text_background_mapper <- function(kable_input, n, dat, pal = red_pal, thresh = 7) {
+  x <- dat[[n]]
+  limits <- range(x)
+  x01 <- findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside = TRUE)
+  bkg <- pal[x01]
+  txt <- ifelse(x01 > thresh, 'white', 'black')
+  column_spec(kable_input, n, background = bkg, color = txt)
+}
+
+kbl(county_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
 ```
+
+\newpage
 
 ## Table S3. Virtual biodiversity threat exports by U.S. state across scenarios
 
 This table shows the total biodiversity threat caused in each U.S. state by production of food consumed domestically in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
 
 ```{r}
-gt_county_extinction %>%
-  tab_options(table.font.size = '85%',
-              column_labels.font.weight = 'bold')
+kbl(county_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
 ```
+
+\newpage
 
 ## Table S4. Virtual land imported to the United States by foreign country across scenarios
 
 This table shows the total area of land consumed in each of the United States' trading partners to produce food consumed in the United States in 2012, in units of square kilometers, summed across all agricultural land use types. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 8% of the United States' virtual land imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
 
 ```{r}
-gt_foreign_land %>%
-  tab_options(table.font.size = '85%',
-              column_labels.font.weight = 'bold')
+kbl(foreign_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
 ```
+
+\newpage
 
 ## Table S5. Virtual biodiversity threats imported to the United States by foreign country across scenarios
 
 This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
 
 ```{r}
-gt_foreign_extinction %>%
-  tab_options(table.font.size = '85%',
-              column_labels.font.weight = 'bold')
+kbl(foreign_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
 ```
 
+\newpage
 
 ## Table S6. Virtual imports of biodiversity threats into the United States by taxonomic group, baseline scenario
 
 This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, in the baseline scenario, summed across all agricultural land use types but disaggregated by taxonomic group threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports.
 
 ```{r}
-gt_import_biodiv %>%
-  tab_options(column_labels.font.weight = 'bold')
+# To 3 sig figs
+nc <- names(import_biodiv_base_wider)[sapply(import_biodiv_base_wider, is.numeric)]
+import_biodiv_base_wider[, (nc) := lapply(.SD, signif, digits = 3), .SDcols = nc]
+
+kbl(import_biodiv_base_wider,
+    col.names = c(' ', names(import_biodiv_base_wider)[-1]),
+    booktabs = TRUE) %>%
+  text_background_mapper(2, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(3, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(4, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(5, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(6, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(7, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(8, dat = import_biodiv_base_wider) %>%
+  add_header_above(c(" " = 1, 'Virtual biodiversity threat export by taxonomic group' = 7))
 ```
+
+\newpage
 
 ## Table S7. Foreign imports of goods and associated virtual land imports into the United States, baseline scenario
 
 This table contains the quantity of each type of agricultural good, by weight in tonnes, reported by FAOSTAT that each of the United States' trading partners exported to the United States in 2012, in the baseline scenario. The table also lists the virtual land export in square kilometers associated with each of these goods, summed across all land use types (e.g., for beef cattle, the sum of the virtual pastureland export and virtual cropland export due to crops grown for cattle feed). Only the top 20 biodiversity threat exporters to the United States are shown; the remainder are aggregated into the "Other" category (see caption of Table S3). Within each country, goods are sorted in descending order by virtual land export. The names of each good follow FAOSTAT's classification.
 
 ```{r}
-gt_import_goods_land %>%
-  tab_options(
-    row_group.background.color = "#FFEFDB",
-    column_labels.font.weight = 'bold',
-    table.font.size = '85%'
-  )
+import_goods_base_wide[, item := tolower(gsub('\xe9', 'é', item))] # Correct character in yerba mate'
+import_goods_base_wide[, VLT_total := as.character(signif(VLT_total/100, 3))]
+import_goods_base_wide[, export_qty := as.character(signif(export_qty, 3))]
+
+kbl(import_goods_base_wide[, -1],
+    col.names = linebreak(c('item', 'export quantity\n\\footnotesize{tonnes}', 'virtual land export\n\\footnotesize{km\\textsuperscript{2}}'), align = 'r'),
+    escape = FALSE, booktabs = TRUE, longtable = TRUE,
+    align = 'lrr') %>%
+  pack_rows(index = table(import_goods_base_wide$country_name), background = "#FFEFDB") %>%
+  kable_styling(latex_options = c('repeat_header', 'striped'), font_size = 7)
 ```
+
+\newpage
 
 ## Table S8. Data sources
 
-The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis.
+The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis. Citations for each data source are provided below the table in a numbered list corresponding to the numbers in the "Citation" column of the table.
 
 ```{r}
+library(dplyr)
 datasources <- read_xlsx('~/virtualland/TableS1_datasources.xlsx')
 
-datasources %>%
-  mutate(`Data year(s)` = if_else(`Data year(s)` == '-', as.character(NA), `Data year(s)`)) %>%
-  gt(groupname_col = 'Type') %>%
-  fmt_missing(columns = everything(), missing_text = html('&mdash;')) %>%
-  tab_options(
-    row_group.background.color = "#D4EBF2",
-    row_group.font.weight = 'bold',
-    column_labels.font.weight = 'bold',
-    table.font.size = '80%'
-  )
+datasources <- datasources %>%
+  mutate(`Data year(s)` = if_else(`Data year(s)` == '-', as.character(NA), `Data year(s)`),
+         Type = factor(Type, levels = c('Primary data', 'Spatial data', 'Crosswalk'),
+                       labels = c('Primary data', 'Spatial data', 'Crosswalks')),
+         `Location on web` = if_else(!is.na(`Location on web`),
+                                     paste0('\\href{', `Location on web`, '}{click here}'),
+                                     as.character(NA))) %>%
+  rename(`Data years` = `Data year(s)`,
+         `Date most recently checked` = `Date most recently checked for availability`) 
+
+datasources$`Location on web`[13] <- 'No longer available. A similar file is \\href{https://www2.census.gov/geo/tiger/TIGER2014/COUNTY/}{available here}.'
+
+# Replace citations with numbers referring to citation list
+datasources$Citation[!is.na(datasources$Citation)] <- as.character(c(1:15, 15, 16:22, 1))
+
+# Remove any special characters from datasources to solve latex compilation errors
+datasources <- datasources %>%
+  mutate(across(where(is.character), ~ gsub('&', '\\&', ., fixed = TRUE))) %>%
+  mutate(across(where(is.character), ~ gsub('_', '\\_', ., fixed = TRUE))) %>%
+  mutate(across(where(is.character), ~ gsub('#', '\\#', ., fixed = TRUE))) 
+  
+
+options(knitr.kable.NA = '---')
+
+kbl(datasources[, -c(1)], booktabs = TRUE, longtable = TRUE, escape = FALSE, linesep = '\\addlinespace') %>%
+  pack_rows(index = table(datasources$Type), background = "#D4EBF2") %>%
+  column_spec(1, width = '7em') %>%
+  column_spec(2, width = '7em') %>%
+  column_spec(3, width = '3em') %>%
+  column_spec(4, width = '12em') %>%
+  column_spec(5, width = '3em') %>%
+  column_spec(6, width = '3em') %>%
+  column_spec(7, width = '4em') %>%
+  column_spec(8, width = '2em') %>%
+  kable_styling(font_size = 5, latex_options = c('repeat_header', 'striped'))
 ```
+
+### Citations, Table S8
+
+1. The publication accompanying Version 2.0 is still in preparation. Until it is published cite USEEIOv1.1: Yang, Y., Ingwersen, W.W., Hawkins, T.R., Srocka, M., Meyer, D.E., 2017. USEEIO: A new and transparent United States environmentally-extended input-output model. Journal of Cleaner Production 158, 308–318. https://doi.org/10.1016/j.jclepro.2017.04.150
+1. USDA - National Agricultural Statistics Service - 2012 Census of Agriculture - Volume 1, Chapter 1: U.S. National Level Data [WWW Document], n.d. URL https://www.nass.usda.gov/Publications/AgCensus/2012/Full_Report/Volume_1,_Chapter_1_US/ (accessed 4.1.21).
+1. U.S. Census Bureau, 2014. County Business Patterns: 2012 [WWW Document]. The United States Census Bureau. URL https://www.census.gov/data/datasets/2012/econ/cbp/2012-cbp.html (accessed 4.1.21).
+1. U.S. Census Bureau, 2015. SUSB Datasets [WWW Document]. The United States Census Bureau. URL https://www.census.gov/programs-surveys/susb/data/datasets.html (accessed 4.1.21).
+1. U.S. Department of Health and Human Services, U.S. Department of Agriculture, 2020. Dietary Guidelines for Americans, 2020-2025 [WWW Document].
+1. Willett, W., Rockström, J., Loken, B., Springmann, M., Lang, T., Vermeulen, S., Garnett, T., Tilman, D., DeClerck, F., Wood, A., Jonell, M., Clark, M., Gordon, L.J., Fanzo, J., Hawkes, C., Zurayk, R., Rivera, J.A., De Vries, W., Majele Sibanda, L., Afshin, A., Chaudhary, A., Herrero, M., Agustina, R., Branca, F., Lartey, A., Fan, S., Crona, B., Fox, E., Bignet, V., Troell, M., Lindahl, T., Singh, S., Cornell, S.E., Srinath Reddy, K., Narain, S., Nishtar, S., Murray, C.J.L., 2019. Food in the Anthropocene: the EAT–Lancet Commission on healthy diets from sustainable food systems. The Lancet 393, 447–492. https://doi.org/10.1016/S0140-6736(18)31788-4
+1. Buzby, J.C., Farah-Wells, H., Hyman, J., 2014. The estimated amount, value, and calories of postharvest food losses at the retail and consumer levels in the United States. SSRN Electronic Journal. https://doi.org/10.2139/ssrn.2501659
+1. USDA Economic Research Service, 2019. Quarterly Food-at-Home Price Database [WWW Document]. URL https://www.ers.usda.gov/data-products/quarterly-food-at-home-price-database/ (accessed 8.5.20).
+1. FAO (Food and Agriculture Organization of the United Nations)), 2021. FAOSTAT [WWW Document]. URL http://www.fao.org/faostat/en/#home (accessed 4.1.21).
+1. U.S. Bureau of Economic Analysis (BEA), 2021. Regional Data: GDP & Personal Income [WWW Document]. URL https://apps.bea.gov/iTable/index_regional.cfm (accessed 4.1.21).
+1. Chaudhary, A., Brooks, T.M., 2018. Land use intensity-specific global characterization factors to assess product biodiversity footprints. Environ. Sci. Technol. 52, 5094–5104. https://doi.org/10.1021/acs.est.7b05570
+1. Olson, D. M. and E. Dinerstein. 2002. The Global 200: Priority ecoregions for global conservation. (PDF file) Annals of the Missouri Botanical Garden 89:125-126.
+1. U.S. Census Bureau, n.d. TIGER/Line Shapefiles [WWW Document]. The United States Census Bureau. URL https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html (accessed 4.1.21).
+1. Natural Earth - Free vector and raster map data at 1:10m, 1:50m, and 1:110m scales, n.d. URL https://www.naturalearthdata.com/ (accessed 4.1.21).
+1. Dewitz, J., 2019, National Land Cover Database (NLCD) 2016 Products: U.S. Geological Survey data release, https://doi.org/10.5066/P96HHBIE.
+1. MRLC, 2003. NLCD 2001 Land Cover (HAWAII) | Multi-Resolution Land Characteristics (MRLC) Consortium [WWW Document]. URL https://www.mrlc.gov/data/nlcd-2001-land-cover-hawaii-0 (accessed 4.1.21).
+1. Ramankutty, N., Evan, A.T., Monfreda, C., Foley, J.A., 2008. Farming the planet: 1. Geographic distribution of global agricultural lands in the year 2000. Global Biogeochemical Cycles 22. https://doi.org/10.1029/2007GB002952
+1. Thenkabail, P., Knox, J., Ozdogan, M., Gumma, M., Congalton, R., Wu, Z., Milesi, C., Finkral, A., Marshall, M., Mariotto, I., You, S., Giri, C., Nagler, P. (2016). NASA Making Earth System Data Records for Use in Research Environments (MEaSUREs) Global Food Security Support Analysis Data (GFSAD) Crop Dominance 2010 Global 1 km V001 [Data set]. NASA EOSDIS Land Processes DAAC.
+1. Center For International Earth Science Information Network-CIESIN-Columbia University, 2017. U.S. Census Grids (Summary File 1), 2010. https://doi.org/10.7927/H40Z716C
+1. Crop Bushel Weights [WWW Document], n.d. . Rayglen Commodities Inc. URL https://www.rayglen.com/crop-bushel-weights/ (accessed 6.1.21).
+1. USDA National Agricultural Statistics Service, 2017. Crop values 2016 Summary (No. ISSN 1949-0372).
+1. FAO (Food and Agriculture Organization of the United Nations)), 2021. FAOSTAT [WWW Document]. URL http://www.fao.org/faostat/en/#home (accessed 4.1.21).
+
+\newpage
 
 ##	Table S9: Primary agricultural commodity and processed food commodity codes 
 
@@ -226,13 +289,8 @@ The following table contains the commodity names and six-character codes from th
 ```{r}
 foodcat <- read_xlsx('~/virtualland/foodcategorytable.xlsx')
 
-foodcat %>%
-  mutate(`Primary agricultural commodity` = if_else(`Primary agricultural commodity` == 'yes', 'primary agricultural goods', 'processed foods')) %>%
-  group_by(`Primary agricultural commodity`) %>%
-gt(groupname_col = 'Primary agricultural commodity') %>%
-  tab_options(
-    row_group.background.color = "#D4EBF2",
-    row_group.font.weight = 'bold',
-    column_labels.font.weight = 'bold'
-  )
+kbl(foodcat[,1:2], booktabs = TRUE) %>%
+  pack_rows('primary agricultural goods', 1, 11, background = "#D4EBF2") %>%
+  pack_rows('processed foods', 12, 37, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  kable_styling(latex_options = c('striped', 'HOLD_position'), font_size = 9)
 ```

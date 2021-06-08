@@ -208,14 +208,14 @@ setdiff(foreign_goods_flow_sums$country_name, iso_lookup$country_name)
 setdiff(foreign_land_flow_sums$country_name, iso_lookup$country_name)
 setdiff(foreign_extinction_flow_sums$country_name, iso_lookup$country_name)
 
-setnames(foreign_goods_flow_sums, old = 'export_qty', new = 'flow_to_usa')
-setnames(foreign_land_flow_sums, old = c('land_use', 'VLT'), new = c('land_type', 'flow_to_usa'))
-setnames(foreign_extinction_flow_sums, old = c('land_use', 'species_lost'), new = c('land_type', 'flow_to_usa'))
+setnames(foreign_goods_flow_sums, old = 'export_qty', new = 'flow_inbound_foreign')
+setnames(foreign_land_flow_sums, old = c('land_use', 'VLT'), new = c('land_type', 'flow_inbound_foreign'))
+setnames(foreign_extinction_flow_sums, old = c('land_use', 'species_lost'), new = c('land_type', 'flow_inbound_foreign'))
 
 # Replace land type columns with all the correct names, filter away the totals for now to keep only the primary data rows (no duplicated total rows)
 
-foreign_land_flow_sums <- foreign_land_flow_sums[!land_type %in% 'total', .(scenario_diet, scenario_waste, ISO_A3, land_type, flow_to_usa)]
-foreign_extinction_flow_sums <- foreign_extinction_flow_sums[!land_type %in% 'total' & !taxon %in% c('animals', 'total'), .(scenario_diet, scenario_waste, ISO_A3, land_type, taxon, flow_to_usa)]
+foreign_land_flow_sums <- foreign_land_flow_sums[!land_type %in% 'total', .(scenario_diet, scenario_waste, ISO_A3, land_type, flow_inbound_foreign)]
+foreign_extinction_flow_sums <- foreign_extinction_flow_sums[!land_type %in% 'total' & !taxon %in% c('animals', 'total'), .(scenario_diet, scenario_waste, ISO_A3, land_type, taxon, flow_inbound_foreign)]
 
 land_type_table <- data.frame(short = c('annual', 'pasture', 'permanent'), long = c('annual_cropland', 'pastureland', 'permanent_cropland'))
 
@@ -226,7 +226,7 @@ setnames(ag_names_lookup, old = 'BEA_389_code', new = 'BEA_code')
 # Replace foreign goods country names with ISO
 setDT(iso_lookup)
 foreign_goods_flow_sums <- iso_lookup[foreign_goods_flow_sums, on = 'country_name']
-foreign_goods_flow_sums <- foreign_goods_flow_sums[, .(scenario_diet, scenario_waste, ISO_A3, item, flow_to_usa)]
+foreign_goods_flow_sums <- foreign_goods_flow_sums[, .(scenario_diet, scenario_waste, ISO_A3, item, flow_inbound_foreign)]
 
 bea_lookup <- as.data.table(ag_names_lookup)
 setnames(bea_lookup, old = c('BEA_389_def', 'short_name'), new = c('ag_good_long_name', 'ag_good_short_name'))
@@ -258,6 +258,19 @@ fips_harmonization_extra <- fips_harmonization %>%
   mutate(county = gsub(',[^,]*$', '', county)) # Remove last comma and everything after
 
 county_lookup <- rbind(county_lookup, fips_harmonization_extra)
+
+
+# Filter to 10 scenarios --------------------------------------------------
+
+# To reduce file size, get rid of the two waste scenarios not used in MS.
+scens <- c('baseline', 'allavoidable')
+setDT(county_goods_flow_sums)
+county_goods_flow_sums <- county_goods_flow_sums[scenario_waste %in% scens]
+county_land_flow_sums <- county_land_flow_sums[scenario_waste %in% scens]
+county_extinction_flow_sums <- county_extinction_flow_sums[scenario_waste %in% scens]
+foreign_goods_flow_sums <- foreign_goods_flow_sums[scenario_waste %in% scens]
+foreign_land_flow_sums <- foreign_land_flow_sums[scenario_waste %in% scens]
+foreign_extinction_flow_sums <- foreign_extinction_flow_sums[scenario_waste %in% scens]
 
 # Write all to CSV --------------------------------------------------------
 

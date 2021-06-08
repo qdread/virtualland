@@ -136,6 +136,9 @@ county_land_agg[, scenario_waste := factor(scenario_waste, levels = c('baseline'
 county_land_agg_wide <- dcast(county_land_agg[!fips_state %in% '11'], fips_state ~ scenario_waste + scenario_diet, value.var = 'flow_display')
 county_land_agg_wide[, fips_state := state_table$state_name[match(fips_state, state_table$state_code)]]
 
+county_land_key <- dcast(county_land_agg[!fips_state %in% '11'], fips_state ~ scenario_waste + scenario_diet, value.var = 'outbound_vs_baseline')
+county_land_key[, fips_state := state_table$state_name[match(fips_state, state_table$state_code)]]
+
 ### County extinctions
 
 county_extinction_agg[, flow_display := paste0(signif(flow_outbound, 3), ' (', to_pct(outbound_vs_baseline), ')')]
@@ -144,6 +147,9 @@ county_extinction_agg[, scenario_waste := factor(scenario_waste, levels = c('bas
 
 county_extinction_agg_wide <- dcast(county_extinction_agg[!fips_state %in% '11' & taxon %in% 'total'], fips_state ~ scenario_waste + scenario_diet, value.var = 'flow_display')
 county_extinction_agg_wide[, fips_state := state_table$state_name[match(fips_state, state_table$state_code)]]
+
+county_extinction_key <- dcast(county_extinction_agg[!fips_state %in% '11' & taxon %in% 'total'], fips_state ~ scenario_waste + scenario_diet, value.var = 'outbound_vs_baseline')
+county_extinction_key[, fips_state := state_table$state_name[match(fips_state, state_table$state_code)]]
 
 ### Foreign land
 
@@ -163,6 +169,7 @@ foreign_vlt_agg[, scenario_waste := factor(scenario_waste, levels = c('baseline'
 foreign_vlt_agg[, country_name := factor(country_name, levels = c(top20biodiv, 'Other'))]
 
 foreign_land_agg_wide <- dcast(foreign_vlt_agg, country_name ~ scenario_waste + scenario_diet, value.var = 'flow_display')
+foreign_land_key <- dcast(foreign_vlt_agg, country_name ~ scenario_waste + scenario_diet, value.var = 'VLT_vs_baseline')
 
 ### Foreign extinctions
 
@@ -181,9 +188,12 @@ foreign_extinction_agg[, scenario_waste := factor(scenario_waste, levels = c('ba
 foreign_extinction_agg[, country_name := factor(country_name, levels = c(top20biodiv, 'Other'))]
 
 foreign_extinction_agg_wide <- dcast(foreign_extinction_agg, country_name ~ scenario_waste + scenario_diet, value.var = 'flow_display')
+foreign_extinction_key <- dcast(foreign_extinction_agg, country_name ~ scenario_waste + scenario_diet, value.var = 'outbound_vs_baseline')
 
 # Save R objects for creating tables with kable
 save(county_land_agg_wide, county_extinction_agg_wide, foreign_land_agg_wide, foreign_extinction_agg_wide, file = 'data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables.RData')
+save(county_land_key, county_extinction_key, foreign_land_key, foreign_extinction_key, file = 'data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables_colorkeys.RData')
+
 
 # Create gt tables --------------------------------------------------------
 

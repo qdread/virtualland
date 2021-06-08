@@ -1,0 +1,227 @@
+---
+title: 'Appendix 3: Supplemental tables'
+author: "Quentin D. Read"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+This document contains supplemental tables for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. **Update this with citation when it is available.**
+
+## Table S1. Total footprints and footprint intensities, baseline scenario
+
+This table shows the total land and biodiversity threat footprint of food consumed in the United States in 2012 (baseline scenario). The land footprint is disaggregated by the three land use types (annual crops, permanent crops, and pasture) as well as origin (domestic and foreign), in units of 1000 km<sup>2</sup>. Biodiversity footprints associated with each of these six land footprint components are shown for animals, plants, and the total of the two, in units of potential global species extinctions. The biodiversity footprints are divided by the land footprints to yield footprint intensities. Cell shading represents relative magnitude of values within each column.
+
+```{r}
+library(data.table)
+library(kableExtra)
+library(readxl)
+
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_import_tables.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_intensity_table.RData')
+
+# Calculate totals and grand totals
+# Done manually
+all_flows_totals <- all_flows[, .(VBT_animals = sum(VBT_animals),
+                                  VBT_plants = sum(VBT_plants),
+                                  VBT_total = sum(VBT_total),
+                                  VLT = sum(VLT),
+                                  VBT_animals_intensity = weighted.mean(VBT_animals_intensity, VBT_animals),
+                                  VBT_plants_intensity = weighted.mean(VBT_plants_intensity, VBT_plants),
+                                  VBT_total_intensity = weighted.mean(VBT_total_intensity, VBT_total)
+                                  ),
+                              by = .(origin)]
+all_flows_grandtotals <- all_flows[, .(VBT_animals = sum(VBT_animals),
+                                  VBT_plants = sum(VBT_plants),
+                                  VBT_total = sum(VBT_total),
+                                  VLT = sum(VLT),
+                                  VBT_animals_intensity = weighted.mean(VBT_animals_intensity, VBT_animals),
+                                  VBT_plants_intensity = weighted.mean(VBT_plants_intensity, VBT_plants),
+                                  VBT_total_intensity = weighted.mean(VBT_total_intensity, VBT_total)
+                                  )]
+
+all_flows_totals[, land_use := 'total']
+all_flows_grandtotals[, land_use := 'grand total']
+
+all_flows_withtotals <- rbindlist(list(all_flows[1:3,], all_flows_totals[1,], all_flows[4:6,], all_flows_totals[2,], all_flows_grandtotals), use.names = TRUE, fill = TRUE)
+
+red_pal <- RColorBrewer::brewer.pal(9, 'Reds')
+
+palette_mapper <- function(x, pal) {
+  limits <- range(x)
+  pal[findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside=TRUE)]
+}
+
+# Custom color function for the individual columns, not including the total and grand total rows
+flow_bkg_color <- function(x) {
+  xcol <- palette_mapper(x[c(1:3, 5:7)], red_pal)
+  c(xcol[1:3], 'white', xcol[4:6], 'white', 'white')
+}
+
+# Rearrange columns
+all_flows_withtotals <- all_flows_withtotals[, .(land_use, VLT, VBT_animals, VBT_plants, VBT_total, VBT_animals_intensity, VBT_plants_intensity, VBT_total_intensity)]
+
+# Manually color the dark cell text white
+txtcol1 <- rep(c('black','white','black'), c(2, 1, 6))
+txtcol2 <- rep(c('black','white','black'), c(5, 1, 3))
+
+# To 2 sig figs
+nc <- names(all_flows_withtotals)[sapply(all_flows_withtotals, is.numeric)]
+all_flows_withtotals[, (nc) := lapply(.SD, signif, digits = 2), .SDcols = nc]
+
+kbl(all_flows_withtotals,
+    col.names = linebreak(c('', 'land\n\\footnotesize{1000 km\\textsuperscript{2}}', 'animals\n\\footnotesize{extinctions}', 'plants\n\\footnotesize{extinctions}', 'total\n\\footnotesize{extinctions}', 'animals\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'plants\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'total\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}'), align = 'c'),
+    escape = FALSE, booktabs = TRUE) %>%
+  column_spec(2, background = flow_bkg_color(all_flows_withtotals$VLT), color = txtcol1) %>%
+  column_spec(3, background = flow_bkg_color(all_flows_withtotals$VBT_animals), color = txtcol1) %>%
+  column_spec(4, background = flow_bkg_color(all_flows_withtotals$VBT_plants), color = txtcol1) %>%
+  column_spec(5, background = flow_bkg_color(all_flows_withtotals$VBT_total), color = txtcol1) %>%
+  column_spec(6, background = flow_bkg_color(all_flows_withtotals$VBT_animals_intensity), color = txtcol2) %>%
+  column_spec(7, background = flow_bkg_color(all_flows_withtotals$VBT_plants_intensity), color = txtcol2) %>%
+  column_spec(8, background = flow_bkg_color(all_flows_withtotals$VBT_total_intensity), color = txtcol2) %>%
+  add_header_above(c(" " = 1, "Total footprint" = 4, "Footprint intensity" = 3)) %>%
+  pack_rows("domestic origin", 1, 4, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("foreign origin", 5, 8, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("", 9, 9) %>%
+  kable_styling(latex_options = 'scale_down') %>%
+  row_spec(4, italic = TRUE) %>%
+  row_spec(8, italic = TRUE) %>%
+  row_spec(9, bold = TRUE, italic = TRUE)
+
+```
+
+\newpage
+
+## Table S2
+
+```{r}
+diet_names <- c('baseline diet', 'USDA U.S. style', 'USDA Mediterranean', 'USDA vegetarian', 'Planetary Health')
+
+kbl(county_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = 'scale_down')
+```
+
+\newpage 
+
+## Table S3
+
+```{r}
+kbl(county_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = 'scale_down')
+```
+
+\newpage
+
+## Table S4
+
+```{r}
+kbl(foreign_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = 'scale_down')
+```
+
+\newpage
+
+## Table S5
+
+```{r}
+kbl(foreign_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = 'scale_down')
+```
+
+\newpage
+
+## Table S6
+
+```{r}
+# To 3 sig figs
+nc <- names(import_biodiv_base_wider)[sapply(import_biodiv_base_wider, is.numeric)]
+import_biodiv_base_wider[, (nc) := lapply(.SD, signif, digits = 3), .SDcols = nc]
+
+# Function to return a column spec both text and background color for each column separately
+# Change to white if above a certain threshold. n is the column index
+text_background_mapper <- function(kable_input, n, pal = red_pal, thresh = 7) {
+  x <- import_biodiv_base_wider[[n]]
+  limits <- range(x)
+  x01 <- findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside = TRUE)
+  bkg <- pal[x01]
+  txt <- ifelse(x01 > thresh, 'white', 'black')
+  column_spec(kable_input, n, background = bkg, color = txt)
+}
+
+
+kbl(import_biodiv_base_wider,
+    col.names = c(' ', names(import_biodiv_base_wider)[-1]),
+    booktabs = TRUE) %>%
+  text_background_mapper(2) %>%
+  text_background_mapper(3) %>%
+  text_background_mapper(4) %>%
+  text_background_mapper(5) %>%
+  text_background_mapper(6) %>%
+  text_background_mapper(7) %>%
+  text_background_mapper(8) %>%
+  add_header_above(c(" " = 1, 'Virtual biodiversity threat export by taxonomic group' = 7))
+```
+
+## Table S7
+
+```{r}
+import_goods_base_wide[, item := tolower(gsub('\xe9', 'é', item))] # Correct character in yerba mate'
+import_goods_base_wide[, VLT_total := signif(VLT_total/100, 3)]
+import_goods_base_wide[, export_qty := signif(export_qty, 3)]
+
+## FIXME the scientific notation is bad
+kbl(import_goods_base_wide[, -1],
+    col.names = linebreak(c('item', 'export quantity\n\\footnotesize{tonnes}', 'virtual land export\n\\footnotesize{km\\textsuperscript{2}}'), align = 'r'),
+    escape = FALSE, booktabs = TRUE, longtable = TRUE, digits = 3,
+    format.args = list(scientific = FALSE)) %>%
+  pack_rows(index = table(import_goods_base_wide$country_name), background = "#FFEFDB") %>%
+  kable_styling(latex_options = c('repeat_header'))
+```
+
+## Table S8. Data sources
+
+The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis.
+
+```{r}
+datasources <- read_xlsx('~/virtualland/TableS1_datasources.xlsx')
+
+# datasources %>%
+#   mutate(`Data year(s)` = if_else(`Data year(s)` == '-', as.character(NA), `Data year(s)`)) %>%
+#   gt(groupname_col = 'Type') %>%
+#   fmt_missing(columns = everything(), missing_text = html('&mdash;')) %>%
+#   tab_options(
+#     row_group.background.color = "#D4EBF2",
+#     row_group.font.weight = 'bold',
+#     column_labels.font.weight = 'bold',
+#     table.font.size = '80%'
+#   )
+```
+
+##	Table S9: Primary agricultural commodity and processed food commodity codes 
+
+The following table contains the commodity names and six-character codes from the U.S. Bureau of Economic Analysis input-output tables used in our analysis. Thirty-seven commodities are shown, including both primary agricultural goods (codes beginning with `1`) and processed foods (codes beginning with `3`).
+
+```{r}
+foodcat <- read_xlsx('~/virtualland/foodcategorytable.xlsx')
+
+kbl(foodcat[,1:2], booktabs = TRUE) %>%
+  pack_rows('primary agricultural goods', 1, 11, background = "#D4EBF2") %>%
+  pack_rows('processed foods', 12, 37, latex_gap_space = '1em', background = "#D4EBF2")
+```
