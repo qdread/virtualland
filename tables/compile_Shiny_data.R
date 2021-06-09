@@ -140,7 +140,8 @@ foreign_vlt_import_long <- foreign_vlt_import %>%
   pivot_longer(contains('land'), names_to = 'land_type', values_to = 'flow_inbound_foreign')
 
 county_land_flow_sums <- merge(county_land_flow_sums, foreign_vlt_import_long, all.x = TRUE, all.y = TRUE)
-county_land_flow_sums[, flow_inbound_total := flow_inbound + flow_inbound_foreign * 10000]
+county_land_flow_sums[, flow_inbound_foreign := flow_inbound_foreign * 10000]
+county_land_flow_sums[, flow_inbound_total := flow_inbound + flow_inbound_foreign]
 replace_na_dt(county_land_flow_sums)
 
 
@@ -271,6 +272,15 @@ county_extinction_flow_sums <- county_extinction_flow_sums[scenario_waste %in% s
 foreign_goods_flow_sums <- foreign_goods_flow_sums[scenario_waste %in% scens]
 foreign_land_flow_sums <- foreign_land_flow_sums[scenario_waste %in% scens]
 foreign_extinction_flow_sums <- foreign_extinction_flow_sums[scenario_waste %in% scens]
+
+# Convert the goods and land flows to more sensible units
+divide_numeric <- function(dt, n = 1e6) {
+  cols <- names(dt)[sapply(dt, is.numeric)]
+  dt[, (cols) := lapply(.SD, function(x) x/n), .SDcols = cols]
+}
+divide_numeric(county_goods_flow_sums)
+divide_numeric(county_land_flow_sums)
+divide_numeric(foreign_land_flow_sums)
 
 # Write all to CSV --------------------------------------------------------
 
