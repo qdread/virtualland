@@ -166,15 +166,6 @@ foreign_goods_country <- rbind(
 
 # Also add ISO_A3 codes to the countries for joining purposes
 
-# Needed:
-# ag_names_lookup
-# county_goods_flow_sums
-# county_land_flow_sums
-# county_extinction_flow_sums
-# foreign_vlt_country
-# foreign_extinction_export_country
-# foreign_goods_country
-
 setnames(county_goods_flow_sums, old = c('flow_inbound', 'flow_outbound'), new = c('flow_inbound_domestic', 'flow_outbound_domestic'))
 setnames(county_land_flow_sums, old = c('flow_inbound', 'flow_outbound'), new = c('flow_inbound_domestic', 'flow_outbound_domestic'))
 setnames(county_extinction_flow_sums, old = c('land_use', 'extinction_inbound', 'extinction_outbound', 'extinction_inbound_foreign', 'extinction_inbound_total'), new = c('land_type', 'flow_inbound_domestic', 'flow_outbound_domestic', 'flow_inbound_foreign', 'flow_inbound_total'))
@@ -273,6 +264,9 @@ foreign_goods_flow_sums <- foreign_goods_flow_sums[scenario_waste %in% scens]
 foreign_land_flow_sums <- foreign_land_flow_sums[scenario_waste %in% scens]
 foreign_extinction_flow_sums <- foreign_extinction_flow_sums[scenario_waste %in% scens]
 
+
+# Additional preprocessing ------------------------------------------------
+
 # Convert the goods and land flows to more sensible units
 divide_numeric <- function(dt, n = 1e6) {
   cols <- names(dt)[sapply(dt, is.numeric)]
@@ -281,6 +275,19 @@ divide_numeric <- function(dt, n = 1e6) {
 divide_numeric(county_goods_flow_sums)
 divide_numeric(county_land_flow_sums)
 divide_numeric(foreign_land_flow_sums)
+
+# Reorder land types and taxa to ordered factors for plotting
+land_options <- c('annual', 'permanent', 'pasture')
+taxa_options <- c('plants', 'amphibians', 'birds', 'mammals', 'reptiles')
+county_land_flow_sums[, land_type := factor(land_type, levels = land_options)]
+foreign_land_flow_sums[, land_type := factor(land_type, levels = land_options)]
+county_extinction_flow_sums[, taxon := factor(taxon, levels = taxa_options)]
+county_extinction_flow_sums[, land_type := factor(land_type, levels = land_options)]
+foreign_extinction_flow_sums[, taxon := factor(taxon, levels = taxa_options)]
+foreign_extinction_flow_sums[, land_type := factor(land_type, levels = land_options)]
+
+# Change encoding of e acute
+foreign_goods_flow_sums[, item := gsub('\xe9', 'é', item)]
 
 # Write all to CSV --------------------------------------------------------
 
@@ -294,8 +301,10 @@ objs <- c('bea_lookup', 'iso_lookup', 'state_lookup', 'county_lookup', 'county_m
 save(list = objs, file = 'data/cfs_io_analysis/shinyapp_data/all_app_data.RData')
 
 # Write the maps to GPKG
-st_write(county_map, 'data/cfs_io_analysis/shinyapp_data/county_map.gpkg', driver = 'GPKG')
-st_write(global_country_map, 'data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg', driver = 'GPKG')
+if(!file.exists('data/cfs_io_analysis/shinyapp_data/county_map.gpkg')) 
+  st_write(county_map, 'data/cfs_io_analysis/shinyapp_data/county_map.gpkg', driver = 'GPKG')
+if(!file.exists('data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg'))
+  st_write(global_country_map, 'data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg', driver = 'GPKG')
 
 # Save to CSVs
 walk(objs[-(5:6)], ~ write_csv(get(.), glue('data/cfs_io_analysis/shinyapp_data/{.}.csv')))
