@@ -286,6 +286,19 @@ county_extinction_flow_sums[, land_type := factor(land_type, levels = land_optio
 foreign_extinction_flow_sums[, taxon := factor(taxon, levels = taxa_options)]
 foreign_extinction_flow_sums[, land_type := factor(land_type, levels = land_options)]
 
+# Reorder scenario_diet and scenario_waste to ordered factors for plotting
+reorder_scen <- function(dt) {
+  dt[, scenario_diet := factor(scenario_diet, levels = c('baseline', 'usstyle', 'medstyle', 'vegetarian', 'planetaryhealth'))]
+  dt[, scenario_waste := factor(scenario_waste, levels = c('baseline', 'allavoidable'))]
+}
+
+reorder_scen(county_land_flow_sums)
+reorder_scen(foreign_land_flow_sums)
+reorder_scen(county_extinction_flow_sums)
+reorder_scen(foreign_extinction_flow_sums)
+reorder_scen(county_goods_flow_sums)
+reorder_scen(foreign_goods_flow_sums)
+
 # Change encoding of e acute
 foreign_goods_flow_sums[, item := gsub('\xe9', 'é', item)]
 
