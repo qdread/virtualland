@@ -302,6 +302,48 @@ reorder_scen(foreign_goods_flow_sums)
 # Change encoding of e acute
 foreign_goods_flow_sums[, item := gsub('\xe9', 'é', item)]
 
+
+# Apply transformation to Alaska and Hawaii -------------------------------
+
+# This will eliminate the need for inset maps because they will now appear as appropriately scaled 
+# areas to the south and west of the L48
+# Adapted from https://rstudio-pubs-static.s3.amazonaws.com/94122_462a1d171e4944f0a99c1f91fd5071d5.html#move-alaska-scaled-down-and-hawaii
+
+rot = function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2)
+
+crs_lambert <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+
+county_map_trans <- county_map %>%
+  st_transform(crs = crs_lambert)
+
+alaska <- county_map_trans %>% filter(fips_state %in% '02')
+alaska_g <- st_geometry(alaska)
+alaska_centroid <- st_centroid(st_union(alaska_g))
+
+alaska_trans <- (alaska_g - alaska_centroid) * rot(-39 * pi/180) / 2.3 + alaska_centroid + c(1000000, -5000000)
+alaska <- st_set_geometry(alaska, alaska_trans) %>% st_set_crs(st_crs(county_map_trans))
+
+
+hi_crs <- '+proj=aea +lat_1=8 +lat_2=18 +lat_0=3 +lon_0=-157 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,-0,-0,-0,0 +units=m +no_defs'
+hi_box <- c(xmin = -400000, ymin = 1761000, xmax = 230000, ymax = 2130000)
+
+hawaii <- county_map %>% 
+  filter(fips_state %in% '15') %>%
+  st_transform(crs = hi_crs) %>%
+  st_crop(hi_box) %>%
+  st_transform(crs = crs_lambert)
+
+hawaii_g <- st_geometry(hawaii)
+hawaii_centroid <- st_centroid(st_union(hawaii_g))
+
+hawaii_trans <- (hawaii_g - hawaii_centroid) * rot(-35 * pi/180) + hawaii_centroid + c(5200000, -1400000)
+hawaii <- st_set_geometry(hawaii, hawaii_trans) %>% st_set_crs(st_crs(county_map_trans))
+
+county_map <- county_map_trans %>%
+  filter(!fips_state %in% c('02', '15')) %>%
+  rbind(alaska) %>%
+  rbind(hawaii)
+
 # Write all to CSV --------------------------------------------------------
 
 # We now have all the data in a consistent format that could be put in a database with common keys if needed.
@@ -314,10 +356,8 @@ objs <- c('bea_lookup', 'iso_lookup', 'state_lookup', 'county_lookup', 'county_m
 save(list = objs, file = 'data/cfs_io_analysis/shinyapp_data/all_app_data.RData')
 
 # Write the maps to GPKG
-if(!file.exists('data/cfs_io_analysis/shinyapp_data/county_map.gpkg')) 
-  st_write(county_map, 'data/cfs_io_analysis/shinyapp_data/county_map.gpkg', driver = 'GPKG')
-if(!file.exists('data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg'))
-  st_write(global_country_map, 'data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg', driver = 'GPKG')
+st_write(county_map, 'data/cfs_io_analysis/shinyapp_data/county_map.gpkg', driver = 'GPKG', append = FALSE)
+st_write(global_country_map, 'data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg', driver = 'GPKG', append = FALSE)
 
 # Save to CSVs
 walk(objs[-(5:6)], ~ write_csv(get(.), glue('data/cfs_io_analysis/shinyapp_data/{.}.csv')))
