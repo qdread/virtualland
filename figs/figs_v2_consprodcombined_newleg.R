@@ -7,7 +7,12 @@ p_consprod_top <- ggplot(lafa_cal_summ %>% mutate(food_group = factor(food_group
   scale_fill_manual(values = unname(okabe_colors[c(1,7,3,4,5)]), labels = diet_long_names$medium_name) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'calories per person per day') +
   scale_x_discrete(name = 'food group') +
-  theme(legend.position = 'none') 
+  theme(legend.position = c(0.65, 0.85),
+        legend.text = element_text(size = rel(.65)),
+        legend.background = element_rect(color = NA, fill = 'gray90'),
+        legend.key.size = unit(0.5, 'cm'),
+        legend.margin=margin(t=0, r=1, b=1, l=1, unit="mm")) +
+  guides(fill = guide_legend(ncol = 3, title = NULL))
 
 p_consprod_bottom <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% c('baseline', 'allavoidable'))) +
   geom_col(aes(x = short_name, y = demand, color = scenario_diet, fill = scenario_diet, group = scenario_diet), position = 'dodge', color = 'black', size = 0.25) +
@@ -18,12 +23,11 @@ p_consprod_bottom <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% 
   scale_x_discrete(name = 'primary agricultural product') +
   scale_y_continuous(expand = expansion(mult = c(0, 0.03)), name = 'production relative to baseline') +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = rel(0.9)),
-        legend.position = 'bottom',
-        legend.text = element_text(size = rel(.75)),
+        legend.position = 'none',
         strip.background = element_blank(),
         strip.text.x = element_blank()) +
   guides(fill=guide_legend(nrow = 2, byrow = FALSE))
 
-png(file.path(fp_fig, 'cons_prod_fig1_combined.png'), height = 9, width = 6, res = 400, units = 'in')
-  grid.arrange(p_consprod_top, p_consprod_bottom, nrow = 2, heights = c(1, 3))
+png(file.path(fp_fig, 'cons_prod_fig1_combined_legendinbox.png'), height = 9, width = 6, res = 400, units = 'in')
+grid.arrange(p_consprod_top, p_consprod_bottom, nrow = 2, heights = c(1, 2.6))
 dev.off()
