@@ -1,7 +1,5 @@
 ---
 title: 'Appendix 2: Supplemental figures'
-author: "Quentin D. Read"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   pdf_document:
     dev: png
@@ -15,7 +13,7 @@ header-includes:
 
 \newcommand{\fpfig}{/nfs/qread-data/cfs_io_analysis/scenario_v2_figs}
 
-This document contains supplemental figures for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. **Update this with citation when it is available.**
+This document contains supplemental figures for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. 
 
 \newpage
 

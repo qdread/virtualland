@@ -9,7 +9,7 @@ p_consprod_top <- ggplot(lafa_cal_summ %>% mutate(food_group = factor(food_group
   scale_x_discrete(name = 'food group') +
   theme(legend.position = c(0.65, 0.85),
         legend.text = element_text(size = rel(.65)),
-        legend.background = element_rect(color = NA, fill = 'gray90'),
+        legend.background = element_blank(),
         legend.key.size = unit(0.5, 'cm'),
         legend.margin=margin(t=0, r=1, b=1, l=1, unit="mm")) +
   guides(fill = guide_legend(ncol = 3, title = NULL))

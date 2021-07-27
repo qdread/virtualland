@@ -1,7 +1,5 @@
 ---
 title: 'Appendix 3: Supplemental tables'
-author: "Quentin D. Read"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   pdf_document: default
 ---
@@ -10,7 +8,7 @@ output:
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-This document contains supplemental tables for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. **Update this with citation when it is available.**
+This document contains supplemental tables for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth, currently under consideration for publication in *PNAS*. 
 
 ## Table S1. Total footprints and footprint intensities, baseline scenario
 
