@@ -204,6 +204,19 @@ setnames(foreign_goods_flow_sums, old = 'export_qty', new = 'flow_outbound_forei
 setnames(foreign_land_flow_sums, old = c('land_use', 'VLT'), new = c('land_type', 'flow_outbound_foreign'))
 setnames(foreign_extinction_flow_sums, old = c('land_use', 'species_lost'), new = c('land_type', 'flow_outbound_foreign'))
 
+# Here fix the countries with incorrect ISO codes by creating a manual lookup table
+iso_lookup_correction <- data.table(country_name = c("Somaliland", "Norway", "Kosovo", "France", "Northern Cyprus",  "Indian Ocean Territories", "Ashmore and Cartier Islands", "Siachen Glacier"),
+                                    ISO_A3 = c('SOM', 'NOR', 'XKX', 'FRA', 'XNCYPRUS', 'IOT', 'XASHMORE', 'XSIACHEN')
+)
+setDT(iso_lookup)
+iso_lookup <- iso_lookup[!ISO_A3 %in% '-99']
+iso_lookup <- rbind(iso_lookup, iso_lookup_correction)
+
+foreign_land_flow_sums[, ISO_A3 := iso_lookup[match(foreign_land_flow_sums$country_name, iso_lookup$country_name), ISO_A3]]
+foreign_extinction_flow_sums[, ISO_A3 := iso_lookup[match(foreign_extinction_flow_sums$country_name, iso_lookup$country_name), ISO_A3]]
+global_country_map <- global_country_map %>%
+  mutate(ISO_A3 = iso_lookup[match(global_country_map$NAME_LONG, iso_lookup$country_name), ISO_A3])
+
 # Replace land type columns with all the correct names, filter away the totals for now to keep only the primary data rows (no duplicated total rows)
 
 foreign_land_flow_sums <- foreign_land_flow_sums[!land_type %in% 'total', .(scenario_diet, scenario_waste, ISO_A3, land_type, flow_outbound_foreign)]
@@ -216,7 +229,6 @@ county_land_flow_sums[, land_type := land_type_table$short[match(land_type, land
 setnames(ag_names_lookup, old = 'BEA_389_code', new = 'BEA_code')
 
 # Replace foreign goods country names with ISO
-setDT(iso_lookup)
 foreign_goods_flow_sums <- iso_lookup[foreign_goods_flow_sums, on = 'country_name']
 foreign_goods_flow_sums <- foreign_goods_flow_sums[, .(scenario_diet, scenario_waste, ISO_A3, item, flow_outbound_foreign)]
 
@@ -372,4 +384,4 @@ st_write(county_map, 'data/cfs_io_analysis/shinyapp_data/county_map.gpkg', drive
 st_write(global_country_map, 'data/cfs_io_analysis/shinyapp_data/global_country_map.gpkg', driver = 'GPKG', append = FALSE)
 
 # Save to CSVs
-walk(objs[-(5:6)], ~ write_csv(get(.), glue('data/cfs_io_analysis/shinyapp_data/{.}.csv')))
+walk(objs[-(5:6)], ~ fwrite(get(.), glue('data/cfs_io_analysis/shinyapp_data/{.}.csv')))
