@@ -276,6 +276,18 @@ divide_numeric(county_goods_flow_sums)
 divide_numeric(county_land_flow_sums)
 divide_numeric(foreign_land_flow_sums)
 
+# Remove -99 codes
+foreign_extinction_flow_sums <- foreign_extinction_flow_sums[!ISO_A3 %in% '-99']
+foreign_land_flow_sums <- foreign_land_flow_sums[!ISO_A3 %in% '-99']
+
+# For presentation, simplify "mixed" land type in foreign land flow sums by assigning 50% to annual and 50% to permanent (simplest assumption)
+foreign_land_flow_wide <- dcast(foreign_land_flow_sums, scenario_diet + scenario_waste + ISO_A3 ~ land_type)
+replace_na_dt(foreign_land_flow_wide, replace_with = 0)
+foreign_land_flow_wide[, annual := annual + mixed/2]
+foreign_land_flow_wide[, permanent := permanent + mixed/2]
+foreign_land_flow_wide[, mixed := NULL]
+foreign_land_flow_sums <- melt(foreign_land_flow_wide, variable.name = 'land_type', value.name = 'flow_outbound_foreign')
+
 # Reorder land types and taxa to ordered factors for plotting
 land_options <- c('annual', 'permanent', 'pasture')
 taxa_options <- c('plants', 'amphibians', 'birds', 'mammals', 'reptiles')
