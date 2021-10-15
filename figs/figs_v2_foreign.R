@@ -322,6 +322,7 @@ p_ext_grandtotals_10 <- ggplot(extinction_grandtotals[scenario_waste %in% c('bas
   scale_y_continuous(name = 'species committed to extinction', expand = expansion(mult = c(0, 0.01))) +
   scale_pattern_manual(values = c('circle', 'none')) +
   scale_fill_manual(values = as.character(okabe_colors[c('reddishpurple', 'bluishgreen')])) +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         strip.text = element_text(size = rel(0.7)),
         legend.title = element_text(size = rel(0.8)),
@@ -337,6 +338,7 @@ p_land_grandtotals_10 <- ggplot(all_vlt_sum[!land_type %in% 'total' & scenario_w
   scale_x_discrete(name = 'diet scenario', labels = diet_long_names$medium_name) +
   scale_y_continuous(name = 'land footprint (million ha)', expand = expansion(mult = c(0, 0.01))) +
   scale_fill_manual(name = 'land use', values = as.character(okabe_colors[c('orange', 'blue', 'vermillion')])) +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         strip.text = element_text(size = rel(0.7)),
         legend.title = element_text(size = rel(0.8)),
@@ -350,6 +352,7 @@ p_top <- p_land_grandtotals_10 +
         axis.title.x = element_blank(), 
         axis.ticks.x = element_blank(),
         strip.text = element_text(size = rel(1)),
+        strip.background = element_blank(),
         legend.title = element_text(size = rel(0.8)),
         legend.key.size = unit(0.5, 'cm'),
         legend.position = c(0.93, 0.71),
