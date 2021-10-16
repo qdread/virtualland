@@ -241,12 +241,12 @@ Figure S28 shows the baseline scenario land use for each of the land use types, 
 The following set of figures shows the virtual land imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in hectares (Figure S29) and percentage change relative to baseline (Figure S30). These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_total_outbound.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound.png}}
 \caption*{Figure S29: Virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_total_outbound_vs_baseline.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound_vs_baseline.png}}
 \caption*{Figure S30: Change relative to baseline in virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
 \end{figure}
 
@@ -305,32 +305,32 @@ Figure S37 shows the baseline scenario biodiversity threat for each of the taxon
 The following set of figures shows the virtual biodiversity threat imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in potential global species extinctions (Figures S38-S40) and percentage change relative to baseline (Figures S31-S43). A separate figure is shown for imported threats to plants, animals (total across taxa), and total of plant and animal threats. These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above.
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_plants_outbound.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound.png}}
 \caption*{Figure S38: Virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_animals_outbound.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound.png}}
 \caption*{Figure S39: Virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_total_outbound.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound.png}}
 \caption*{Figure S40: Virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_plants_outbound_vs_baseline.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound_vs_baseline.png}}
 \caption*{Figure S41: Change relative to baseline in virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_animals_outbound_vs_baseline.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound_vs_baseline.png}}
 \caption*{Figure S42: Change relative to baseline in virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenarios_country_extinction_total_outbound_vs_baseline.png}}
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound_vs_baseline.png}}
 \caption*{Figure S43: Change relative to baseline in virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
