@@ -109,9 +109,9 @@ The following figures show the virtual biodiversity threat footprints for the ba
 
 \newpage
 
-## Figures S13-S24. Maps showing domestic goods production across scenarios
+## Figures S13-S15. Maps showing domestic goods production
 
-The following groups of figures in this document are all maps showing values spatially disaggregated by county in the United States. In all cases we present absolute values of each of the quantities for each scenario, as well as values relative to the baseline case for each scenario. The colorblind-friendly `viridis` color gradient is used to fill the polygons on the maps showing absolute values. Note that the color gradient represents values on a logarithmic scale.
+The following groups of figures in this document are maps showing values spatially disaggregated by county in the United States. In maps where we present absolute values of each of the quantities for each scenario, we use a colorblind-friendly `viridis` color gradient to fill the polygons on the maps. Note that the color gradient represents values on a logarithmic scale.
 
 On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
 
@@ -119,7 +119,9 @@ The maps showing differences across scenarios have ten panels, each of which rep
 
 The contiguous United States map is displayed with an Albers equal-area projection for the continental United States identical to the one used by the National Land Cover Database. The inset maps for Alaska and Hawaii are displayed with Albers equal-area projections with parameters appropriate for those regions.
 
-Figures S13-S22 show the absolute value of domestic production of the following ten groups of primary agricultural goods, in units of million USD (2012), with a log-transformed color gradient: 
+Figure S13 shows the absolute value of domestic production of all primary agricultural goods, in units of million USD (2012), with a log-transformed color gradient. 
+Figure S14 shows the total across the ten groups of goods divided by the baseline value, resulting in a difference for each scenario relative to the baseline.
+Figure S15 shows the domestic production, by value in million USD, of the following ten primary agricultural goods listed above in this document, as well as the total, for the baseline scenario only. Each panel shows production for a different good.
 
 - oilseeds and soybeans
 - grains
@@ -132,206 +134,148 @@ Figures S13-S22 show the absolute value of domestic production of the following 
 - poultry and eggs
 - other meat, including farm-raised fish
 
-Figure S23 shows the total across the ten groups of goods.
-
-Figure S24 shows the total across the ten groups of goods divided by the baseline value, resulting in a difference for each scenario relative to the baseline.
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_oilseeds_outbound.png}}
-\caption*{Figure S13: Total production value of oilseeds in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_grains_outbound.png}}
-\caption*{Figure S14: Total production value of grains in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_vegetables_outbound.png}}
-\caption*{Figure S15: Total production value of vegetables in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_fruits_outbound.png}}
-\caption*{Figure S16: Total production value of fruits and nuts in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_greenhouse_crops_outbound.png}}
-\caption*{Figure S17: Total production value of greenhouse crops in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_crops_outbound.png}}
-\caption*{Figure S18: Total production value of other crops in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_dairy_outbound.png}}
-\caption*{Figure S19: Total production value of dairy products in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_beef_outbound.png}}
-\caption*{Figure S20: Total production value of beef cattle in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_poultry_outbound.png}}
-\caption*{Figure S21: Total production value of poultry and eggs in each county by diet and waste scenario}
-\end{figure}
-
-\begin{figure}[H]
-\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_other_meat_outbound.png}}
-\caption*{Figure S22: Total production value of other meat (including farmed fish) in each county by diet and waste scenario}
-\end{figure}
+Maps disaggregated by type of good across each scenario can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound.png}}
-\caption*{Figure S23: Total production value of all agricultural goods in each county by diet and waste scenario}
+\caption*{Figure S13: Total production value of all agricultural goods in each county by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound_vs_baseline.png}}
-\caption*{Figure S24: Change in production relative to baseline of all agricultural goods in each county by diet and waste scenario}
+\caption*{Figure S14: Change in production relative to baseline of all agricultural goods in each county by diet and waste scenario}
 \end{figure}
-
-\newpage
-
-## Figure S25. Maps showing domestic goods production, baseline scenario only
-
-Figure S25 shows the baseline scenario only for domestic production of each of the primary agricultural goods, spatially disaggregated by USA county. It shows the domestic production, by value in million USD, of the ten primary agricultural goods listed above in this document, as well the total. Each panel shows production for a different good. Note that these correspond to the upper left panels of Figures S13-S23.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_goods_flow_outbound.png}}
-\caption*{Figure S25: Total production value of agricultural goods in each county in the baseline scenario}
+\caption*{Figure S15: Total production value of agricultural goods in each county in the baseline scenario}
 \end{figure}
 
 \newpage
 
-## Figures S26-S27. Maps showing land use in each county across scenarios
+## Figures S16-S17. Maps showing land use in each county across scenarios
 
-The following set of figures shows the land used in each county in the United States to produce food for domestic consumption under all combinations of diet and waste scenario, summed across all land use types (annual cropland, permanent cropland, and pastureland). Land use is shown in hectares (ha). Layout of panels and other details are the same as in the goods production figures above. Figure S26 shows the absolute values for each scenario, and Figure S27 the percent change relative to the baseline value. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+The following set of figures shows the land used in each county in the United States to produce food for domestic consumption under all combinations of diet and waste scenario, summed across all land use types (annual cropland, permanent cropland, and pastureland). Land use is shown in hectares (ha). Layout of panels and other details are the same as in the goods production figures above. Figure S16 shows the absolute values for each scenario, and Figure S17 the percent change relative to the baseline value. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound.png}}
-\caption*{Figure S26: Land use summed across land use types in each county by diet and waste scenario}
+\caption*{Figure S16: Land use summed across land use types in each county by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound_vs_baseline.png}}
-\caption*{Figure S27: Change relative to baseline in land use summed across land use types in each county by diet and waste scenario}
+\caption*{Figure S17: Change relative to baseline in land use summed across land use types in each county by diet and waste scenario}
 \end{figure}
 
 \newpage
 
-## Figure S28. Maps showing land use by type, baseline scenario only
+## Figure S18. Maps showing land use by type, baseline scenario only
 
-Figure S28 shows the baseline scenario land use for each of the land use types, spatially disaggregated by USA county. Values are in units of hectares (ha). The figure has a separate panel for annual cropland, permanent cropland, pastureland, and the total across all four land use types.
+Figure S18 shows the baseline scenario land use for each of the land use types, spatially disaggregated by USA county. Values are in units of hectares (ha). The figure has a separate panel for annual cropland, permanent cropland, pastureland, and the total across all four land use types.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_land_flow_outbound.png}}
-\caption*{Figure S28:Land use by type in each county in the baseline scenario}
+\caption*{Figure S18:Land use by type in each county in the baseline scenario}
 \end{figure}
 
 \newpage
 
-## Figures S29-S30. Maps showing foreign virtual land imports to the United States across scenarios
+## Figures S19-S20. Maps showing foreign virtual land imports to the United States across scenarios
 
-The following set of figures shows the virtual land imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in hectares (Figure S29) and percentage change relative to baseline (Figure S30). These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+The following set of figures shows the virtual land imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in hectares (Figure S19) and percentage change relative to baseline (Figure S20). These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound.png}}
-\caption*{Figure S29: Virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
+\caption*{Figure S19: Virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound_vs_baseline.png}}
-\caption*{Figure S30: Change relative to baseline in virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
+\caption*{Figure S20: Change relative to baseline in virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \newpage
 
-## Figures S31-S36. Maps showing threatened biodiversity in each county across scenarios
+## Figures S21-S26. Maps showing threatened biodiversity in each county across scenarios
 
-The following set of figures shows the total biodiversity threat associated with food production in each county in the United States under all combinations of diet and waste scenario, with separate figures for plants, the sum of all animal taxa (amphibians, birds, mammals, and reptiles), and the total of plants and animals. Biodiversity threats are shown in units of number of species threatened by eventual global extinction. Layout of panels and other details are the same as in the goods production figures above. Figures S31-33 show the absolute values for each scenario for each of the taxonomic groups, and Figures S34-36 the percent change relative to the baseline value. Maps disaggregated by taxonomic group can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+The following set of figures shows the total biodiversity threat associated with food production in each county in the United States under all combinations of diet and waste scenario, with separate figures for plants, the sum of all animal taxa (amphibians, birds, mammals, and reptiles), and the total of plants and animals. Biodiversity threats are shown in units of number of species threatened by eventual global extinction. Layout of panels and other details are the same as in the goods production figures above. Figures S21-23 show the absolute values for each scenario for each of the taxonomic groups, and Figures S24-26 the percent change relative to the baseline value. Maps disaggregated by taxonomic group can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_plantextinction_outbound.png}}
-\caption*{Figure S31: Threats to plant biodiversity in each county by diet and waste scenario}
+\caption*{Figure S21: Threats to plant biodiversity in each county by diet and waste scenario}
 \end{figure}
 
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_animalextinction_outbound.png}}
-\caption*{Figure S32: Threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
+\caption*{Figure S22: Threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_totalextinction_outbound.png}}
-\caption*{Figure S33: Threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
+\caption*{Figure S23: Threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_plantextinction_outbound_vs_baseline.png}}
-\caption*{Figure S34: Change relative to baseline in threats to plant biodiversity in each county by diet and waste scenario}
+\caption*{Figure S24: Change relative to baseline in threats to plant biodiversity in each county by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_animalextinction_outbound_vs_baseline.png}}
-\caption*{Figure S35: Change relative to baseline in threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
+\caption*{Figure S25: Change relative to baseline in threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_totalextinction_outbound_vs_baseline.png}}
-\caption*{Figure S36: Change relative to baseline in threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
+\caption*{Figure S26: Change relative to baseline in threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
 \end{figure}
 
 \newpage
 
-## Figure S37. Maps showing biodiversity threat by taxonomic group, baseline scenario only
+## Figure S27. Maps showing biodiversity threat by taxonomic group, baseline scenario only
 
-Figure S37 shows the baseline scenario biodiversity threat for each of the taxonomic groups, spatially disaggregated by USA county. Values are in units of potential global species extinctions. The figure has a separate panel for plants, amphibians, birds, mammals, reptiles, total across the four animal taxa, and total across both animals and plants.
+Figure S27 shows the baseline scenario biodiversity threat for each of the taxonomic groups, spatially disaggregated by USA county. Values are in units of potential global species extinctions. The figure has a separate panel for plants, amphibians, birds, mammals, reptiles, total across the four animal taxa, and total across both animals and plants.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_totalland_extinction_outbound.png}}
-\caption*{Figure S37: Biodiversity threats to each taxonomic group in each county in the baseline scenario}
+\caption*{Figure S27: Biodiversity threats to each taxonomic group in each county in the baseline scenario}
 \end{figure}
 
 \newpage
 
-## Figures S38-S43. Maps showing foreign virtual biodiversity threat imports to the United States across scenarios
+## Figures S28-S33. Maps showing foreign virtual biodiversity threat imports to the United States across scenarios
 
-The following set of figures shows the virtual biodiversity threat imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in potential global species extinctions (Figures S38-S40) and percentage change relative to baseline (Figures S31-S43). A separate figure is shown for imported threats to plants, animals (total across taxa), and total of plant and animal threats. These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above.
+The following set of figures shows the virtual biodiversity threat imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in potential global species extinctions (Figures S28-S30) and percentage change relative to baseline (Figures S31-S33). A separate figure is shown for imported threats to plants, animals (total across taxa), and total of plant and animal threats. These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound.png}}
-\caption*{Figure S38: Virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S28: Virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound.png}}
-\caption*{Figure S39: Virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S29: Virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound.png}}
-\caption*{Figure S40: Virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S30: Virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound_vs_baseline.png}}
-\caption*{Figure S41: Change relative to baseline in virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S31: Change relative to baseline in virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound_vs_baseline.png}}
-\caption*{Figure S42: Change relative to baseline in virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S32: Change relative to baseline in virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound_vs_baseline.png}}
-\caption*{Figure S43: Change relative to baseline in virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
+\caption*{Figure S33: Change relative to baseline in virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
 \end{figure}
 
 \newpage
