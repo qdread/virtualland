@@ -153,9 +153,11 @@ Maps disaggregated by type of good across each scenario can be generated using t
 
 \newpage
 
-## Figures S16-S17. Maps showing land use in each county across scenarios
+## Figures S16-S18. Maps showing land use in each county across scenarios
 
 The following set of figures shows the land used in each county in the United States to produce food for domestic consumption under all combinations of diet and waste scenario, summed across all land use types (annual cropland, permanent cropland, and pastureland). Land use is shown in hectares (ha). Layout of panels and other details are the same as in the goods production figures above. Figure S16 shows the absolute values for each scenario, and Figure S17 the percent change relative to the baseline value. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+Figure S18 shows land use for each of the land use types in the baseline scenario only. The figure has a separate panel for annual cropland, permanent cropland, pastureland, and the total across all four land use types.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound.png}}
@@ -166,12 +168,6 @@ The following set of figures shows the land used in each county in the United St
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound_vs_baseline.png}}
 \caption*{Figure S17: Change relative to baseline in land use summed across land use types in each county by diet and waste scenario}
 \end{figure}
-
-\newpage
-
-## Figure S18. Maps showing land use by type, baseline scenario only
-
-Figure S18 shows the baseline scenario land use for each of the land use types, spatially disaggregated by USA county. Values are in units of hectares (ha). The figure has a separate panel for annual cropland, permanent cropland, pastureland, and the total across all four land use types.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_land_flow_outbound.png}}
@@ -199,6 +195,8 @@ The following set of figures shows the virtual land imports to the United States
 ## Figures S21-S26. Maps showing threatened biodiversity in each county across scenarios
 
 The following set of figures shows the total biodiversity threat associated with food production in each county in the United States under all combinations of diet and waste scenario, with separate figures for plants, the sum of all animal taxa (amphibians, birds, mammals, and reptiles), and the total of plants and animals. Biodiversity threats are shown in units of number of species threatened by eventual global extinction. Layout of panels and other details are the same as in the goods production figures above. Figures S21-23 show the absolute values for each scenario for each of the taxonomic groups, and Figures S24-26 the percent change relative to the baseline value. Maps disaggregated by taxonomic group can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+Figure S27 shows the biodiversity threat for each of the taxonomic groups in the baseline scenario only. The figure has a separate panel for plants, amphibians, birds, mammals, reptiles, total across the four animal taxa, and total across both animals and plants.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_plantextinction_outbound.png}}
@@ -230,12 +228,6 @@ The following set of figures shows the total biodiversity threat associated with
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_totalextinction_outbound_vs_baseline.png}}
 \caption*{Figure S26: Change relative to baseline in threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
 \end{figure}
-
-\newpage
-
-## Figure S27. Maps showing biodiversity threat by taxonomic group, baseline scenario only
-
-Figure S27 shows the baseline scenario biodiversity threat for each of the taxonomic groups, spatially disaggregated by USA county. Values are in units of potential global species extinctions. The figure has a separate panel for plants, amphibians, birds, mammals, reptiles, total across the four animal taxa, and total across both animals and plants.
 
 \begin{figure}[H]
 \centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_totalland_extinction_outbound.png}}
