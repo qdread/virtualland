@@ -99,7 +99,7 @@ comparison_dat[diet == 'EAT', diet := 'planetaryhealth']
 
 ## Results
 
-The figure below shows that while our estimates are uniformly higher, the relative differences between diets are the same between studies. Importantly, the total land footprint decreases relative to baseline for the vegetarian and Planetary Health diets, as do the outsourced total and outsourced grassland footprints. However, the outsourced cropland footprints increase relative to baseline, with the vegetarian diet increasing more than the Planetary Health diet. Note that the individual panels have different y-axis limits.
+The figure below shows that our estimates are uniformly higher due to differing methodology and potentially different definitions of system boundaries. For example, our total land footprint in the baseline case is 39% higher than Laroche and colleagues' estimate. However, the relative differences between diets are similar between studies. Importantly, the total land footprint (including both domestic and outsourced) decreases relative to baseline for the vegetarian and Planetary Health diets, as do the outsourced total and outsourced grassland footprints. However, the outsourced cropland footprints increase relative to baseline, with the vegetarian diet increasing more than the Planetary Health diet. Note that the individual panels have different y-axis limits.
 
 ```{r figure, fig.cap = 'Figure S34. Comparison between our land footprint estimates and those of Laroche and colleagues'}
 ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') & 
@@ -117,6 +117,9 @@ ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') &
 ```
 
 The *relative* column in the table below indicates the percent difference between the land footprint estimate of Laroche et al. and the corresponding estimate from the present study (differences between pairs of bars in the figure). For example a value of 129% indicates that our estimate is 129% higher, or 2.29 times as high, as the estimate from Laroche et al. All are positive indicating that our estimates are uniformly higher. 
+
+In particular, the pastureland (grassland) footprints for foreign imports are fairly different across the two studies, with our estimate over twice as high for the baseline case, and a full seven times higher for the Planetary Health diet. Thus, in general our study concludes that U.S. diets have a higher land footprint than the Laroche et al. (2020) study concludes, and that a higher share of it is imported. Relative to Laroche and colleagues, we found that less of a decline in land footprint would occur if an individual switched from the average American diet to the vegetarian or Planetary Health diets. Therefore Laroche and colleagues assume a greater reduction in environmental impact due to diet shifts than we do.
+
 
 ```{r table}
 comparison_wide <- 
