@@ -3,7 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(purrr)
 
-final_output_path <- '~/Documents/GitHub/foodwaste/biodiversity-farm2fork/data'
+final_output_path <- '~/biodiversity-farm2fork/data' # change for clean repo.
 load(file.path(final_output_path, 'all_app_data.RData'))
 
 # Comparison with Marques et al. bird extinctions
@@ -22,13 +22,13 @@ bird_domestic[, lapply(.SD, sum), by = land_type, .SDcols = flow_cols]
 # ==========================
 
 # Load Chaudhary et al. supplemental information (do this on server)
-chaud_cfs <- fread('/nfs/qread-data/raw_data/biodiversity/chaudhary2015SI/chaud2018si_CFs.csv')
+chaud_cfs <- fread('/nfs/qread-data/raw_data/biodiversity/chaudhary2015SI/chaud2018si_CFs.csv') # Edit for clean repo
 
 chaud_bird <- chaud_cfs[taxon == 'birds' & CF_type == 'occupation' & unit == 'potential species loss y m-2' & land_use %in% c('crop', 'pasture') & statistic == 'mean' & region_type == 'ecoregion']
 
 chaud_bird_wide <- dcast(chaud_bird[intensity == 'med'], ... ~ land_use, value.var = 'value')
 chaud_bird_wide[, relative := pasture/crop]
-
+# The pastureland vs cropland characterization factor ratio shows that cropland has not that much greater of a CF than pastureland, if not lower. All the ratios are ~between 1 and 1.5 except for one outlier (Ogasawara) representing a tiny portion of the land area of Japan (negligible)
 
 # Comparison with Laroche et al. land use
 # =======================================
