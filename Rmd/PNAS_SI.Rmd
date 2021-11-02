@@ -3,7 +3,7 @@ title: 'Supplementary Information for: "Biodiversity effects of food system sust
 output: 
   pdf_document:
     dev: png
-    toc: true
+    toc: false
     toc_depth: 3
 header-includes:
 - \usepackage{caption}
@@ -17,12 +17,20 @@ header-includes:
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-**Supplementary Information for: "Biodiversity effects of food system sustainability actions from farm to fork"**
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.7\textwidth]{/research-home/qread/pnaslogo.png}}
+\end{figure}
 
-Quentin D. Read, Kelly L. Hondula, and Mary K. Muth
+This document contains supplementary Information for **"Biodiversity effects of food system sustainability actions from farm to fork."**
 
+**Authors**: Quentin D. Read, Kelly L. Hondula, and Mary K. Muth  
 **Corresponding author**: Quentin D. Read  
 **Email**:  quentin.read@usda.gov
+
+```{=latex}
+% Trigger ToC creation in LaTeX
+\tableofcontents
+```
 
 \newpage
 
@@ -830,10 +838,8 @@ comparison_dat[diet == 'EAT', diet := 'planetaryhealth']
 
 The figure below shows that our estimates are uniformly higher due to differing methodology and potentially different definitions of system boundaries. For example, our total land footprint in the baseline case is 39% higher than Laroche and colleagues' estimate. However, the relative differences between diets are similar between studies. Importantly, the total land footprint (including both domestic and outsourced) decreases relative to baseline for the vegetarian and Planetary Health diets, as do the outsourced total and outsourced grassland footprints. However, the outsourced cropland footprints increase relative to baseline, with the vegetarian diet increasing more than the Planetary Health diet. Note that the individual panels have different y-axis limits.
 
-\captionsetup{labelformat=empty}
-
-```{r figure, fig.cap = 'Figure S34. Comparison between our land footprint estimates and those of Laroche and colleagues'}
-ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') & 
+```{r figure}
+p <- ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') & 
                         (origin == 'outsourced' | land_type == 'total')], 
        aes(x = diet, y = per_capita_footprint, group = source, fill = source)) +
   geom_col(position = 'dodge') +
@@ -846,6 +852,11 @@ ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') &
         panel.grid = element_blank()) +
   scale_fill_manual(values = c(viridis::viridis(7, alpha = 0.7)[c(3,6)]))
 ```
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{/research-home/qread/temp/fig_s34.png}}
+\caption*{Figure S34: Comparison between our land footprint estimates and those of Laroche and colleagues}
+\end{figure}
 
 ### Table S10. Relative differences between our estimates and those of Laroche et al.
 
@@ -860,6 +871,8 @@ comparison_wide <-
         diet + land_type + origin ~ source, value.var = 'per_capita_footprint')
 comparison_wide[, relative := round((`this study`/`Laroche et al.` - 1), 2)]
 ```
+
+\captionsetup{labelformat=empty}
 
 ```{r kable, echo = FALSE}
 kable_dat <- comparison_wide[, .(diet, land_type, origin, relative)]
