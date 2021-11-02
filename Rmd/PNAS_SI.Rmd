@@ -1,0 +1,905 @@
+---
+title: 'Supplementary Information for: "Biodiversity effects of food system sustainability actions from farm to fork"'
+output: 
+  pdf_document:
+    dev: png
+    toc: true
+    toc_depth: 3
+header-includes:
+- \usepackage{caption}
+- \usepackage{multirow}
+- \usepackage{float}
+---
+
+\newcommand{\fpfig}{/nfs/qread-data/cfs_io_analysis/scenario_v2_figs}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+**Supplementary Information for: "Biodiversity effects of food system sustainability actions from farm to fork"**
+
+Quentin D. Read, Kelly L. Hondula, and Mary K. Muth
+
+**Corresponding author**: Quentin D. Read  
+**Email**:  quentin.read@usda.gov
+
+\newpage
+
+# Appendix 1: Complete methods
+
+The following appendix contains a complete description of the materials and methods to accompany the manuscript: “Biodiversity effects of food system sustainability actions from farm to fork,” by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth.
+
+## Notes on spatially explicit data
+
+*Spatial harmonization of county-level datasets*: We used three datasets with values at the USA county (or county-equivalent) level: spatial boundaries (U.S. Census Bureau, 2014a), agricultural production data provided by the U.S. Census of Agriculture (U.S. Department of Agriculture, National Agricultural Statistics Service, 2014), and consumer expenditure data (U.S. Bureau of Economic Analysis (BEA), 2021). We harmonized the three datasets by spatially aggregating units where necessary to achieve a common set of counties across all three datasets. This required us to update the FIPS classification to the most recent scheme, then to aggregate Virginia’s independent cities with their surrounding counties, as well as summing the production values for Aleutians East and West census areas in Alaska, which were separated in the expenditure dataset but not the production dataset.
+
+*Spatially explicit environmentally extended input-output models*: In this manuscript, we used an EEIO model to estimate the total indirect and direct demand required to satisfy final consumer demand, and to derive the associated land requirements, making the model spatially explicit where possible. Any of the three components of an EEIO model (final demand, transactions among industries required to satisfy that demand, and environmental extensions) can be made spatially explicit (Sun et al., 2019). This can be done either by using endogenous spatially explicit data or by downscaling using an external spatial dataset. In this study, we used spatially explicit environmental extensions: crop production and land use at the county level, and biodiversity threat characterization factors at the ecoregion level. However, because county-level data are lacking, the final demand and transactions are not spatially resolved. We used values for the whole United States, downscaled by assuming that final demand across all demand categories for each county are proportional to the total income of that county. However, we do not present the results of the spatial downscaling of demand in the manuscript, but we retain the description of the methods here to facilitate potential later improvements to the values if better spatially resolved data for the final demand and transactions become available. 
+
+## Production of agricultural and non-agricultural goods and consumption of food in each county
+
+We derived data on agricultural production for the year 2012 for counties in the United States from the Census of Agriculture (U.S. Department of Agriculture, National Agricultural Statistics Service, 2014). We obtained production values, in 2012 dollars, for each of the 50 states and for the highest North American Industry Classification System (NAICS) code resolution available. In addition, we obtained land area used for the production of each crop and for pastureland in 2012. We aggregated the land area into annual cropland and permanent cropland, because the biodiversity characterization factors used later in the analysis to determine virtual biodiversity threat transfers are also divided up in this way.
+
+*State-level production*: We obtained the County Business Patterns data for 2012 (U.S. Census Bureau, 2014b). The Census of Agriculture provides the total value of agricultural production and the total harvested area at the state level for a variety of four- and six-digit agricultural NAICS codes. We harmonized those NAICS codes with the relevant Bureau of Economic Analysis (BEA) codes. In most cases, there was a one-to-one or many-to-one correspondence between NAICS and BEA classifications; in the many-to-one case we could simply sum the production values for the multiple NAICS codes corresponding to one BEA code. However, there was one case of a one-to-many correspondence: the NAICS code classification for grain and oilseed production value is presented as a single aggregate value in the Census of Agriculture but corresponds to two BEA codes. To disaggregate the grain and oilseed production values, we used the state level crop sales data for the individual grain and oilseed crops. For industries other than those producing primary agricultural goods, e.g., food-processing industries such as cheese manufacturing (BEA code 311513) and snack food manufacturing (BEA code 311910), we obtained the total receipts of each industry in each state from the Statistics of U.S. Businesses data for 2012 (U.S. Census Bureau, 2015). These data are provided by NAICS code, typically six-digit resolution. We harmonized the NAICS classification with the BEA classification.
+
+*Downscaling state-level production to county level*: We downscaled the state-level production data for each BEA code, including both agricultural and non-agricultural codes, to the county level. The number of establishments classified under each BEA code in each county was the variable we used to downscale state-level annual production values to county-level. We obtained the number of establishments in each county classified under agricultural NAICS codes from the 2012 Census of Agriculture, and the non-agricultural codes from the County Business Patterns data from 2012 from the U.S. Census Bureau. In each case we harmonized the NAICS classification with the BEA classification. We multiplied the state-level production data for each BEA code by the proportion of establishments in each county classified under that BEA code to yield the downscaled production values for each county.
+
+*Downscaling national consumption to county level*: We obtained the 2012 personal consumption expenditure vector classified by the 411 BEA commodity codes for the USA from the BEA input-output data, and additionally obtained household income totals at the county level for 2012 (U.S. Bureau of Economic Analysis (BEA), 2021). Because of the lack of county-specific personal consumption expenditure data, we downscaled the national personal consumption expenditure vector to the county level by multiplying the consumption vector by each county's total personal income divided by the total income for the USA. Note: as mentioned above, due to the strong assumptions underlying the downscaling of national consumption to the county level, we do not present the estimates generated from the downscaling in the main manuscript or in the supplements (see “Notes on spatially explicit data” above). Instead, we present the estimates of consumption-side footprint summed across all counties to yield a total country-wide footprint; we retain the spatial disaggregation of the production-side footprint in our main results. However, the estimates for the spatial downscaling of the production-side footprints are available in our interactive data visualization (<https://qdread.shinyapps.io/biodiversity-farm2fork/>).
+
+*Total production required to satisfy final demand in each county*: Producing the food to satisfy final consumer demand for food products requires the production of goods across all sectors of the economy to supply the industries that produce the goods directly purchased and consumed by households. An input-output model allows the estimation of the total production required to satisfy both the indirect and direct demand. The basic formulation of an environmentally-extended input-output model is given in Equation 1.
+
+$$\boldsymbol{\mathrm{m}=B(I-A)^{-1}\mathrm{f}}$$ (Eq. 1)
+  
+Here, $\boldsymbol{A}$ is the direct requirements coefficients (DRC) matrix from the USEEIOv2.0 model (Yang et al., 2017); this matrix is derived from the make and use tables for 2012 supplied by the BEA. The DRC matrix represents, for each commodity produced, the intermediate requirements of all other commodities to produce one unit of output. The DRC matrix is generated by first normalizing the transactions in the make and use tables to produce a table of market shares of each industry for all commodities it produces (commodities × industries) and a table of the direct requirements of each commodity by each industry to produce its output (industries × commodities). Multiplying these two matrices results in the DRC matrix (commodities × commodities). This procedure is described in detail in (Miller and Blair, 2009). This method has been previously used to calculate the consumption of goods that drive land use under different scenarios (Zeng and Ramaswami, 2020). 
+We took the Leontief inverse, i.e., $(\boldsymbol{I-A})^{-1}$, of the DRC matrix and multiplied it by the downscaled final demand vector $\boldsymbol{\mathrm{f}}$ for each county; the product $\boldsymbol{(I-A)^{-1}\mathrm{f}}$ represents the total demand at the county level required to satisfy the final demand. In the following, we only consider the ten elements of the total demand vector representing primary agricultural goods: BEA code 1111A0, oilseeds and soybeans; 1111B0, wheat, corn, rice, and other grains; 111200, vegetables; 111300, fruits; 111400, greenhouse crops; 111900, all other crops (including peanuts and sugar crops); 112120, dairy cattle; 1121A0, beef cattle; 112300, poultry; 112A00, all other livestock. Code 114000, for wild-caught fish and seafood, is included in our final consumption results for completeness. However, because we only consider biodiversity threats due to terrestrial land use change, we do not account for any biodiversity impacts of wild-caught seafood (all excess demand for fish and seafood in alternative scenarios is assumed to be satisfied by expanded aquaculture rather than increased wild fish capture).
+
+## Food-related flows of goods between USA counties
+
+We allocated the consumption footprint of agricultural goods to counties using the strong assumption that agricultural goods are transported from producer to consumer within the United States independently of the geographic distance between them. We assume that the consumption of goods in each county is directly proportional to the income of that county. In other words, all agricultural goods contribute to a common pool of goods that are drawn from by individual counties. Additionally this requires the assumption that the populations of all counties consume the same mix of foods, and that spending on food makes up an equal proportion of household budgets in all counties. Given these strong simplifying assumptions, we allocated a proportion of the total production of every individual county to be consumed by each county.  We did this by taking the outer product of each county's production vector and the normalized county income vector. The result is a 411 × 3112 total consumption matrix for each county, including all primary agricultural goods required to produce the food consumed in that county, where each column is a vector with the production from a single county required to satisfy consumption in the target county.
+
+## Land use due to agriculture in each USA county
+
+From the 2012 Census of Agriculture, we found the total land area devoted to each agricultural NAICS code and the total receipts of each NAICS code, at the state level, then converted the NAICS classification to the BEA classification using the method described above. The land area divided by the receipts is a land exchange factor representing the amount of land required to produce a dollar of output of each primary agricultural commodity in each state. We constructed a 3 × 10 satellite land exchange matrix for each state, corresponding to element $\boldsymbol{B}$ of Equation 1, where the rows represent the three agricultural land use types we considered (annual cropland, permanent cropland, and pastureland), and the columns represent the ten primary agricultural BEA commodity classifications that occupy agricultural land in the United States.
+
+## Food-related virtual land flows between USA counties and ecoregions
+
+*Estimating land flows between counties*: For each county, we took the 10 × 3112 subset of its consumption matrix representing the consumption of primary agricultural goods sourced from each other county. The product of the 3 × 10 land exchange matrix and the 10 × 3112 consumption matrix is a 3 × 3112 matrix containing the land footprint of food consumption in each USA county, geographically resolved at the level of producing county.
+
+*Converting inter-county flows to ecoregion-to-county flows*: We converted flows between counties to flows between ecoregions as follows. First, to divide the outgoing flows from counties among the ecoregions making up that county (many of the counties or county equivalents in the United States have more than one TNC ecoregion within their borders), we determined the proportion of cropland and pastureland pixels from the National Land Cover Dataset in each county that lie within each of the ecoregions that overlap with it. We weighted the outgoing annual and permanent cropland flows by the proportion of cropland pixels in each ecoregion (assuming that annual and permanent cropland are divided up by ecoregions in the same proportions), and the outgoing pastureland flows by the pastureland proportion. The result of this weighting is a vector of virtual land flows into each county from each TNC ecoregion.
+
+*Converting ecoregion-to-county flows to inter-ecoregion flows*: Next, we divided the incoming flows to each county among its constituent ecoregions by finding the proportion of the county's population living within each ecoregion. We used the U.S. Census gridded demographic data product prepared by CIESIN (2017), with population totals at 30 arc-second pixel resolution for the United States in the year 2010 to generate the population estimates for the portion of each ecoregion intersecting with each county. The result of this second weighting is a vector of virtual land flows between each pair of TNC ecoregions. We did not use these flows in any further analysis but describe their calculation here for completeness.
+
+## Food-related virtual biodiversity threat transfers between USA counties
+
+*Technical background on biodiversity threat estimates*: To estimate the virtual biodiversity threat transfers embodied in the virtual land transfers, we used biodiversity characterization factors developed by (Chaudhary and Brooks, 2018). The characterization factors represent the marginal number of species committed to eventual extinction for each additional 1 square meter of land converted from natural to human use in each Nature Conservancy ecoregion, assuming that the impact of land conversion does not vary spatially within an ecoregion. The characterization factor for a particular combination of taxon, human land use type, and ecoregion is a function of the following inputs: the original species richness of that taxon in the ecoregion; the habitat affinity, or the relative proportion of species richness lost from that taxon in that ecoregion when natural habitat is changed to a particular human land use type; the rate at which species richness increases as area sampled increases; and the vulnerability score for that taxon in the ecoregion, which essentially represents the proportion of endemic species in the ecoregion. Additional data required to estimate affinity values include the amount of natural habitat that has been converted into each human land use type in each ecoregion to date, and the number of species lost from the ecoregion as a result.
+
+The theory underlying the characterization factors is based on the countryside species-area relationship (cSAR) (Pereira et al., 2014). Originally, ecologists observed a power-law relationship between land area and the number of species of a particular taxon found there, dubbed the species-area relationship (SAR). The power law takes the form S=cA^z, where A is the sampled area, S is the number of species encountered, and the parameter c is a constant that reflects the taxon’s overall species richness. The power law exponent z typically varies around ¼, varying based on taxon, biome, and scale (Drakare et al., 2006). However, directly using the SAR power law to estimate potential extinctions in a region due to habitat loss may yield inflated estimates (He and Hubbell, 2013); direct use of the SAR implicitly assumes that when land is converted from natural to human use, it becomes completely hostile to life and cannot support any natural populations; of course, there are many possible human land uses with varying ability to support natural populations. Furthermore, different taxonomic groups have different affinities for human land use types. The countryside species-area relationship captures both those nuances to yield more reasonable estimates of potential extinctions when natural landscapes are affected by humans. When comparing the predictions derived from the cSAR to those derived from the SAR and another SAR-based approach, and validating all three against a database of bird extinctions in biodiversity hotspots, the predictions made by the cSAR model were a significantly better match to the observed data (Pereira et al., 2014).
+
+A full description of the cSAR implementation from which we derive our biodiversity characterization factors is found in Chaudhary & Brooks (2018), including the data sources from which the parameters were taken. Following is a brief description of the model, paraphrasing Chaudhary & Brooks. The underlying cSAR model is given in Equation 2:
+
+$$ S_{loss,g,j} = S_{org,g,j}\Big( 1 - \big( \frac {A_{new,j} + \sum^{16}_{i=1} h_{g,i,j}A_{i,j}} {A_{org,j}} \big) ^ {z_j} \Big) $$ (Eq. 2)
+  
+The subscript g refers to taxon (mammals, birds, amphibians, reptiles, and plants), the subscript $i$ refers to land use type (there are 16, of which we only consider annual cropland, permanent cropland, and pastureland in this study), and the subscript $j$ refers to ecoregion (804 globally, of which 86 are found within the contiguous United States, Alaska, and Hawaii).
+
+In Equation 2, $S_{org,g,j}$ is the original number of species of taxon $g$ in ecoregion $j$ before human land use modification. $A$ represents land areas within ecoregion $j$, where $A_{org}$ is the original unmodified natural habitat area, $A_{new}$ is the remaining unmodified area after human intervention, and $A_i$ is the land area devoted to a particular human-modified land use type after intervention. $h_{g,i,j}$ is the affinity of taxon $g$ to land use type $i$ in ecoregion $j$. A value of $h$ close to zero would indicate that land use type $i$ is hostile to the taxon in that ecoregion and can support only very low species richness of that taxon, and a value of one would indicate no change in richness with land modification. A value above one would indicate that the modified landscape could support a higher richness than the unmodified. When averaging $h$ values by taxon and land use type across all ecoregions, no values greater than one are present in the cSAR model parameters used in the present analysis (Chaudhary & Brooks 2018; Table 2). Finally, $z_j$ is the species-area relationship exponent for the ecoregion; typically, values of $z$ range around 0.25. Therefore, if the original species richness, the extent of modified land, the taxon affinities, and the SAR exponent are known, this equation results in the expected number of species ultimately committed to extinction within the ecoregion given that land use. Details of how the parameters $S_{org}$, $A$, $h$, and $z$ were derived are found in Chaudhary & Brooks (2018). 
+
+The cSAR formulation is used to derive characterization factors (CFs) that express potential biodiversity damage as a rate of global species extinctions per square meter of land use converted to a particular land use in a particular ecoregion for a particular taxon. This requires first converting the species loss to a marginal rate and then deriving a global extinction rate from the ecoregion-specific extinction rate, as follows. First, an allocation factor $a_{g,i,j}$ is calculated for each taxon $g$ across each land use type $i$ in each ecoregion $j$ as given in Equation 3. The allocation factors for a particular taxon in a particular ecoregion sum to 1 and indicate the share of regional extinctions due to each type of land conversion.
+
+$$ a_{g,i,j} = \frac {A_{i,j}(1 - h_{g,i,j})} {\sum^{16}_{i=1} A_{i,j}(1 - h_{g,i,j})} $$ (Eq. 3)
+  
+Next, a regional land-occupation characterization factor $CF_{regional,occ,g,i,j}$ is calculated for each taxon $g$ across each land use type $i$ in each ecoregion $j$. This represents the projected number of species of taxon $g$ committed to local extirpation in ecoregion $j$ for each unit area of land use type $i$ (Equation 4).
+
+$$ CF_{regional,occ,g,i,j} = \frac {S_{loss,g,j}a_{i,j}} {A_{i,j}} $$ (Eq. 4)
+  
+The regional characterization factor is converted to a global characterization factor by multiplying by the vulnerability score $VS_{g,j}$, or the weighted proportion of the range of each species in taxon $g$ that occurs in ecoregion $j$, derived from IUCN range maps, with an additional weighting factor applied representing the IUCN category of extinction risk (Equation 5). For example if 100% of species in taxon $g$ are completely endemic to ecoregion $j$ and are listed as critically endangered by the IUCN Red List, they will all go globally extinct if they are locally extirpated from ecoregion $j$ ($VS = 1$). Details of the derivation of $VS$ are provided in Chaudhary et al. (2015).
+
+$$ CF_{global,g,i,j} = CF_{regional,occ,g,i,j} * VS_{g,j} $$ (Eq. 5)
+  
+These global characterization factors are used in our further analysis. They are expressed in units of species potentially committed to global extinction per square meter. Within each ecoregion, there are a number of characterization factors: one for each combination of biological taxon (plants, mammals, birds, amphibians, and reptiles) and agricultural land use type (annual cropland, permanent cropland, and pastureland). We present the characterization factors associated with land occupation and medium land use intensity in all cases. We reran the analysis with the low-intensity and high-intensity characterization factors and found that the median sensitivity of the species extinction threat totals for each combination of land use type, taxon, and scenario was 1.5% for medium versus low intensity, and 0.4% for medium versus high intensity. Because of the relatively low sensitivity and because of the lack of nationally available data to distinguish between levels of land use intensity, we chose to use the medium-intensity factors. We used the factors for land occupation rather than land transformation because we are dealing with land that has already been transformed to agricultural use and our alternative scenarios involve a contraction of this land area rather than any new expansion.
+
+*Conceptual issues regarding the biodiversity threat estimates*: The biodiversity threat estimates we generated here represent the number of species committed to extinction by agricultural land use in the United States. Although few plant and vertebrate species have been conclusively proven to have gone globally extinct due to agricultural land transformation in the United States, the current level of agricultural land use has reduced the available habitat so much for some species that they cannot maintain a non-negative population growth rate in the long term. Therefore, they are inevitably committed to extinction if current trends continue. However, reducing the land area devoted to agriculture would allow natural habitats to regenerate over time, possibly allowing population growth rates to recover.
+
+Here, biodiversity threat is expressed in units of potential global species extinctions per meter squared of land converted from natural land to food production. This translates all activities related to food production to a single common metric that can be compared across geographical regions. The cSAR approach is a “top-down” approach that calculates losses at the level of taxonomic groups rather than a “bottom-up” approach that estimates impacts at the level of individual species before summing them up to find the total impact. Therefore, it is less data-hungry than other potential candidate methods. However, it suffers from a few limitations. First, because threats are expressed in absolute number of species extinctions, if results are summed across taxa, they will be weighted toward the taxon with the highest species richness. Because we used characterization factors for plants and several vertebrate groups, and plants have a much higher species richness than vertebrates, around 75% of the species extinctions we predict in the baseline case are plants. Second, because the units are global extinctions, it tends to ignore local impacts in areas that have low endemism. In fact, for a few of the ecoregions that have relatively low endemism, threat is shown to be negligible or zero, though that might not be the case considering local or regional extinctions.
+
+*Calculation of biodiversity threat transfers*: We joined all the ecoregion-to-county virtual land flows (estimation of these flows is described in the section above titled “Food-related virtual land flows between USA counties and ecoregions”) with the characterization factors for the exporting ecoregion. The product of the land flow in square meters and the characterization factor represents the number of species committed to extinction by ongoing agricultural land use in the exporting ecoregion that contribute to the importing county's biodiversity threat footprint due to food consumption. We used the population weights described above to convert the pairwise virtual biodiversity threat transfers between ecoregions to pairwise transfers between counties.
+
+## Virtual land and biodiversity threat transfers due to imported agricultural goods 
+
+Foreign food imports contribute substantially to the global land and biodiversity footprint of U.S. consumers. To address this, we compiled and/or derived the following data from FAOSTAT (FAO (Food and Agriculture Organization of the United Nations)), 2021): food production in all countries that are agricultural trading partners with the United States, the proportion of those countries' food production that is exported to the United States, the harvested land area of each crop, and the proportion of crops grown for feed and pastureland that are used to feed livestock eventually exported to the United States.
+
+*Virtual land transfers due to imported crops*: First, we averaged the most recent five years of data for the relevant FAOSTAT data series, all at the country level: production in tons and area harvested for each crop, food balance sheets including the proportions of each crop used for feed and human consumption, export data reported by the United States' trading partners, land use inputs data including total amount of pastureland, and livestock patterns data including the total amount of livestock in each major species converted to common biomass-based units. We harmonized the commodity codes in the crop and livestock production dataset with those in the trade dataset. We joined the crop production dataset with the trade dataset and multiplied the total area harvested for each crop in each country by the proportion of that crop's production that is exported to the United States. We summed these values across annual and permanent crops within each exporting nation. This represents the virtual annual and permanent cropland transfers due to directly exported crops.
+
+*Virtual land transfers due to imported animal products*: For virtual land transfers embodied in animal products, the calculation is more complex because it requires estimating the pastureland footprint for grazing animals as well as the land used to grow feed for the animals. We made a number of simplifying assumptions. First, we joined the food balance sheet for each crop in each country with the crop production, crop trade, and area harvested data for those countries. The product of the proportion of each crop that is used for feed times the area harvested is the land area of each crop used to feed animals in each country. Next, we joined an additional dataset: the livestock patterns dataset, which presents the amount of each major type of livestock (excluding smaller types such as honeybees, turkeys, rabbits, etc.) in each country in biomass-equivalent units. We multiplied the total annual and permanent cropland footprint associated with animal feed in each country by the relative share of the livestock patterns for each major livestock type. This resulted in the annual and permanent cropland footprint used to feed each livestock species in each country, assuming for simplicity that all livestock species receive the same mix of crops as feed. 
+
+We additionally joined the livestock patterns dataset with the land inputs dataset, including the area of pastureland in each country. We multiplied the total pastureland in each country by the relative share of the livestock patterns for each major livestock type, this time including only ruminant grazers that use pastureland. This resulted in the pastureland footprint used to feed each grazing livestock species in each country. The livestock patterns dataset also includes the amount of livestock for each species in each country used to produce meat, milk (for ruminants), and eggs (for chickens). We multiplied the land footprints for each species by the proportion of stock used to produce each type of product, resulting in the annual and permanent cropland footprint associated with meat, dairy products, and eggs for each species. Finally, we derived conversion factors to estimate the approximate weight of milk required to produce a unit of butter or cheese. We averaged the conversion factors provided by FAO (FAO (Food and Agriculture Organization of the United Nations)), 1972) and ERS (USDA Economic Research Service, 2021); we used the average of the conversion factors for all dairy products as the factor for the "other dairy" category in the FAOSTAT food export dataset. We used the conversion factors to disaggregate the milk cropland footprints into footprints associated with each dairy product specifically. 
+
+Finally, we joined the cropland and pastureland footprints associated with all exported animal product from all countries exporting to the United States with the trade data and multiplied the animal-derived land footprints with the proportion of each animal product exported to the United State from each other country. This results in the virtual land transfer, of each major land type, embodied in animal products exported from foreign countries into the United States.
+
+*Virtual biodiversity threat transfers from foreign countries*: We proportionally allocated the virtual land flows from exporting countries to ecoregions within those countries. First, we counted the pixels in the global cropland and pastureland layers in each intersected country-ecoregion polygon. We used these counts to determine the proportion of cropland and pastureland in each country that lies within each of its ecoregions. Assuming the same proportional division of annual and permanent cropland, we divided the virtual land flows originating from each country among the ecoregions within it, weighted by the relative proportions of pixels from the global cropland mask layer (Thenkabail et al., 2016) and pastureland layer (Ramankutty et al., 2010) within each of a country’s ecoregions. To estimate the virtual biodiversity threat transfers associated with the virtual land transfers, we used the characterization factors published by Chaudhary and Brooks in the same way as above, then summed the transfers from each ecoregion back up by exporting country.
+
+## Alternative consumption scenarios: diet shifts and food waste reduction
+
+We modeled the effects of nationwide diet shifts and food waste reduction on the land footprint of agricultural production and consumption in the United States, and associated implications for biodiversity threats. Note that these alternative scenarios do not account for costs or other issues in transitioning to different diets or to a food system with greatly reduced waste; instead, we simply assume that the changes occur instantaneously. Furthermore, the biodiversity threat reduction relative to the baseline scenario is calculated assuming that land taken out of agricultural production can immediately support the same number of species as previously undisturbed land (i.e., no hysteresis and no time lag to full recovery). However, a meta-analysis of ecosystem recovery studies documented only partial recovery of pre-disturbance diversity for recovering agricultural land after roughly 20 years (Moreno-Mateos et al., 2017). In addition, we do not account for wild populations’ potential to adapt to agricultural habitats (i.e., affinity of taxa to a particular land use type is constant). Therefore it is more appropriate to consider the alternative scenarios as counterfactual cases rather than a simulation of a process occurring over time.
+
+The alternative diets we consider are the Planetary Health diet proposed by the EAT Lancet Commission (Willett et al., 2019) and the three healthy dietary patterns presented in the United States’ 2020-2025 dietary guidelines (U.S. Department of Health and Human Services and U.S. Department of Agriculture, 2020). While both diets attempt to deliver balanced, healthy nutrition, the Planetary Health diet explicitly considers sustainability and minimizing land footprint in its formulation; in contrast, the three USDA-recommended diets only consider the individual's health and not environmental sustainability. The daily allowance of meat on the Planetary Health diet is much lower than the current average meat consumption in the USA. Dairy products, added fats, and added sugars are also allocated fewer calories than currently consumed. In contrast, calories from fruits, grains, nuts, and vegetables are higher than the current USA consumption. While all three of the USDA-recommended diets have fewer calories due to meat and added fats than the current average American eats daily, they compensate for this with a substantially increased dairy consumption, in addition to increases in the fruit, grain, and vegetable food groups. In further contrast to the Lancet diet, the USDA-recommended diets allocate roughly the same or slightly more calories per day to added sugars as the current typical American level of consumption.
+
+To simulate the effects of food waste reduction, we separately assumed a 50% reduction in avoidable pre-consumer food waste (including manufacturing and retail waste) and a 50% reduction in avoidable consumer food waste (including household and food service waste). In summary, our analysis included five distinct diet scenarios: the baseline and four counterfactual diet scenarios (Planetary Health diet and the three USDA diets) and four waste scenarios (the baseline, 50% pre-consumer waste reduction, 50% consumer waste reduction, and 50% reduction in both pre-consumer and consumer waste). We did a full-factorial cross of the diet and waste scenarios, resulting in 20 scenarios total. In the pre-consumer waste reduction scenarios, we only simulated waste reduction for domestic food production, as we assumed foreign food loss is outside the ability of United States policy changes to alter. Note that we only present the baseline and full waste reduction scenarios in the manuscript, for a total of 10 scenario combinations; the methods for all waste scenarios are presented here for completeness.
+
+To determine the projected consumption of agricultural goods across the different scenarios, we needed to (1) harmonize the food group categories from both the Planetary Health and USDA diets with the food categories in the USDA's Loss-Adjusted Food Availability (LAFA) dataset from which we obtained the food waste rates for 2012 (using years as close to 2012 as possible for those food items that did not have data for 2012 available) and then (2) convert the daily food group servings values to common units (cal/day). First, we manually constructed a crosswalk table to harmonize the food group categorizations from the two diets with the list of food categories in the LAFA dataset. Because the LAFA categorization is much finer than the food group categorization for any of the recommended diets, this entailed many-to-one mapping of LAFA categories to diet categories. The exceptions to this are that the diet categories distinguish between whole and refined grains, and between saturated and unsaturated fat, while LAFA does not; those categories were aggregated for our harmonized classification. Next, we converted the daily food group allowances to calories per day by using the per capita food availability in the LAFA dataset, which presents availability in a variety of different units for each food and facilitates conversion to calories. Finally, we multiplied the “primary to retail” and “retail to consumer” food waste rates from LAFA to yield pre-consumer waste, and used the “edible consumer” food waste rate for the consumer stage. We calculated the reduction in production that would result from 50% reduction in food waste at both of these stages, assuming that if waste is reduced, production reduces by the amount needed to satisfy the new reduced amount of consumption.
+
+## Potential changes in virtual land and biodiversity threat transfers in the alternative scenarios
+
+To estimate possible changes to land and biodiversity footprints of food production and consumption under the alternative scenarios, we applied the scenario factors for each BEA code to the baseline food consumption final demand vector to generate 19 alternative final demand vectors in addition to the baseline. Again the 20 scenarios are a full factorial cross between four waste scenarios (baseline, 50% pre-consumer waste reduction, 50% consumer waste reduction, 50% waste reduction across both sectors) and five diet scenarios (baseline, Planetary Health, USDA/DHHS Dietary Guidelines US-style, USDA Mediterranean-style, and USDA vegetarian). We applied the same procedure as described above for the baseline final demand vector to estimate the total direct and indirect demand for primary agricultural goods in each county. To operationalize the assumption that all excess demand for seafood above baseline (summing across direct consumer demand and indirect demand via processed products containing seafood), we found the difference between total demand for BEA code 114000 (wild-caught fish) in the alternative scenario versus the baseline scenario. If this difference was greater than zero, we reassigned that amount of demand to BEA code 112A00 (animal farms and aquaculture). Next we continued with the procedures as described above to estimate the proportional allocation of production to consumption based on population, the land footprints associated with the consumption, and finally the biodiversity threats associated with the land footprints. We also applied the same procedure to estimate foreign imports of land and biodiversity threats in the alternative scenarios.
+
+## Key assumptions
+
+Unfortunately, the data sources we used for this analysis do not have any quantitative uncertainty associated with them. Therefore, it is difficult to determine how sensitive our final results are to uncertainty in the underlying data. The exception is the biodiversity characterization factors provided by Chaudhary & Brooks (2018), who provided a low, medium, and high intensity value for each characterization factor. As we describe above, we performed a sensitivity analysis and found that the median difference in total biodiversity threat estimates by region was negligible. Here, we outline the most important assumptions we made in the modeling exercise.
+
+### Assumptions: Domestic land footprint
+
+- The indirect demand required to satisfy final demand is uniform across the country. In other words, a final consumer product requires the same inputs to produce regardless of where it is produced or consumed.
+- All individuals in the United States spend an equivalent proportion of their income on food, and consume the same average diet. Therefore the only variation in consumption land footprint across counties is from the variation in total consumer spending by county, which is a function of the population and affluence of the county.
+- Total land area harvested per crop at the state level can be downscaled to the county level by the relative numbers of establishments for that crop’s NAICS code at the county level.
+-	The yield of a crop measured in monetary value per land area is the same for all counties in a state.
+-	All consumers in the United States consume an equal mix of goods sourced from everywhere in the United States and world, completely independent of the geographic location of the consumer. This is a strong assumption but does not affect the main findings which are summed across all consumers.
+-	The only consumption of agricultural goods that we consider for the land footprint is final consumer demand by households, as captured by the personal consumption expenditure totals in the BEA input-output data. This ignores, e.g., government purchases of food.
+-	All pastureland is actively used. This assumption derives from our calculation of land exchange factors by state as the quotient of total pastureland area and monetary output of grazing animals. This assumption was not as strong for cropland because in that case the numerator is area harvested, implying active land use.
+-	We further assumed that all agricultural land has a single use, although it is possible that some land may be used for both animal forage and food crops. Any such land would be double-counted, potentially overestimating the land footprint.
+	
+### Assumptions: Foreign land footprint
+
+-	We use the export values reported by the United States' trading partners (because they are more likely to be comparable to the total production quantities for those countries) rather than import values reported by the United States, though the two differ.
+-	The foreign land footprint may be exaggerated relative to the domestic because it is not possible to disaggregate exports destined for household consumption from other exports. Therefore, the foreign footprint has a slightly wider boundary than the domestic one. Furthermore, note the other methodological differences between the estimation of domestic and foreign land footprints (see above) when comparing the two.
+-	All livestock in a particular country consume the same mixture of feed crops. The apportioning of total crop quantity used for animal feed among livestock species was done purely based on the biomass of each livestock species, not accounting for differences in diet among livestock species.
+-	Livestock are either used for meat production, or milk/eggs production, but not both. This may overestimate the land footprint because in reality some individual animals may produce multiple products.
+-	All pastureland in foreign countries is actively used. As in the domestic analysis, we account for the fact that not all cropland is actively harvested each year, but do not have analogous data allowing us to account for this in the case of pastureland. This may lead to overestimation of the pastureland footprint.
+-	As in the domestic analysis, we assumed that agricultural land has a single use, ignoring any potential multiple use of the same land for producing animal forage and food crops.
+-	The values for cropland and pastureland used to produce animal products for export depend on the conversion factors that underlie the FAOSTAT livestock patterns dataset, as well as the dairy conversion factors we derived from FAOSTAT and USDA ERS. 
+-	The FAOSTAT livestock patterns dataset only includes the most numerous livestock species (asses, buffaloes, camels, cattle, chickens, goats, horses, mules, pigs, and sheep), ignoring less common species. Therefore we assume that the land footprint of imported livestock production of less common species is negligible.
+-	The portion of output exported to the United States has the same land footprint by weight as the rest of the output.
+	
+### Assumptions: Domestic and foreign biodiversity footprint
+
+We inherit all assumptions made by Chaudhary and Brooks (2018) when developing the biodiversity characterization factors. See Table 1 in Chaudhary and Brooks (2018) for a list of the data sources used in the calculation of the characterization factors. 
+
+-	The most important of these assumptions is that the countryside species-area relationship holds, and that it is possible to derive a marginal extinction per square meter of land that is relatively consistent across the range of land use values we present here. In other words the slope of the relationship does not change substantially over the range we are considering).
+-	Once we assume that cSAR is a valid foundation, the biodiversity threat model yielding the characterization factors has numerous parameters and may be more or less sensitive to the literature-derived values for those parameters. This includes the habitat affinity values for taxon/land use/ecoregion combinations, and the endemism proportions used to convert local extinction threats to global.
+-	The parameter $h$ (habitat affinity for each taxon for each land use type in each ecoregion) was a function of three inputs: the broad habitat affinity taken from the IUCN habitat classification scheme (five classes), a relative richness parameter taken from a meta-analysis by Newbold et al. (2015) for vertebrate taxa and from a meta-analysis conducted by Chaudhary et al. (2016) for plants, and the species-area power law exponent for each taxon taken from a study by Drakare et al. (2006). The relative richness parameter was used to derive habitat affinities for a finer classification of land use than the coarse five classes in the IUCN scheme. 
+-	Furthermore, the biodiversity threat reduction relative to the baseline scenario is calculated assuming that land taken out of agricultural production can immediately support the same number of species as previously undisturbed land (i.e., no hysteresis and no time lag to full recovery).
+-	We assume that there is no cost of time or resources required to restore agricultural land to natural habitat capable of supporting the same level of biodiversity as undisturbed habitat. 
+-	Finally, our approach also assumes that wild populations of organisms do not adapt to agricultural landscapes, meaning that their affinities to different land use types remain constant over time.
+	
+## Code and data availability
+
+All code required to reproduce the analyses described in this paper is contained in a permanent copy of a GitHub repository on Zenodo (temporary link <https://github.com/qdread/biodiversity-farm2fork-analysis>; this will be replaced by a permanent Zenodo DOI upon publication). Data required to reproduce the analysis is archived on a Figshare repository (<https://doi.org/10.6084/m9.figshare.14892087>). View our interactive data visualization app at <https://qdread.shinyapps.io/biodiversity-farm2fork/>.
+
+\newpage
+
+# Appendix 2: Supplemental figures
+
+This appendix contains supplemental figures for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth. 
+
+Please note that not all possible visualizations of data and model results are presented in this document. To interactively view results and generate tables, plots, and maps, please visit the Shiny app accompanying this manuscript at <https://qdread.shinyapps.io/biodiversity-farm2fork>.
+
+\newpage
+
+## Figure S1. Methods graph
+
+This figure graphically shows the relationship between each component in our data synthesis and modeling procedure. Each cluster (blue box with rounded corners) represents a phase of the data synthesis and modeling. Within each cluster, green boxes represent data sources incorporated in that phase, and red boxes represent models used in that phase. In each scenario, the food consumption data are derived from the USDA LAFA dataset, modified by the appropriate set of diet shift and waste reduction scenario parameters. Food consumption determines the required levels of domestic and foreign production (the USEEIO input-output model is used to estimate domestic production, and FAOSTAT trade and production data are used directly for foreign production). Next, the land exchange tables we developed are used to convert domestic production to domestic land footprint, and FAOSTAT yield and food balance sheet data are used for the foreign land footprint. We used the Chaudhary & Brooks model parameterized with IUCN and WWF data to convert the land footprints to biodiversity footprints for each scenario.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=1.0\textwidth]{\fpfig/method_graph.png}}
+\caption*{Figure S1: Data sources and models used in the study}
+\end{figure}
+
+\newpage
+
+## Figures S2-S3. Summary maps
+
+Figures S2 and S3 show global ecoregions colored by WWF realm in the United States and across the entire world respectively.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/usa_ecoregions.png}}
+\caption*{Figure S2: United States map showing global ecoregions categorized by realm}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/world_ecoregions.png}}
+\caption*{Figure S3: World map showing global ecoregions categorized by realm}
+\end{figure}
+
+\newpage
+
+## Figure S4. Disaggregated production totals
+
+This figure shows the total production, in units of value (billion USD), of each type of domestically produced primary agricultural good in each scenario (in contrast to Figure 2 in the main text, which shows the same values divided by the baseline consumption). Bars representing plant-derived goods are shaded in green, and bars representing animal-derived goods are shaded in pink. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). *Note*: A similar accounting is not possible for agricultural goods imported from foreign countries because of the different methodology and underlying data used for foreign imports.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/total_consumption_10_scenarios.png}}
+\caption*{Figure S4: Total consumption of each primary domestic agricultural good in each scenario, by value}
+\end{figure}
+
+\newpage
+
+## Figure S5. Disaggregated virtual land footprints
+
+This figure shows the virtual land footprint of food consumed in the United States in the baseline scenario and alternative diet and waste scenarios, disaggregated by domestic (blue shading) versus foreign origin (orange shading), with separate totals for annual cropland, pastureland, and permanent cropland. The bars represent total amounts of land virtually consumed in the United States each year, in units of square kilometers per year. Each panel represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). 
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_vlt_by_scenario_10.png}}
+\caption*{Figure S5: Total virtual land consumption in each scenario, by origin and land type}
+\end{figure}
+
+\newpage
+
+## Figures S6-S12. Disaggregated virtual biodiversity threat footprints
+
+The following figures show the virtual biodiversity threat footprints for the baseline case and the alternative diet and waste scenarios, disaggregated by origin, land use type, and taxon. In all these figures, the heights of the bars represent the number of terrestrial species forecast to eventually become globally extinct due to land used to produce food consumed in the United States. The biodiversity threat footprints are disaggregated by origin (blue shading represents domestic origin and orange shading represents foreign origin) and by land use type. Each panel of each figure represents a different combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction). Figure S6 shows the values for all taxa summed, Figure S7 shows plants only, Figure S8 shows all animal taxa summed, Figure S9 shows amphibians, Figure S10 shows birds, Figure S11 shows mammals, and Figure S12 shows reptiles.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_alltaxaextinctions_by_scenario_10.png}}
+\caption*{Figure S6: Total virtual biodiversity threat footprint in each scenario, by origin and land type: all taxa summed}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_plantextinctions_by_scenario_10.png}}
+\caption*{Figure S7: Total virtual biodiversity threat footprint in each scenario, by origin and land type: plants}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_animalextinctions_by_scenario_10.png}}
+\caption*{Figure S8: Total virtual biodiversity threat footprint in each scenario, by origin and land type: all animals summed}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_amphibianextinctions_by_scenario_10.png}}
+\caption*{Figure S9: Total virtual biodiversity threat footprint in each scenario, by origin and land type: amphibians}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_birdextinctions_by_scenario_10.png}}
+\caption*{Figure S10: Total virtual biodiversity threat footprint in each scenario, by origin and land type: birds}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_mammalextinctions_by_scenario_10.png}}
+\caption*{Figure S11: Total virtual biodiversity threat footprint in each scenario, by origin and land type: mammals}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/foreign_vs_domestic_reptileextinctions_by_scenario_10.png}}
+\caption*{Figure S12: Total virtual biodiversity threat footprint in each scenario, by origin and land type: reptiles}
+\end{figure}
+
+\newpage
+
+## Figures S13-S15. Maps showing domestic goods production
+
+The following groups of figures in this document are maps showing values spatially disaggregated by county in the United States. In maps where we present absolute values of each of the quantities for each scenario, we use a colorblind-friendly `viridis` color gradient to fill the polygons on the maps. Note that the color gradient represents values on a logarithmic scale.
+
+On the maps showing relative values, a colorblind-friendly `scico` divergent color gradient is used. Blue colors indicate decreases relative to the baseline and reddish-brown colors indicate increases. The starting or ending values of the color gradient are modified in each case so that white color indicates no change relative to baseline. On all maps, gray polygons indicate missing values or zero values that produce negative infinity when log-transformed.
+
+The maps showing differences across scenarios have ten panels, each of which represents a combination of diet scenario (baseline, three USDA diets, and planetary health diet) and waste scenario (baseline and 50% reduction).
+
+The contiguous United States map is displayed with an Albers equal-area projection for the continental United States identical to the one used by the National Land Cover Database. The inset maps for Alaska and Hawaii are displayed with Albers equal-area projections with parameters appropriate for those regions.
+
+Figure S13 shows the absolute value of domestic production of all primary agricultural goods, in units of million USD (2012), with a log-transformed color gradient. 
+Figure S14 shows the total across the ten groups of goods divided by the baseline value, resulting in a difference for each scenario relative to the baseline.
+Figure S15 shows the domestic production, by value in million USD, of the following ten primary agricultural goods listed above in this document, as well as the total, for the baseline scenario only. Each panel shows production for a different good.
+
+- oilseeds and soybeans
+- grains
+- vegetables, including melons and potatoes
+- fruits and nuts
+- greenhouse crops grown for food, including mushrooms
+- other crops, primarily sugar crops, peanuts, and herbs
+- dairy products
+- beef cattle
+- poultry and eggs
+- other meat, including farm-raised fish
+
+Maps disaggregated by type of good across each scenario can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound.png}}
+\caption*{Figure S13: Total production value of all agricultural goods in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_total_outbound_vs_baseline.png}}
+\caption*{Figure S14: Change in production relative to baseline of all agricultural goods in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_goods_flow_outbound.png}}
+\caption*{Figure S15: Total production value of agricultural goods in each county in the baseline scenario}
+\end{figure}
+
+\newpage
+
+## Figures S16-S18. Maps showing land use in each county across scenarios
+
+The following set of figures shows the land used in each county in the United States to produce food for domestic consumption under all combinations of diet and waste scenario, summed across all land use types (annual cropland, permanent cropland, and pastureland). Land use is shown in hectares (ha). Layout of panels and other details are the same as in the goods production figures above. Figure S16 shows the absolute values for each scenario, and Figure S17 the percent change relative to the baseline value. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+Figure S18 shows land use for each of the land use types in the baseline scenario only. The figure has a separate panel for annual cropland, permanent cropland, pastureland, and the total across all four land use types.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound.png}}
+\caption*{Figure S16: Land use summed across land use types in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_outbound_vs_baseline.png}}
+\caption*{Figure S17: Change relative to baseline in land use summed across land use types in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_land_flow_outbound.png}}
+\caption*{Figure S18:Land use by type in each county in the baseline scenario}
+\end{figure}
+
+\newpage
+
+## Figures S19-S20. Maps showing foreign virtual land imports to the United States across scenarios
+
+The following set of figures shows the virtual land imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in hectares (Figure S19) and percentage change relative to baseline (Figure S20). These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above. Maps disaggregated by land use type can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound.png}}
+\caption*{Figure S19: Virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_total_outbound_vs_baseline.png}}
+\caption*{Figure S20: Change relative to baseline in virtual imports totaled across all land use types from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\newpage
+
+## Figures S21-S26. Maps showing threatened biodiversity in each county across scenarios
+
+The following set of figures shows the total biodiversity threat associated with food production in each county in the United States under all combinations of diet and waste scenario, with separate figures for plants, the sum of all animal taxa (amphibians, birds, mammals, and reptiles), and the total of plants and animals. Biodiversity threats are shown in units of number of species threatened by eventual global extinction. Layout of panels and other details are the same as in the goods production figures above. Figures S21-23 show the absolute values for each scenario for each of the taxonomic groups, and Figures S24-26 the percent change relative to the baseline value. Maps disaggregated by taxonomic group can be generated using the [Shiny app](https://qdread.shinyapps.io/biodiversity-farm2fork/).
+
+Figure S27 shows the biodiversity threat for each of the taxonomic groups in the baseline scenario only. The figure has a separate panel for plants, amphibians, birds, mammals, reptiles, total across the four animal taxa, and total across both animals and plants.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_plantextinction_outbound.png}}
+\caption*{Figure S21: Threats to plant biodiversity in each county by diet and waste scenario}
+\end{figure}
+
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_animalextinction_outbound.png}}
+\caption*{Figure S22: Threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_totalextinction_outbound.png}}
+\caption*{Figure S23: Threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_plantextinction_outbound_vs_baseline.png}}
+\caption*{Figure S24: Change relative to baseline in threats to plant biodiversity in each county by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_animalextinction_outbound_vs_baseline.png}}
+\caption*{Figure S25: Change relative to baseline in threats to animal biodiversity in each county by diet and waste scenario (totaled across the four animal taxonomic groups)}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_maps/10scenarios_county_totalland_totalextinction_outbound_vs_baseline.png}}
+\caption*{Figure S26: Change relative to baseline in threats to all biodiversity in each county by diet and waste scenario (totaled across all plant and animal taxa)}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_baseline_maps/county_totalland_extinction_outbound.png}}
+\caption*{Figure S27: Biodiversity threats to each taxonomic group in each county in the baseline scenario}
+\end{figure}
+
+\newpage
+
+## Figures S28-S33. Maps showing foreign virtual biodiversity threat imports to the United States across scenarios
+
+The following set of figures shows the virtual biodiversity threat imports to the United States from all foreign trading partners across all combinations of diet and waste scenarios, both as absolute values in potential global species extinctions (Figures S28-S30) and percentage change relative to baseline (Figures S31-S33). A separate figure is shown for imported threats to plants, animals (total across taxa), and total of plant and animal threats. These world maps use the Robinson equal-area projection. Color scales and layout of panels are as described above.
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound.png}}
+\caption*{Figure S28: Virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound.png}}
+\caption*{Figure S29: Virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound.png}}
+\caption*{Figure S30: Virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_plants_outbound_vs_baseline.png}}
+\caption*{Figure S31: Change relative to baseline in virtual imports of threats to plant biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_animals_outbound_vs_baseline.png}}
+\caption*{Figure S32: Change relative to baseline in virtual imports of threats to animal biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\begin{figure}[H]
+\centerline{\includegraphics[width=0.8\textwidth]{\fpfig/paneled_foreign_maps/10scenariosvertical_country_extinction_total_outbound_vs_baseline.png}}
+\caption*{Figure S33: Change relative to baseline in virtual imports of total threats to plant and animal biodiversity from all countries to the United States by diet and waste scenario}
+\end{figure}
+
+\newpage
+
+# Appendix 3: Supplemental tables
+
+This appendix contains supplemental tables for the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth. 
+
+## Table S1. Total footprints and footprint intensities, baseline scenario
+
+This table shows the total land and biodiversity threat footprint of food consumed in the United States in 2012 (baseline scenario). The land footprint is disaggregated by the three land use types (annual crops, permanent crops, and pasture) as well as origin (domestic and foreign), in units of 1000 km<sup>2</sup>. Biodiversity footprints associated with each of these six land footprint components are shown for animals, plants, and the total of the two, in units of potential global species extinctions. Footprints are rounded to the nearest whole number. The biodiversity footprints are divided by the land footprints to yield footprint intensities. Cell shading represents relative magnitude of values within each column.
+
+```{r}
+library(data.table)
+library(kableExtra)
+library(readxl)
+
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_flowchange_tables_colorkeys.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_import_tables.RData')
+load('/nfs/qread-data/cfs_io_analysis/scenario_v2_figs/gt_tables/data_intensity_table.RData')
+
+# Calculate totals and grand totals
+# Done manually
+all_flows_totals <- all_flows[, .(VBT_animals = sum(VBT_animals),
+                                  VBT_plants = sum(VBT_plants),
+                                  VBT_total = sum(VBT_total),
+                                  VLT = sum(VLT),
+                                  VBT_animals_intensity = weighted.mean(VBT_animals_intensity, VBT_animals),
+                                  VBT_plants_intensity = weighted.mean(VBT_plants_intensity, VBT_plants),
+                                  VBT_total_intensity = weighted.mean(VBT_total_intensity, VBT_total)
+                                  ),
+                              by = .(origin)]
+all_flows_grandtotals <- all_flows[, .(VBT_animals = sum(VBT_animals),
+                                  VBT_plants = sum(VBT_plants),
+                                  VBT_total = sum(VBT_total),
+                                  VLT = sum(VLT),
+                                  VBT_animals_intensity = weighted.mean(VBT_animals_intensity, VBT_animals),
+                                  VBT_plants_intensity = weighted.mean(VBT_plants_intensity, VBT_plants),
+                                  VBT_total_intensity = weighted.mean(VBT_total_intensity, VBT_total)
+                                  )]
+
+all_flows_totals[, land_use := 'Total']
+all_flows_grandtotals[, land_use := 'Grand Total']
+
+all_flows_withtotals <- rbindlist(list(all_flows[1:3,], all_flows_totals[1,], all_flows[4:6,], all_flows_totals[2,], all_flows_grandtotals), use.names = TRUE, fill = TRUE)
+
+red_pal <- RColorBrewer::brewer.pal(9, 'Reds')
+div_pal <- scico::scico(9, palette = 'vik')
+
+palette_mapper <- function(x, pal) {
+  limits <- range(x)
+  pal[findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside=TRUE)]
+}
+
+# Custom color function for the individual columns, not including the total and grand total rows
+flow_bkg_color <- function(x) {
+  xcol <- palette_mapper(x[c(1:3, 5:7)], red_pal)
+  c(xcol[1:3], 'white', xcol[4:6], 'white', 'white')
+}
+
+# Rearrange columns
+all_flows_withtotals <- all_flows_withtotals[, .(land_use, VLT, VBT_animals, VBT_plants, VBT_total, VBT_animals_intensity, VBT_plants_intensity, VBT_total_intensity)]
+
+# Manually color the dark cell text white
+txtcol1 <- rep(c('black','white','black'), c(2, 1, 6))
+txtcol2 <- rep(c('black','white','black'), c(5, 1, 3))
+
+# Round absolute values to nearest whole number, intensities to 2 sigfigs
+absc <- c('VLT', 'VBT_animals', 'VBT_plants', 'VBT_total')
+relc <- c('VBT_animals_intensity', 'VBT_plants_intensity', 'VBT_total_intensity')
+all_flows_withtotals[, (absc) := lapply(.SD, round), .SDcols = absc]
+all_flows_withtotals[, (relc) := lapply(.SD, signif, digits = 2), .SDcols = relc]
+
+kbl(all_flows_withtotals,
+    col.names = linebreak(c('', 'land\n\\footnotesize{1000 km\\textsuperscript{2}}', 'animals\n\\footnotesize{extinctions}', 'plants\n\\footnotesize{extinctions}', 'total\n\\footnotesize{extinctions}', 'animals\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'plants\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}', 'total\n\\footnotesize{extinctions/1000 km\\textsuperscript{2}}'), align = 'c'),
+    escape = FALSE, booktabs = TRUE) %>%
+  column_spec(2, background = flow_bkg_color(all_flows_withtotals$VLT), color = txtcol1) %>%
+  column_spec(3, background = flow_bkg_color(all_flows_withtotals$VBT_animals), color = txtcol1) %>%
+  column_spec(4, background = flow_bkg_color(all_flows_withtotals$VBT_plants), color = txtcol1) %>%
+  column_spec(5, background = flow_bkg_color(all_flows_withtotals$VBT_total), color = txtcol1) %>%
+  column_spec(6, background = flow_bkg_color(all_flows_withtotals$VBT_animals_intensity), color = txtcol2) %>%
+  column_spec(7, background = flow_bkg_color(all_flows_withtotals$VBT_plants_intensity), color = txtcol2) %>%
+  column_spec(8, background = flow_bkg_color(all_flows_withtotals$VBT_total_intensity), color = txtcol2) %>%
+  add_header_above(c(" " = 1, "Total footprint" = 4, "Footprint intensity" = 3)) %>%
+  pack_rows("domestic origin", 1, 4, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("foreign origin", 5, 8, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  pack_rows("", 9, 9) %>%
+  kable_styling(latex_options = c('scale_down', 'HOLD_position')) %>%
+  row_spec(4, italic = TRUE) %>%
+  row_spec(8, italic = TRUE) %>%
+  row_spec(9, bold = TRUE, italic = TRUE)
+```
+
+\newpage
+
+## Table S2. Total land used for domestic food consumption by U.S. state across scenarios
+
+This table shows the total area of land consumed in each U.S. state to produce food consumed domestically in 2012, in units of square kilometers, summed across all agricultural land use types. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+diet_names <- c('baseline diet', 'USDA U.S. style', 'USDA Mediterranean', 'USDA vegetarian', 'Planetary Health')
+
+# Function to return a column spec both text and background color for each column separately
+# Change to white if above a certain threshold. n is the column index
+text_background_mapper <- function(kable_input, n, dat, pal = red_pal, thresh = 7) {
+  x <- dat[[n]]
+  limits <- range(x)
+  x01 <- findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside = TRUE)
+  bkg <- pal[x01]
+  txt <- ifelse(x01 > thresh, 'white', 'black')
+  column_spec(kable_input, n, background = bkg, color = txt)
+}
+
+kbl(county_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
+```
+
+\newpage
+
+## Table S3. Total biodiversity threatened by domestic food consumption by U.S. state across scenarios
+
+This table shows the total biodiversity threat caused in each U.S. state by production of food consumed domestically in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. For each of the 50 states, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+kbl(county_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
+```
+
+\newpage
+
+## Table S4. Virtual land imported to the United States by foreign country across scenarios
+
+This table shows the total area of land consumed in each of the United States' trading partners to produce food consumed in the United States in 2012, in units of square kilometers, summed across all agricultural land use types. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 8% of the United States' virtual land imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+kbl(foreign_land_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
+```
+
+\newpage
+
+## Table S5. Virtual biodiversity threats imported to the United States by foreign country across scenarios
+
+This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, summed across all agricultural land use types and taxonomic groups threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports. For each of the 20 countries, the value for the baseline scenario and the nine other counterfactual scenarios is provided (the baseline diet and four alternative diets crossed with baseline levels of food waste and 50% food waste reduction). After each value, the percentage change in each scenario relative to the baseline case is listed in parentheses.
+
+```{r}
+kbl(foreign_extinction_agg_wide,
+    col.names = c(' ', rep(diet_names, 2)),
+    booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No waste reduction" = 5, "50% waste reduction" = 5)) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'))
+```
+
+\newpage
+
+## Table S6. Virtual imports of biodiversity threats into the United States by taxonomic group, baseline scenario
+
+This table shows the total biodiversity threat caused in each of the United States' trading partners by production of food consumed in the United States in 2012, in units of potential global species extinctions, in the baseline scenario, summed across all agricultural land use types but disaggregated by taxonomic group threatened. Only the top 20 trading partners, sorted in descending order by the size of the biodiversity threat they virtually exported to the United States in 2012 (baseline scenario) are listed. The remaining countries are aggregated into the category "Other," which accounts for less than 2% of the United States' virtual biodiversity threat imports.
+
+```{r}
+# To 3 sig figs
+nc <- names(import_biodiv_base_wider)[sapply(import_biodiv_base_wider, is.numeric)]
+import_biodiv_base_wider[, (nc) := lapply(.SD, signif, digits = 3), .SDcols = nc]
+
+kbl(import_biodiv_base_wider,
+    col.names = c(' ', names(import_biodiv_base_wider)[-1]),
+    booktabs = TRUE) %>%
+  text_background_mapper(2, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(3, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(4, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(5, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(6, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(7, dat = import_biodiv_base_wider) %>%
+  text_background_mapper(8, dat = import_biodiv_base_wider) %>%
+  add_header_above(c(" " = 1, 'Virtual biodiversity threat export by taxonomic group' = 7))
+```
+
+\newpage
+
+## Table S7. Foreign imports of goods and associated virtual land imports into the United States, baseline scenario
+
+This table contains the quantity of each type of agricultural good, by weight in tonnes, reported by FAOSTAT that each of the United States' trading partners exported to the United States in 2012, in the baseline scenario. The table also lists the virtual land export in square kilometers associated with each of these goods, summed across all land use types (e.g., for beef cattle, the sum of the virtual pastureland export and virtual cropland export due to crops grown for cattle feed). Only the top 20 biodiversity threat exporters to the United States are shown; the remainder are aggregated into the "Other" category (see caption of Table S3). Within each country, goods are sorted in descending order by virtual land export. Goods with less than 1000 tonnes exported are summed into the "Other" category. The names of each good follow FAOSTAT's classification.
+
+```{r}
+# Within countries, sum goods with less than 50 tonnes to other, then sort so that
+# other is on the bottom.
+import_goods_base_wide[export_qty < 1000, item := 'Other']
+import_goods_todisplay <- import_goods_base_wide[, .(export_qty = sum(export_qty), VLT_total = sum(VLT_total)),
+                                                 by = .(country_name, item)]
+
+# Reorder such that Other is at bottom within each country
+import_goods_todisplay <- import_goods_todisplay[order(country_name, item == 'Other', -VLT_total)]
+import_goods_todisplay[, item := tolower(gsub('\xe9', 'é', item))] # Correct character in yerba mate'
+import_goods_todisplay[, VLT_total := as.character(signif(VLT_total/100, 3))]
+import_goods_todisplay[, export_qty := as.character(signif(export_qty, 3))]
+
+kbl(import_goods_todisplay[, -1],
+    col.names = linebreak(c('item', 'export quantity\n\\footnotesize{tonnes}', 'virtual land export\n\\footnotesize{km\\textsuperscript{2}}'), align = 'r'),
+    escape = FALSE, booktabs = TRUE, longtable = TRUE,
+    align = 'lrr') %>%
+  pack_rows(index = table(import_goods_todisplay$country_name), background = "#FFEFDB") %>%
+  kable_styling(latex_options = c('repeat_header', 'striped'), font_size = 7)
+```
+
+\newpage
+
+## Table S8. Data sources
+
+The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis. Citations for each data source are provided below the table in a numbered list corresponding to the numbers in the "Citation" column of the table.
+
+```{r}
+library(dplyr)
+datasources <- read_xlsx('~/virtualland/TableS1_datasources.xlsx')
+
+datasources <- datasources %>%
+  mutate(`Data year(s)` = if_else(`Data year(s)` == '-', as.character(NA), `Data year(s)`),
+         Type = factor(Type, levels = c('Primary data', 'Spatial data', 'Crosswalk'),
+                       labels = c('Primary data', 'Spatial data', 'Crosswalks')),
+         `Location on web` = if_else(!is.na(`Location on web`),
+                                     paste0('\\href{', `Location on web`, '}{click here}'),
+                                     as.character(NA))) %>%
+  rename(`Data years` = `Data year(s)`,
+         `Date most recently checked` = `Date most recently checked for availability`) 
+
+datasources$`Location on web`[13] <- 'No longer available. A similar file is \\href{https://www2.census.gov/geo/tiger/TIGER2014/COUNTY/}{available here}.'
+
+# Replace citations with numbers referring to citation list
+datasources$Citation[!is.na(datasources$Citation)] <- as.character(c(1:15, 15, 16:22, 1))
+
+# Remove any special characters from datasources to solve latex compilation errors
+datasources <- datasources %>%
+  mutate(across(where(is.character), ~ gsub('&', '\\&', ., fixed = TRUE))) %>%
+  mutate(across(where(is.character), ~ gsub('_', '\\_', ., fixed = TRUE))) %>%
+  mutate(across(where(is.character), ~ gsub('#', '\\#', ., fixed = TRUE))) 
+  
+
+options(knitr.kable.NA = '---')
+
+kbl(datasources[, -c(1)], booktabs = TRUE, longtable = TRUE, escape = FALSE, linesep = '\\addlinespace') %>%
+  pack_rows(index = table(datasources$Type), background = "#D4EBF2") %>%
+  column_spec(1, width = '7em') %>%
+  column_spec(2, width = '7em') %>%
+  column_spec(3, width = '3em') %>%
+  column_spec(4, width = '12em') %>%
+  column_spec(5, width = '3em') %>%
+  column_spec(6, width = '3em') %>%
+  column_spec(7, width = '4em') %>%
+  column_spec(8, width = '2em') %>%
+  kable_styling(font_size = 5, latex_options = c('repeat_header', 'striped'))
+```
+
+### Citations, Table S8
+
+1. The publication accompanying Version 2.0 is still in preparation. Until it is published cite USEEIOv1.1: Yang, Y., Ingwersen, W.W., Hawkins, T.R., Srocka, M., Meyer, D.E., 2017. USEEIO: A new and transparent United States environmentally-extended input-output model. Journal of Cleaner Production 158, 308–318. https://doi.org/10.1016/j.jclepro.2017.04.150
+1. USDA - National Agricultural Statistics Service - 2012 Census of Agriculture - Volume 1, Chapter 1: U.S. National Level Data [WWW Document], n.d. URL https://www.nass.usda.gov/Publications/AgCensus/2012/Full_Report/Volume_1,_Chapter_1_US/ (accessed 4.1.21).
+1. U.S. Census Bureau, 2014. County Business Patterns: 2012 [WWW Document]. The United States Census Bureau. URL https://www.census.gov/data/datasets/2012/econ/cbp/2012-cbp.html (accessed 4.1.21).
+1. U.S. Census Bureau, 2015. SUSB Datasets [WWW Document]. The United States Census Bureau. URL https://www.census.gov/programs-surveys/susb/data/datasets.html (accessed 4.1.21).
+1. U.S. Department of Health and Human Services, U.S. Department of Agriculture, 2020. Dietary Guidelines for Americans, 2020-2025 [WWW Document].
+1. Willett, W., Rockström, J., Loken, B., Springmann, M., Lang, T., Vermeulen, S., Garnett, T., Tilman, D., DeClerck, F., Wood, A., Jonell, M., Clark, M., Gordon, L.J., Fanzo, J., Hawkes, C., Zurayk, R., Rivera, J.A., De Vries, W., Majele Sibanda, L., Afshin, A., Chaudhary, A., Herrero, M., Agustina, R., Branca, F., Lartey, A., Fan, S., Crona, B., Fox, E., Bignet, V., Troell, M., Lindahl, T., Singh, S., Cornell, S.E., Srinath Reddy, K., Narain, S., Nishtar, S., Murray, C.J.L., 2019. Food in the Anthropocene: the EAT–Lancet Commission on healthy diets from sustainable food systems. The Lancet 393, 447–492. https://doi.org/10.1016/S0140-6736(18)31788-4
+1. Buzby, J.C., Farah-Wells, H., Hyman, J., 2014. The estimated amount, value, and calories of postharvest food losses at the retail and consumer levels in the United States. SSRN Electronic Journal. https://doi.org/10.2139/ssrn.2501659
+1. USDA Economic Research Service, 2019. Quarterly Food-at-Home Price Database [WWW Document]. URL https://www.ers.usda.gov/data-products/quarterly-food-at-home-price-database/ (accessed 8.5.20).
+1. FAO (Food and Agriculture Organization of the United Nations)), 2021. FAOSTAT [WWW Document]. URL http://www.fao.org/faostat/en/#home (accessed 4.1.21).
+1. U.S. Bureau of Economic Analysis (BEA), 2021. Regional Data: GDP & Personal Income [WWW Document]. URL https://apps.bea.gov/iTable/index_regional.cfm (accessed 4.1.21).
+1. Chaudhary, A., Brooks, T.M., 2018. Land use intensity-specific global characterization factors to assess product biodiversity footprints. Environ. Sci. Technol. 52, 5094–5104. https://doi.org/10.1021/acs.est.7b05570
+1. Olson, D. M. and E. Dinerstein. 2002. The Global 200: Priority ecoregions for global conservation. (PDF file) Annals of the Missouri Botanical Garden 89:125-126.
+1. U.S. Census Bureau, n.d. TIGER/Line Shapefiles [WWW Document]. The United States Census Bureau. URL https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html (accessed 4.1.21).
+1. Natural Earth - Free vector and raster map data at 1:10m, 1:50m, and 1:110m scales, n.d. URL https://www.naturalearthdata.com/ (accessed 4.1.21).
+1. Dewitz, J., 2019, National Land Cover Database (NLCD) 2016 Products: U.S. Geological Survey data release, https://doi.org/10.5066/P96HHBIE.
+1. MRLC, 2003. NLCD 2001 Land Cover (HAWAII) | Multi-Resolution Land Characteristics (MRLC) Consortium [WWW Document]. URL https://www.mrlc.gov/data/nlcd-2001-land-cover-hawaii-0 (accessed 4.1.21).
+1. Ramankutty, N., Evan, A.T., Monfreda, C., Foley, J.A., 2008. Farming the planet: 1. Geographic distribution of global agricultural lands in the year 2000. Global Biogeochemical Cycles 22. https://doi.org/10.1029/2007GB002952
+1. Thenkabail, P., Knox, J., Ozdogan, M., Gumma, M., Congalton, R., Wu, Z., Milesi, C., Finkral, A., Marshall, M., Mariotto, I., You, S., Giri, C., Nagler, P. (2016). NASA Making Earth System Data Records for Use in Research Environments (MEaSUREs) Global Food Security Support Analysis Data (GFSAD) Crop Dominance 2010 Global 1 km V001 [Data set]. NASA EOSDIS Land Processes DAAC.
+1. Center For International Earth Science Information Network-CIESIN-Columbia University, 2017. U.S. Census Grids (Summary File 1), 2010. https://doi.org/10.7927/H40Z716C
+1. Crop Bushel Weights [WWW Document], n.d. . Rayglen Commodities Inc. URL https://www.rayglen.com/crop-bushel-weights/ (accessed 6.1.21).
+1. USDA National Agricultural Statistics Service, 2017. Crop values 2016 Summary (No. ISSN 1949-0372).
+1. FAO (Food and Agriculture Organization of the United Nations)), 2021. FAOSTAT [WWW Document]. URL http://www.fao.org/faostat/en/#home (accessed 4.1.21).
+
+\newpage
+
+##	Table S9: Primary agricultural commodity and processed food commodity codes 
+
+The following table contains the commodity names and six-character codes from the U.S. Bureau of Economic Analysis input-output tables used in our analysis. Thirty-seven commodities are shown, including both primary agricultural goods (codes beginning with `1`) and processed foods (codes beginning with `3`).
+
+```{r}
+foodcat <- read_xlsx('~/virtualland/foodcategorytable.xlsx')
+
+kbl(foodcat[,1:2], booktabs = TRUE) %>%
+  pack_rows('primary agricultural goods', 1, 11, background = "#D4EBF2") %>%
+  pack_rows('processed foods', 12, 37, latex_gap_space = '1em', background = "#D4EBF2") %>%
+  kable_styling(latex_options = c('striped', 'HOLD_position'), font_size = 9)
+```
+
+\newpage
+
+# Appendix 4: Comparison of land footprint estimates with previous study
+
+```{r setup2, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+final_output_path <- '~/biodiversity-farm2fork/data'
+raw_data_path <- '/nfs/qread-data/raw_data'
+```
+
+## Summary
+
+This appendix is a supplement to the manuscript "Biodiversity effects of food system sustainability actions from farm to fork" by Quentin D. Read, Kelly L. Hondula, and Mary K. Muth. 
+
+In this appendix, which contains R code and results, we compare the land footprint estimates generated by our own models with the estimates generated by Laroche et al. (2020). We describe how we harmonized our results with theirs and present a figure and table comparing the results. Overall, we found that our study estimated higher land footprints than Laroche and colleagues'. In both studies, the relative differences between diets are qualitatively very similar. However, Laroche et al. estimated the reduction in land footprint, especially foreign-sourced, due to diet shifts to be much greater than we did.
+
+## Harmonization
+
+Laroche et al. provide estimates of the per capita land footprint of the average American diet and of several other diets. They provide totals for domestic and imported (outsourced in their terminology) land footprint, and they further disaggregate the foreign land footprint into cropland and grassland. These estimates are given in Table 3 of their manuscript.
+
+We assumed that their term grassland corresponds to our definition of pastureland, and that their term cropland corresponds to the total of our annual cropland and permanent cropland categories.
+
+In the following code, we load the data and then sum up our estimates by origin and land type, renaming them to use the same terminology as Laroche et al. (`foreign` becomes `outsourced` and `pasture` becomes `grassland`, and `cropland` is the sum of `annual` and `permanent`). We also divide our estimate by the 2012 USA population to make it a per capita estimate matching Laroche et al., and convert our units from square kilometers to square meters. 
+
+```{r sum our estimates, echo = TRUE}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(kableExtra)
+library(scales)
+
+load(file.path(final_output_path, 'all_app_data.RData'))
+
+laroche_landuse <- fread(file.path(raw_data_path, 'biodiversity/laroche2020_table3.csv'))
+
+# Sum up the land footprint by origin x land type
+landflow_cols <- c('flow_inbound_total', 'flow_inbound_foreign')
+our_landuse <- county_land_flow_sums[, lapply(.SD, sum), 
+                                     by = .(scenario_diet, scenario_waste, land_type), 
+                                     .SDcols = landflow_cols]
+setnames(our_landuse, old = landflow_cols, new = c('total', 'outsourced'))
+
+# 2012 USA population from https://www.multpl.com/united-states-population/table/by-year
+pop2012 <- 314e6
+our_landuse_long <- 
+  melt(our_landuse, variable.name = 'origin', value.name = 'total_footprint')
+our_landuse_long[, per_capita_footprint := total_footprint / pop2012 * 1e6 ]
+
+# Sum up annual and permanent cropland. Rename pasture to grassland
+our_landuse_long[, land_type := ifelse(land_type %in% c('annual','permanent'), 
+                                       'cropland', 'grassland')]
+our_landuse_sums <- our_landuse_long[scenario_waste == 'baseline', 
+                                     .(per_capita_footprint = sum(per_capita_footprint)), 
+                                     by = .(scenario_diet, land_type, origin)]
+
+# Add additional grand totals
+total_outsourced <- our_landuse_sums[, 
+                                     .(per_capita_footprint = sum(per_capita_footprint)), 
+                                     by = .(scenario_diet, origin)]
+total_outsourced[, land_type := 'total']
+our_landuse_sums <- rbindlist(list(our_landuse_sums, total_outsourced), use.names = TRUE)
+our_landuse_sums[, source := 'this study']
+setnames(our_landuse_sums, old = 'scenario_diet', new = 'diet')
+```
+
+Next, we harmonize the Laroche et al. estimates with ours. First, we sum cropland used for food and cropland used for feed, which aren't differentiated in our final estimates.
+
+```{r sum Laroche estimates, echo = TRUE}
+laroche_landuse[, origin := ifelse(`Land type` == 'total', 'total', 'outsourced')]
+laroche_landuse[, land_type := map_chr(strsplit(`Land type`, ' '), 1)]
+setnames(laroche_landuse,
+         old = c('Diet','Per capita footprint'), 
+         new = c('diet', 'per_capita_footprint'))
+laroche_landuse_sums <- 
+  laroche_landuse[, 
+                  .(per_capita_footprint = sum(per_capita_footprint)), 
+                  by = .(diet, land_type, origin)]
+laroche_landuse_sums[, source := 'Laroche et al.']
+
+comparison_dat <- rbind(our_landuse_sums, laroche_landuse_sums)
+```
+
+Next, we matched the names of diets across the two studies. Laroche et al. investigated some diets that we didn't consider, and used different names. We matched their `AAD` (Average American diet) with our `baseline` diet, and their `EAT` diet with our `planetaryhealth` diet. Those should be identical. Their `lacto-ovo vegetarian` diet should correspond closely with our `vegetarian` (USDA healthy vegetarian) diet, so we matched those up for comparison purposes.
+
+```{r match diet names, echo = TRUE}
+comparison_dat[diet == 'AAD', diet := 'baseline']
+comparison_dat[diet == 'lacto-ovo vegetarian', diet := 'vegetarian']
+comparison_dat[diet == 'EAT', diet := 'planetaryhealth']
+```
+
+## Results 
+
+### Figure S34. Total land footprints from the present study and Laroche et al. 2020
+
+The figure below shows that our estimates are uniformly higher due to differing methodology and potentially different definitions of system boundaries. For example, our total land footprint in the baseline case is 39% higher than Laroche and colleagues' estimate. However, the relative differences between diets are similar between studies. Importantly, the total land footprint (including both domestic and outsourced) decreases relative to baseline for the vegetarian and Planetary Health diets, as do the outsourced total and outsourced grassland footprints. However, the outsourced cropland footprints increase relative to baseline, with the vegetarian diet increasing more than the Planetary Health diet. Note that the individual panels have different y-axis limits.
+
+\captionsetup{labelformat=empty}
+
+```{r figure, fig.cap = 'Figure S34. Comparison between our land footprint estimates and those of Laroche and colleagues'}
+ggplot(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth') & 
+                        (origin == 'outsourced' | land_type == 'total')], 
+       aes(x = diet, y = per_capita_footprint, group = source, fill = source)) +
+  geom_col(position = 'dodge') +
+  facet_wrap(land_type ~ origin, scales = 'free_y') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)), 
+                     name = 'Per capita land footprint (m2/cap/y)') +
+  theme_bw() +
+  theme(legend.position = 'bottom',
+        strip.background = element_blank(),
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c(viridis::viridis(7, alpha = 0.7)[c(3,6)]))
+```
+
+### Table S10. Relative differences between our estimates and those of Laroche et al.
+
+The *relative* column in the table below indicates the percent difference between the land footprint estimate of Laroche et al. and the corresponding estimate from the present study (differences between pairs of bars in the figure). For example a value of 129% indicates that our estimate is 129% higher, or 2.29 times as high, as the estimate from Laroche et al. All are positive indicating that our estimates are uniformly higher. 
+
+In particular, the pastureland (grassland) footprints for foreign imports are fairly different across the two studies, with our estimate over twice as high for the baseline case, and a full seven times higher for the Planetary Health diet. Thus, in general our study concludes that U.S. diets have a higher land footprint than the Laroche et al. (2020) study concludes, and that a higher share of it is imported. Relative to Laroche and colleagues, we found that less of a decline in land footprint would occur if an individual switched from the average American diet to the vegetarian or Planetary Health diets. Therefore Laroche and colleagues assume a greater reduction in environmental impact due to diet shifts than we do.
+
+
+```{r table, echo = TRUE}
+comparison_wide <- 
+  dcast(comparison_dat[diet %in% c('baseline','vegetarian','planetaryhealth')], 
+        diet + land_type + origin ~ source, value.var = 'per_capita_footprint')
+comparison_wide[, relative := round((`this study`/`Laroche et al.` - 1), 2)]
+```
+
+```{r kable, echo = FALSE}
+kable_dat <- comparison_wide[, .(diet, land_type, origin, relative)]
+kable_dat[, relative := percent(relative, accuracy = 1)]
+
+options(knitr.kable.NA = '\u2014')
+
+kbl(kable_dat,
+    col.names = c('Diet', 'Land use type', 'Origin', 'Relative difference'),
+    caption = 'Table S10. Relative differences between our estimates and those of Laroche and colleagues.',
+    booktabs = TRUE) %>%
+  kable_styling(latex_options = c('scale_down', 'striped', 'HOLD_position'), font_size = 9)
+```
+
+\newpage
+
+# SI References
+
+1. A. Chaudhary, T. M. Brooks, Land use intensity-specific global characterization factors to assess product biodiversity footprints. *Environ. Sci. Technol.* **52**, 5094–5104 (2018).
+1. A. Chaudhary, Z. Burivalova, L. P. Koh, S. Hellweg, Impact of forest management on species richness: global meta-analysis and economic trade-offs. *Sci Rep* **6**, 23954 (2016).
+1. A. Chaudhary, F. Verones, L. de Baan, S. Hellweg, Quantifying land use impacts on biodiversity: combining species–area models and vulnerability indicators. Environ. Sci. Technol. 49, 9987–9995 (2015). 
+1. S. Drakare, J. J. Lennon, H. Hillebrand, The imprint of the geographical, evolutionary and ecological context on species–area relationships. Ecology Letters 9, 215–227 (2006).
+1. FAO (Food and Agriculture Organization of the United Nations)), Technical conversion factors for agricultural commodities (1972) http://www.fao.org/fileadmin/templates/ess/documents/methodology/tcf.pdf (accessed April 28, 2021).
+1. FAO (Food and Agriculture Organization of the United Nations)), FAOSTAT (2021) http://www.fao.org/faostat/en/#home (accessed April 1, 2021).
+1. F. He, S. Hubbell, Estimating extinction from species–area relationships: why the numbers do not add up. Ecology 94, 1905–1912 (2013). 
+1. P. C. S. J. Laroche, C. J. E. Schulp, T. Kastner, P. H. Verburg, Telecoupled environmental impacts of current and alternative Western diets. Global Environmental Change 62, 102066 (2020). 
+1. A. Marques, et al., Increasing impacts of land-use on biodiversity and carbon-sequestration driven by population and economic growth. Nat Ecol Evol 3, 628–637 (2019).
+1. R. E. Miller, P. D. Blair, Input–Output Analysis: Foundations and Extensions, 2nd Ed. (Cambridge University Press, 2009) https:/doi.org/10.1017/CBO9780511626982 (August 29, 2018).
+1. T. Newbold, et al., Global effects of land use on local terrestrial biodiversity. Nature 520, 45–50 (2015).
+1. H. M. Pereira, G. Ziv, M. Miranda, Countryside species–area relationship as a valid alternative to the matrix-calibrated species–area model. Conserv. Biol. 28, 874–876 (2014).
+1. N. Ramankutty, A. T. Evan, C. Monfreda, J. A. Foley, Global Agricultural Lands: Pastures, 2000 (2010) https://doi.org/10.7927/H47H1GGR (accessed April 1, 2021).
+1. Z. Sun, A. Tukker, P. Behrens, Going global to local: connecting top-down accounting and local impacts, a methodological review of spatially explicit input–output approaches. Environ Sci Technol 53, 1048–1062 (2019).
+1. P. Thenkabail, et al., NASA Making Earth System Data Records for Use in Research Environments (MEaSUREs) Global Food Security Support Analysis Data (GFSAD) Crop Dominance 2010 Global 1 km V001 [Data set] (2016).
+1. U.S. Bureau of Economic Analysis (BEA), Regional Data: GDP and Personal Income (2017) https://apps.bea.gov/iTable/index_regional.cfm (accessed March 23, 2021).
+1. U.S. Census Bureau, TIGER/Line Shapefiles. The United States Census Bureau (2014) https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html (accessed April 1, 2021).
+1. U.S. Census Bureau, County Business Patterns: 2012. The United States Census Bureau (2014) https://www.census.gov/data/datasets/2012/econ/cbp/2012-cbp.html  (accessed April 1, 2021).
+1. U.S. Census Bureau, SUSB Datasets. The United States Census Bureau (2015) https://www.census.gov/programs-surveys/susb/data/datasets.html (accessed April 1, 2021).
+1. U.S. Department of Agriculture, National Agricultural Statistics Service, USDA - National Agricultural Statistics Service - 2012 Census of Agriculture - Volume 1, Chapter 1: U.S. National Level Data (2014) https://www.nass.usda.gov/Publications/AgCensus/2012/Full_Report/Volume_1,_Chapter_1_US/ (accessed April 1, 2021).
+1. U.S. Department of Health and Human Services, U.S. Department of Agriculture, Dietary Guidelines for Americans, 2020-2025 (2020). https://www.dietaryguidelines.gov/sites/default/files/2021-03/Dietary_Guidelines_for_Americans-2020-2025.pdf (accessed April 1, 2021)
+1. USDA Economic Research Service, Dairy Data - Documentation (2021) https://www.ers.usda.gov/data-products/dairy-data/documentation/ (accessed April 28, 2021).
+1. W. Willett, et al., Food in the Anthropocene: the EAT–Lancet Commission on healthy diets from sustainable food systems. *The Lancet* 393, 447–492 (2019).
+1. Y. Yang, W. W. Ingwersen, T. R. Hawkins, M. Srocka, D. E. Meyer, USEEIO: A new and transparent United States environmentally-extended input-output model. *J. Cleaner Prod.* 158, 308–318 (2017).
+1. L. Zeng, A. Ramaswami, Impact of locational choices and consumer behaviors on personal land footprints: an exploration across the urban–rural continuum in the United States. *Environ. Sci. Technol.* 54, 3091–3102 (2020).
