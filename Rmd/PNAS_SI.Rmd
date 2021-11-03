@@ -658,7 +658,7 @@ kbl(import_goods_todisplay[, -1],
 
 ## Table S8. Data sources
 
-The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis. Citations for each data source are provided below the table in a numbered list corresponding to the numbers in the "Citation" column of the table.
+The following table contains the data sources used in the manuscript, along with the names of the dataset providers, the year the datasets represent, a description of the use of the datasets in the analysis, URLs of the datasets and when the datasets were downloaded and last checked for online availability. The table lists primary non-spatial data sources, spatial data sources (polygon and raster), and crosswalk tables used to harmonize different datasets. Some crosswalk tables were downloaded from existing sources and some were created manually by the authors for this analysis. Citations for each data source are provided in the *SI References* section at the bottom of this document, numbered corresponding to the numbers in the "Citation" column of the table.
 
 ```{r}
 library(dplyr)
