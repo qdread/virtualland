@@ -71,7 +71,7 @@ p_consprod_top <- ggplot(lafa_cal_summ %>% mutate(food_group = factor(food_group
 )
 ggsave(file.path(fp_bw, 'bw_fig1.png'), fig1bw, height = 5*.85, width = 6*.85, dpi = 400, device = png)
 
-#### Fig 2 Setup
+#### Fig 1b Setup
 # Reorder factors in loaded CSV.
 totaldemand_sums <- totaldemand_sums %>%
   mutate(short_name = factor(short_name, levels = unique(short_name)),
@@ -87,8 +87,8 @@ totaldemand_relative <- totaldemand_sums %>%
   mutate(scenario_diet = factor(scenario_diet, levels = diet_levels_ordered),
          scenario_waste = factor(scenario_waste, levels = waste_levels_ordered))
 
-#### Drawing Fig2
-fig2bw <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand)) +
+#### Drawing Fig1b
+fig1bbw <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% c('baseline', 'allavoidable')), aes(x = short_name, y = demand)) +
   geom_col(aes(fill = kingdom), color = 'black', size = 0.25) +
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'white', size = 0.5) +
   facet_grid(scenario_waste ~ scenario_diet, labeller = scenario_labeller_fn(diet = 'medium', waste = 'long')) +
@@ -99,17 +99,17 @@ fig2bw <- ggplot(totaldemand_relative %>% filter(scenario_waste %in% c('baseline
   theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1), 
         legend.position = 'none')
 
-fig2bw <- ggdraw(fig2bw + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
+fig1bbw <- ggdraw(fig2bw + theme(plot.margin = unit(c(25, 25, 5.5, 5.5), 'points'))) +
   draw_label(label = 'diet scenario', x = 0.5, y = 0.97, color = 'white') +
   draw_label(label = 'waste scenario', x = 0.99, y = 0.5, angle = -90, color = 'white')
 
-ggsave(file.path(fp_bw, 'bw_fig2.png'), fig2bw, height = 9*.75*.75, width = 12*.8, dpi = 400, device = png)
+ggsave(file.path(fp_bw, 'bw_fig1b.png'), fig1bbw, height = 9*.75*.75, width = 12*.8, dpi = 400, device = png)
 
 
 
-# Fig 3: In & Out map.
+# Fig 2: In & Out map.
 
-#### Fig 3 Setup
+#### Fig 2 Setup
 library(data.table)
 load('~/biodiversity-farm2fork/data/all_app_data.RData')
 
@@ -127,8 +127,6 @@ foreign_ext_toplot <- foreign_extinction_flow_sums[scenario_diet == 'baseline' &
                                                    by = .(ISO_A3)]
 
 
-# Set up world map projection ---------------------------------------------
-
 # Filter country map to get rid of very southern latitudes
 extent_countries <- st_bbox(c(xmin = -180, ymin = -58, xmax = 180, ymax = 84), crs = "+proj=longlat +ellps=WGS84") %>%
   st_as_sfc
@@ -141,7 +139,7 @@ country_map_toplot <- global_country_map %>%
   st_transform(crs = "+proj=robin") %>%
   filter(!country_name %in% "Antarctica")
 
-# Join data with maps and draw maps ---------------------------------------
+#### Drawing Fig 2
 
 # Note: land flows are already in units of ha for both.
 
@@ -182,40 +180,10 @@ p_fext <- ggplot(left_join(country_map_toplot, foreign_ext_toplot)) +
   scale_fill_viridis_c(name = 'Foreign biodiversity\nfootprint (extinctions) ', trans = 'log10', breaks = scale_breaks, labels = scale_labels, na.value = 'gray80') +
   leg_long_bw
 
-png(glue('{fp_bw}/bw_fig3.png'), height=8+90+90,width=8+120+120,res=400,units='mm')
+png(glue('{fp_bw}/bw_fig2.png'), height=8+90+90,width=8+120+120,res=400,units='mm')
 grid.newpage()
 grid.draw(gtable_cbind(
   gtable_rbind(ggplotGrob(p_dland), ggplotGrob(p_fland)),
   gtable_rbind(ggplotGrob(p_dext), ggplotGrob(p_fext))))
 dev.off()
 
-### FIXME ANYTHING BELOW THIS MUST BE CHANGED.
-
-# Fig.4 not going to include.
-
-# Fig.5: goofy stacked bar plot.
-
-fig5abw <- p_ext_grandtotals_10 + 
-  theme_black() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
-        strip.text = element_text(size = rel(0.7)),
-        legend.title = element_text(size = rel(0.8)),
-        legend.position = c(0.93, 0.78),
-        legend.background = element_blank(),
-        legend.spacing.y = unit(0.1, 'cm')) 
-
-fig5bbw <- p_land_grandtotals_10 +
-  theme_black() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
-        strip.text = element_text(size = rel(0.7)),
-        legend.title = element_text(size = rel(0.8)),
-        legend.position = c(0.93, 0.71),
-        legend.background = element_blank(),
-        legend.spacing.y = unit(0.1, 'cm'))
-
-ggsave(file.path(fp_bw, 'bw_fig5a.png'), fig5abw, height = 6, width = 8, dpi = 400)
-ggsave(file.path(fp_bw, 'bw_fig5b.png'), fig5bbw, height = 6, width = 8, dpi = 400)
-
-png(file.path(fp_fig, 'foreign_vs_domestic_10scenarios_grandtotals.png'), height = 7, width = 7, res = 400, units = 'in')
-grid.draw(gridExtra::gtable_rbind(ggplotGrob(p_top), ggplotGrob(p_bottom)))
-dev.off()
